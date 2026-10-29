@@ -26,7 +26,9 @@ Read `README.md` and inspect the current branch and working tree before editing.
 
 ## Commands and dependencies
 
-No install, development, lint, typecheck, test, or build commands are established yet. Do not invent them or present them as verified.
+No application install, development, lint, typecheck, test, or build commands are established yet. Do not invent them or present them as verified.
+
+Repository-level checks live in `.github/workflows/security.yml`: repository hygiene and a redacted full-history Gitleaks secret scan run on pushes and pull requests. These checks do not replace application tests or block a secret before it is pushed. Keep Actions pinned to full commit SHAs and the scanner image pinned to its digest. `.github/dependabot.yml` proposes weekly GitHub Action updates. CODEOWNERS requests owner review but does not enforce approval without supported branch protection.
 
 Once the project is scaffolded:
 
