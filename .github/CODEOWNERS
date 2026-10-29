@@ -1,0 +1,3 @@
+# Ownership requests review; enforce approvals through supported branch rules.
+# An author cannot satisfy independent review of their own changes.
+* @skdevops4

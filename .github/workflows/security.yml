@@ -1,0 +1,101 @@
+name: Repository security
+
+on:
+  push:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: security-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  repository-hygiene:
+    name: Repository hygiene
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Check out repository without persisted credentials
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Reject tracked credentials and validate instruction import
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import pathlib
+          import subprocess
+          import sys
+
+          paths = subprocess.check_output(["git", "ls-files", "-z"]).decode("utf-8").split("\0")
+          forbidden_names = {"id_rsa", "id_ed25519", ".npmrc", ".netrc"}
+          forbidden_suffixes = (".pem", ".key", ".p12", ".pfx", ".keystore")
+          violations = []
+          for name in filter(None, paths):
+              path = pathlib.PurePosixPath(name)
+              leaf = path.name.lower()
+              real_env = (leaf == ".env" or leaf.startswith(".env.")) and leaf != ".env.example"
+              if real_env or leaf in forbidden_names or leaf.endswith(forbidden_suffixes):
+                  violations.append(name)
+          for name in violations:
+              print(f"Forbidden tracked credential/configuration file: {name!r}")
+          if violations:
+              sys.exit(1)
+
+          claude = pathlib.Path("CLAUDE.md").read_text(encoding="utf-8")
+          if "@rulesd.md" not in claude.splitlines() or not pathlib.Path("rulesd.md").is_file():
+              raise SystemExit("CLAUDE.md must import the root rulesd.md file")
+
+          example = pathlib.Path(".env.example").read_text(encoding="utf-8")
+          for line in example.splitlines():
+              if not line.strip() or line.lstrip().startswith("#"):
+                  continue
+              key, separator, value = line.partition("=")
+              if not separator:
+                  raise SystemExit("Malformed environment example assignment")
+              if any(term in key.upper() for term in ("SECRET", "TOKEN", "PASSWORD", "KEY", "DATABASE_URL")) and value.strip():
+                  raise SystemExit(f"Sensitive placeholder must be blank: {key}")
+
+          probes = [".env", ".env.production", "apps/api/.env.local", "private.key", "apps/web/node_modules/check.js"]
+          for name in probes:
+              result = subprocess.run(["git", "check-ignore", "--no-index", "--quiet", name])
+              if result.returncode != 0:
+                  raise SystemExit(f"Expected ignore rule is missing for {name}")
+          for name in (".env.example", "apps/api/.env.example"):
+              result = subprocess.run(["git", "check-ignore", "--no-index", "--quiet", name])
+              if result.returncode != 1:
+                  raise SystemExit(f"Example configuration must remain committable: {name}")
+          print("Repository hygiene checks passed. Application lint/tests/build are not configured yet.")
+          PY
+
+  secret-scan:
+    name: Secret scan
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Check out full history without persisted credentials
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Scan full fetched Git history with pinned Gitleaks
+        shell: bash
+        env:
+          # Official gitleaks/gitleaks v8.30.1 image; pin digest rather than a tag.
+          GITLEAKS_IMAGE: ghcr.io/gitleaks/gitleaks@sha256:c00b6bd0aeb3071cbcb79009cb16a60dd9e0a7c60e2be9ab65d25e6bc8abbb7f
+        run: |
+          set -euo pipefail
+          docker pull "$GITLEAKS_IMAGE"
+          docker run --rm --network none --cap-drop ALL \
+            --security-opt no-new-privileges --read-only \
+            --user "$(id -u):$(id -g)" \
+            --volume "$GITHUB_WORKSPACE:/repo:ro" --workdir /repo \
+            "$GITLEAKS_IMAGE" git --redact=100 --no-banner \
+            --ignore-gitleaks-allow --exit-code 1 --timeout 300 \
+            --log-opts="--all" /repo

@@ -1,0 +1,33 @@
+# Dependencies, caches, and build output
+node_modules/
+.next/
+dist/
+build/
+coverage/
+.turbo/
+.cache/
+*.tsbuildinfo
+
+# Real environment files are local; only placeholder examples belong in Git.
+.env
+.env.*
+!.env.example
+
+# Credentials, local tooling, and generated reports
+*.pem
+*.key
+*.p12
+*.pfx
+*.keystore
+id_rsa
+id_ed25519
+.npmrc
+.netrc
+.claude/settings.local.json
+CLAUDE.local.md
+gitleaks-report.*
+*.log
+
+# Operating-system files
+.DS_Store
+Thumbs.db
