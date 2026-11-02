@@ -90,7 +90,8 @@ export const CATEGORY_SECTIONS: readonly CategorySection[] = [
  */
 export const METER_NAV_ITEM: NavLink = {
   href: "/meter",
-  label: "Meter",
+  // Owner-approved label (Nov 2026): "Meter Token Issuer".
+  label: "Meter Token Issuer",
 };
 
 export function getCategorySection(slug: string): CategorySection | undefined {

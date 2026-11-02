@@ -1,20 +1,22 @@
 import type { Metadata } from "next";
-import { Montserrat, Poppins } from "next/font/google";
+import { Inter, Montserrat } from "next/font/google";
 import { ACTIVE_COUNTRY } from "@tronic/country-config";
 import { Header } from "@/components/header/Header";
 import { Footer } from "@/components/footer/Footer";
+import { BottomNav } from "@/components/nav/BottomNav";
 import "./globals.css";
 
-// Approved pairing (master prompt §4): Montserrat 500/600/700 for headings
-// (800/900 intentionally not loaded), Poppins 400/500/600 + 700 for selected
-// emphasis in interface and product information.
+// Headings: Montserrat 500/600/700 (master prompt §4; 800/900 intentionally
+// not loaded). Body/UI: Inter — owner decision (Nov 2026) replacing Poppins
+// for an SF Pro-like interface feel; SF Pro itself is Apple-proprietary and
+// cannot legally be embedded as a web font.
 const montserrat = Montserrat({
   subsets: ["latin"],
   weight: ["500", "600", "700"],
   variable: "--font-heading",
 });
 
-const poppins = Poppins({
+const inter = Inter({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
   variable: "--font-body",
@@ -35,7 +37,8 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang={ACTIVE_COUNTRY.locale}>
-      <body className={`${montserrat.variable} ${poppins.variable} flex min-h-screen flex-col`}>
+      {/* max-md bottom padding keeps content clear of the fixed mobile tab bar */}
+      <body className={`${montserrat.variable} ${inter.variable} flex min-h-screen flex-col max-md:pb-14`}>
         <a
           href="#main-content"
           className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:bg-white focus:px-4 focus:py-2"
@@ -47,6 +50,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           {children}
         </main>
         <Footer />
+        <BottomNav />
       </body>
     </html>
   );

@@ -3,7 +3,7 @@
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import type { SearchResultItem, SearchState } from "@tronic/types";
-import { SearchIcon } from "@tronic/ui";
+import { SearchIcon, SlidersIcon } from "@tronic/ui";
 import { createSearchClient, type SearchClient } from "@tronic/api-client";
 
 const DEBOUNCE_MS = 300;
@@ -119,7 +119,12 @@ export function SearchBox({ client }: SearchBoxProps) {
         }}
         onFocus={() => setIsOpen(true)}
         onKeyDown={onKeyDown}
-        className="h-11 w-full rounded-full border border-[var(--color-light-grey)] bg-white pl-5 pr-14 text-sm transition-colors placeholder:text-[var(--text-muted)] focus:border-[var(--color-mid-grey)]"
+        className="h-11 w-full rounded-full border border-[var(--color-light-grey)] bg-white pl-5 pr-14 text-sm transition-colors placeholder:text-[var(--text-muted)] focus:border-[var(--color-mid-grey)] max-md:rounded-xl max-md:border-transparent max-md:pl-11 max-md:shadow-sm"
+      />
+      {/* Leading icon on the mobile pill (approved mobile UI reference) */}
+      <SearchIcon
+        size={18}
+        className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[var(--text-muted)] md:hidden"
       />
       <button
         type="button"
@@ -128,9 +133,12 @@ export function SearchBox({ client }: SearchBoxProps) {
           setIsOpen(true);
           inputRef.current?.focus();
         }}
-        className="absolute right-1 top-1/2 flex h-9 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-[var(--color-action-red)] text-white transition-colors hover:bg-[var(--color-action-red-dark)]"
+        className="absolute right-1 top-1/2 flex h-9 w-11 -translate-y-1/2 items-center justify-center rounded-full transition-colors max-md:text-[var(--text-secondary)] max-md:hover:text-[var(--text-primary)] md:bg-[var(--color-action-red)] md:text-white md:hover:bg-[var(--color-action-red-dark)]"
       >
-        <SearchIcon size={18} />
+        {/* Mobile shows a filter-style affordance (approved UI reference);
+            both focus the same search input. */}
+        <SearchIcon size={18} className="max-md:hidden" />
+        <SlidersIcon size={19} className="md:hidden" />
       </button>
       {showPanel ? (
         <div className="absolute left-0 right-0 top-full z-50 mt-2 overflow-hidden rounded-xl border border-[var(--color-light-grey)] bg-white shadow-lg">
