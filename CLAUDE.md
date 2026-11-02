@@ -26,7 +26,16 @@ Read `README.md` and inspect the current branch and working tree before editing.
 
 ## Commands and dependencies
 
-No application install, development, lint, typecheck, test, or build commands are established yet. Do not invent them or present them as verified.
+The project is a pnpm + Turborepo monorepo (Node >= 20, pnpm version pinned in the root `packageManager` field; install it with `npm install -g pnpm@<that version>`). Tested commands, run from the repository root:
+
+- `pnpm install` — install workspace dependencies (use `--frozen-lockfile` in CI).
+- `pnpm run lint` — ESLint across workspace packages.
+- `pnpm run typecheck` — strict TypeScript checks in every package.
+- `pnpm run test` — Vitest component/config tests (storefront).
+- `pnpm run build` — production build (Next.js storefront).
+- `pnpm run dev` — start the storefront dev server on port 3000.
+
+`.github/workflows/ci.yml` runs lint, typecheck, test, and build on pushes and pull requests.
 
 Repository-level checks live in `.github/workflows/security.yml`: repository hygiene and a redacted full-history Gitleaks secret scan run on pushes and pull requests. These checks do not replace application tests or block a secret before it is pushed. Keep Actions pinned to full commit SHAs and the scanner image pinned to its digest. `.github/dependabot.yml` proposes weekly GitHub Action updates. CODEOWNERS requests owner review but does not enforce approval without supported branch protection.
 
