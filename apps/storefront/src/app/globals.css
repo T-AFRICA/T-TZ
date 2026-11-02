@@ -65,6 +65,35 @@ h4 {
   }
 }
 
+/* Mobile drawer entrance: panel slides in, backdrop fades (master prompt §10). */
+@keyframes drawer-in {
+  from {
+    opacity: 0;
+    transform: translateX(-18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes backdrop-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.mobile-drawer[open] {
+  animation: drawer-in 240ms ease-out;
+}
+
+.mobile-drawer[open]::backdrop {
+  animation: backdrop-in 200ms ease-out;
+}
+
 /* Motion is decorative everywhere on the storefront (master prompt §10). */
 @media (prefers-reduced-motion: reduce) {
   *,

@@ -3,6 +3,21 @@
 Meaningful implementation changes, newest first. Dates are work dates;
 nothing below is released.
 
+## 2026-11-02 — dependency security updates
+
+- Resolved 10 of 11 Dependabot/pnpm-audit alerts: vitest 3.2.7 → 4.1.12
+  (fixes the two critical tinypool prototype-pollution RCEs and three
+  @vitest/mocker advisories), pnpm override postcss >= 8.5.18 (two high +
+  two moderate sourceMappingURL/stringify advisories via next>postcss),
+  scoped override minimatch >= 11.0.1 for @typescript-eslint.
+- Accepted residual: @eslint/eslintrc still pins minimatch 3 (moderate
+  dev-time DoS, GHSA-g3hv-75wg-m249); forcing 11 breaks ESLint's default
+  import, so it waits on the upstream eslintrc release. Lint-time only,
+  never shipped to the storefront bundle.
+- Premium drawer pass: slide-in motion, white cards on off-white,
+  CATEGORIES/QUICK LINKS sections, red icon chips on every row, country +
+  Login card. All checks re-run green on vitest 4.
+
 ## 2026-11-02 — Module 01 (unreleased, on feat/module-01-design-system)
 
 - Scaffolded the pnpm + Turborepo monorepo: `apps/storefront` (Next.js 15,
