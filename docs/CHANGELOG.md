@@ -28,3 +28,33 @@ nothing below is released.
   PROJECT_MAP / DESIGN_SYSTEM / CHANGELOG documents.
 - Tests: 12 Vitest component/config tests; manual responsive verification at
   375px and desktop in the browser pane.
+- Premium visual refinement pass (UI/UX redesign prompt): two-column
+  editorial hero with in-house SVG product illustrations (floodlight, cable
+  coil, breaker — tagged "Illustration" pending approved photography),
+  carousel controls moved to a non-overlapping bottom bar, display type
+  capped at 56px, category tiles rebuilt with media areas and per-category
+  stroke illustrations, support phone moved to the utility row, compact
+  announcement bar, footer column polish, `prefers-reduced-motion` support.
+  Verified at 360/768/1440/1920 plus lint/typecheck/tests/build.
+- Mobile app-style homepage (owner-supplied UI reference): centred logo with
+  circular menu/notification chips, grey search pill with leading icon,
+  light rounded hero card, horizontally scrolling category circles,
+  SAMPLE-labelled "Special for you" product cards (synthetic TZS prices, no
+  fabricated ratings/discounts), and a fixed bottom tab bar
+  (Home/Categories/Wishlist/Cart/Profile, no fake badge counts). Desktop
+  layout unchanged from md upward. Second pass to match the reference: page
+  sits on off-white (#F5F5F5) below md with white floating cards and chips
+  (soft shadows, no borders), white search pill with leading search icon and
+  trailing filter-style control, white hero card, white category circles.
+- Body/UI font switched from Poppins to Inter (owner decision: SF Pro look;
+  SF Pro itself is Apple-proprietary and cannot be embedded on the web).
+  Montserrat headings unchanged.
+- Supporting surfaces polished: branded 404 page, premium "page is on the
+  way" placeholder (icon, copy, home/departments CTAs), mobile drawer with
+  brand mark header and Meter pill, app-consistent shadow cards on mobile
+  category pages.
+- Category landing pages redesigned: alt-surface header band with breadcrumb
+  and watermark illustration, group cards with icon chips (honest
+  "coming soon" copy), cross-navigation pills to other departments. Meter
+  page: dark service header plus an SRS-accurate three-step "how it will
+  work" explainer — still no payment/cart elements.

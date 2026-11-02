@@ -21,6 +21,14 @@ body {
   font-family: var(--font-body, var(--font-fallback-body));
 }
 
+/* Mobile app aesthetic (approved UI reference): the page sits on off-white
+   and cards float white on top of it. Desktop keeps the white page. */
+@media (max-width: 47.9375rem) {
+  body {
+    background: var(--color-off-white);
+  }
+}
+
 h1,
 h2,
 h3,
@@ -32,4 +40,39 @@ h4 {
 :focus-visible {
   outline: var(--focus-ring);
   outline-offset: var(--focus-ring-offset);
+}
+
+/* Hero slide entrance: copy rises, artwork drifts in (master prompt §10). */
+@keyframes hero-copy-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes hero-art-in {
+  from {
+    opacity: 0;
+    transform: translateX(14px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+/* Motion is decorative everywhere on the storefront (master prompt §10). */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+  }
 }

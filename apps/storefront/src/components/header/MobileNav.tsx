@@ -3,9 +3,9 @@
 import { useRef } from "react";
 import Link from "next/link";
 import { CATEGORY_SECTIONS, METER_NAV_ITEM } from "@tronic/country-config";
-import { HeartIcon, TruckIcon, UserIcon, VisuallyHidden } from "@tronic/ui";
+import { BrandMark, HeartIcon, MeterIcon, ShieldCheckIcon, TruckIcon, UserIcon } from "@tronic/ui";
 import { CountrySelector } from "@/components/country/CountrySelector";
-import { ACCOUNT_LINK, COMPANY_LINKS, TRACK_ORDER_LINK, WISHLIST_LINK } from "@/config/site";
+import { ACCOUNT_LINK, CHECK_WARRANTY_LINK, TRACK_ORDER_LINK, WISHLIST_LINK } from "@/config/site";
 
 /**
  * Mobile navigation drawer built on the native <dialog> element, which
@@ -20,7 +20,7 @@ export function MobileNav() {
       <button
         type="button"
         onClick={() => dialogRef.current?.showModal()}
-        className="flex h-10 w-10 items-center justify-center rounded-md hover:bg-[var(--surface-card)]"
+        className="flex h-10 w-10 items-center justify-center rounded-full bg-white shadow-sm transition-colors hover:bg-[var(--surface-card)] md:bg-transparent md:shadow-none"
         aria-label="Open menu"
       >
         <svg aria-hidden="true" width="20" height="20" viewBox="0 0 20 20" fill="none">
@@ -29,7 +29,7 @@ export function MobileNav() {
       </button>
       <dialog
         ref={dialogRef}
-        className="m-0 h-full max-h-none w-80 max-w-[85vw] bg-white p-0 backdrop:bg-black/40"
+        className="m-0 h-full max-h-none w-80 max-w-[85vw] overflow-y-auto bg-white p-0 backdrop:bg-black/40"
         aria-label="Site menu"
         onClick={(event) => {
           // Click on the backdrop (the dialog element itself) closes the drawer.
@@ -39,11 +39,11 @@ export function MobileNav() {
         }}
       >
         <div className="flex items-center justify-between border-b border-[var(--color-light-grey)] p-4">
-          <span className="font-bold">Menu</span>
+          <BrandMark tone="light" />
           <button
             type="button"
             onClick={() => dialogRef.current?.close()}
-            className="flex h-10 w-10 items-center justify-center rounded-md hover:bg-[var(--surface-card)]"
+            className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--surface-card)] transition-colors hover:bg-[var(--color-light-grey)]"
             aria-label="Close menu"
           >
             <svg aria-hidden="true" width="18" height="18" viewBox="0 0 18 18" fill="none">
@@ -51,22 +51,12 @@ export function MobileNav() {
             </svg>
           </button>
         </div>
-        <nav aria-label="Product categories" className="overflow-y-auto p-2">
+        <nav aria-label="Product categories" className="p-2">
           <ul>
-            <li>
-              <Link
-                href={METER_NAV_ITEM.href}
-                onClick={() => dialogRef.current?.close()}
-                className="block rounded px-3 py-2.5 font-semibold text-[var(--color-action-red)]"
-              >
-                {METER_NAV_ITEM.label}
-                <VisuallyHidden> token service</VisuallyHidden>
-              </Link>
-            </li>
             {CATEGORY_SECTIONS.map((section) => (
               <li key={section.slug}>
                 <details className="group">
-                  <summary className="flex cursor-pointer items-center justify-between rounded px-3 py-2.5 font-medium hover:bg-[var(--surface-card)]">
+                  <summary className="flex cursor-pointer items-center justify-between rounded-lg px-3 py-2.5 font-medium hover:bg-[var(--surface-card)]">
                     {section.name}
                     <svg
                       aria-hidden="true"
@@ -106,23 +96,25 @@ export function MobileNav() {
             ))}
           </ul>
         </nav>
+        {/* Owner request (Nov 2026): Meter and Track Order sit right under the
+            categories; Login closes the menu. Company links live in the footer. */}
         <div className="border-t border-[var(--color-light-grey)] p-2">
           <ul>
             <li>
               <Link
-                href={ACCOUNT_LINK.href}
+                href={METER_NAV_ITEM.href}
                 onClick={() => dialogRef.current?.close()}
-                className="flex items-center gap-3 rounded px-3 py-2.5 font-medium hover:bg-[var(--surface-card)]"
+                className="flex items-center gap-3 rounded-lg px-3 py-2.5 font-medium hover:bg-[var(--surface-card)]"
               >
-                <UserIcon size={20} className="text-[var(--color-action-red)]" />
-                {ACCOUNT_LINK.label}
+                <MeterIcon size={20} className="text-[var(--color-action-red)]" />
+                {METER_NAV_ITEM.label}
               </Link>
             </li>
             <li>
               <Link
                 href={TRACK_ORDER_LINK.href}
                 onClick={() => dialogRef.current?.close()}
-                className="flex items-center gap-3 rounded px-3 py-2.5 font-medium hover:bg-[var(--surface-card)]"
+                className="flex items-center gap-3 rounded-lg px-3 py-2.5 font-medium hover:bg-[var(--surface-card)]"
               >
                 <TruckIcon size={20} className="text-[var(--color-action-red)]" />
                 {TRACK_ORDER_LINK.label}
@@ -130,9 +122,19 @@ export function MobileNav() {
             </li>
             <li>
               <Link
+                href={CHECK_WARRANTY_LINK.href}
+                onClick={() => dialogRef.current?.close()}
+                className="flex items-center gap-3 rounded-lg px-3 py-2.5 font-medium hover:bg-[var(--surface-card)]"
+              >
+                <ShieldCheckIcon size={20} className="text-[var(--color-action-red)]" />
+                {CHECK_WARRANTY_LINK.label}
+              </Link>
+            </li>
+            <li>
+              <Link
                 href={WISHLIST_LINK.href}
                 onClick={() => dialogRef.current?.close()}
-                className="flex items-center gap-3 rounded px-3 py-2.5 font-medium hover:bg-[var(--surface-card)]"
+                className="flex items-center gap-3 rounded-lg px-3 py-2.5 font-medium hover:bg-[var(--surface-card)]"
               >
                 <HeartIcon size={20} className="text-[var(--color-action-red)]" />
                 {WISHLIST_LINK.label}
@@ -143,21 +145,16 @@ export function MobileNav() {
             <CountrySelector />
           </div>
         </div>
-        <nav aria-label="Company" className="border-t border-[var(--color-light-grey)] p-2 pb-4">
-          <ul>
-            {COMPANY_LINKS.map((link) => (
-              <li key={link.href}>
-                <Link
-                  href={link.href}
-                  onClick={() => dialogRef.current?.close()}
-                  className="block rounded px-3 py-2 text-sm text-[var(--text-secondary)] hover:bg-[var(--surface-card)]"
-                >
-                  {link.label}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </nav>
+        <div className="border-t border-[var(--color-light-grey)] p-3 pb-4">
+          <Link
+            href={ACCOUNT_LINK.href}
+            onClick={() => dialogRef.current?.close()}
+            className="flex items-center justify-center gap-2 rounded-full bg-[var(--color-action-red)] px-4 py-2.5 font-semibold text-white transition-colors hover:bg-[var(--color-action-red-dark)]"
+          >
+            <UserIcon size={18} />
+            {ACCOUNT_LINK.label}
+          </Link>
+        </div>
       </dialog>
     </div>
   );

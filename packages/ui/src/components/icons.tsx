@@ -109,3 +109,63 @@ export function ArrowRightIcon(props: IconProps) {
     </svg>
   );
 }
+
+export function HomeIcon(props: IconProps) {
+  return (
+    <svg {...svgProps(props)}>
+      <path d="m3.5 10.5 8.5-7 8.5 7" />
+      <path d="M5.5 9v11h13V9" />
+      <path d="M10 20v-5.5h4V20" />
+    </svg>
+  );
+}
+
+export function GridIcon(props: IconProps) {
+  return (
+    <svg {...svgProps(props)}>
+      <rect x="4" y="4" width="6.5" height="6.5" rx="1.5" />
+      <rect x="13.5" y="4" width="6.5" height="6.5" rx="1.5" />
+      <rect x="4" y="13.5" width="6.5" height="6.5" rx="1.5" />
+      <rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.5" />
+    </svg>
+  );
+}
+
+export function SlidersIcon(props: IconProps) {
+  return (
+    <svg {...svgProps(props)}>
+      <path d="M5 21v-7M5 10V3M12 21v-9M12 8V3M19 21v-5M19 12V3" />
+      <path d="M2.5 14h5M9.5 8h5M16.5 16h5" />
+    </svg>
+  );
+}
+
+export function ShieldCheckIcon(props: IconProps) {
+  return (
+    <svg {...svgProps(props)}>
+      <path d="M12 2.5 20 5.5v6c0 5-3.2 8.7-8 10-4.8-1.3-8-5-8-10v-6l8-3Z" />
+      <path d="m8.5 11.5 2.5 2.5 4.5-4.5" />
+    </svg>
+  );
+}
+
+export function MeterIcon(props: IconProps) {
+  return (
+    <svg {...svgProps(props)}>
+      {/* gauge: dial arc, needle and base ticks */}
+      <path d="M4 17a8.5 8.5 0 1 1 16 0" />
+      <path d="M12 17l3.5-5" />
+      <circle cx="12" cy="17" r="1.6" />
+      <path d="M5.5 12.5l1.5 1M18.5 12.5l-1.5 1M12 7.5V9" />
+    </svg>
+  );
+}
+
+export function BellIcon(props: IconProps) {
+  return (
+    <svg {...svgProps(props)}>
+      <path d="M18 10a6 6 0 1 0-12 0c0 4-1.5 5.5-2.5 6.5h17c-1-1-2.5-2.5-2.5-6.5" />
+      <path d="M10 20a2.2 2.2 0 0 0 4 0" />
+    </svg>
+  );
+}

@@ -39,13 +39,18 @@
   --text-on-dark: var(--color-white);
 
   /* Typography — families are injected by next/font as
-     --font-heading (Montserrat) and --font-body (Poppins). */
+     --font-heading (Montserrat) and --font-body (Inter; owner decision
+     Nov 2026 replacing Poppins — SF Pro itself is Apple-proprietary and
+     cannot be embedded on the web). The fallback stack surfaces the
+     platform's native UI font (SF Pro on Apple devices). */
   --font-fallback-heading: "Montserrat", "Segoe UI", Arial, sans-serif;
-  --font-fallback-body: "Poppins", "Segoe UI", Arial, sans-serif;
+  --font-fallback-body: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
 
   /* Fluid type scale (master prompt §4.3): desktop ↔ mobile ranges.
-     Display 68→36, H1 48→30, H2 38→24, H3 27→20. */
-  --text-display: clamp(2.25rem, 1.4rem + 2.8vw, 4.25rem);
+     Display 56→32 (capped below the 68px ceiling after the visual review
+     found it oversized next to supporting content), H1 48→30, H2 38→24,
+     H3 27→20. */
+  --text-display: clamp(2rem, 1.35rem + 2.2vw, 3.5rem);
   --text-h1: clamp(1.875rem, 1.35rem + 1.75vw, 3rem);
   --text-h2: clamp(1.5rem, 1.2rem + 1vw, 2.375rem);
   --text-h3: clamp(1.25rem, 1.1rem + 0.5vw, 1.6875rem);

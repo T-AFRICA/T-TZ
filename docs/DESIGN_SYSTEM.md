@@ -6,13 +6,19 @@ SRS v1.2 NFR-11, SSD §4, and the engineering master prompt §§3–7.
 
 ## Typography
 
-Two families only (master prompt §4), loaded via `next/font/google` in
+Two families only, loaded via `next/font/google` in
 `apps/storefront/src/app/layout.tsx` as CSS variables:
 
 | Variable | Family | Weights loaded | Use |
 | --- | --- | --- | --- |
 | `--font-heading` | Montserrat | 500 / 600 / 700 | Hero, page and section headings, brand expression (800/900 deliberately not loaded) |
-| `--font-body` | Poppins | 400 / 500 / 600 / 700 | Body, navigation, buttons, prices, forms, tables (700 for selected emphasis only) |
+| `--font-body` | Inter | 400 / 500 / 600 / 700 | Body, navigation, buttons, prices, forms, tables (700 for selected emphasis only) |
+
+Body family history: the master prompt §4 named Poppins; on 2026-11-02 the
+owner asked for an SF Pro look. SF Pro is Apple-proprietary and cannot be
+embedded as a web font, so Inter (its standard open equivalent) replaced
+Poppins as the body/UI family, with the platform UI font (SF Pro on Apple
+devices) in the fallback stack.
 
 Fallback stacks live in `--font-fallback-heading` / `--font-fallback-body`.
 
@@ -20,7 +26,7 @@ Fallback stacks live in `--font-fallback-heading` / `--font-fallback-body`.
 
 | Token | Range (mobile → desktop) | Use |
 | --- | --- | --- |
-| `--text-display` | 36 → 68px | Hero H1 |
+| `--text-display` | 32 → 56px | Hero H1 (68px ceiling dropped after visual review found it oversized) |
 | `--text-h1` | 30 → 48px | Page H1 |
 | `--text-h2` | 24 → 38px | Section H2 |
 | `--text-h3` | 20 → 27px | Sub-sections, feature headings |

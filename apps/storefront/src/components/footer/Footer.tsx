@@ -11,19 +11,19 @@ import { COMPANY_LINKS, POLICY_LINKS } from "@/config/site";
 export function Footer() {
   return (
     <footer className="border-t-4 border-[var(--color-brand-red)] bg-[var(--surface-footer)] text-[var(--text-on-dark)]">
-      <Container className="grid grid-cols-1 gap-10 py-12 sm:grid-cols-2 lg:grid-cols-4">
-        <div>
+      <Container className="grid grid-cols-1 gap-10 py-14 sm:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_1fr] lg:gap-12">
+        <div className="max-w-sm">
           <BrandMark tone="dark" />
-          <p className="mt-3 text-sm text-[var(--color-light-grey)]">
+          <p className="mt-4 text-sm leading-relaxed text-white/70">
             Electrical supplies, LED lighting and switchgear for homes, businesses and industry.
           </p>
-          <p className="mt-3 text-sm text-[var(--color-light-grey)]">
+          <p className="mt-3 text-sm text-white/70">
             Prices in {ACTIVE_COUNTRY.currency} ({ACTIVE_COUNTRY.name}).
           </p>
         </div>
         <nav aria-label="Shop">
-          <h2 className="text-sm font-bold uppercase tracking-wide">Shop</h2>
-          <ul className="mt-3 space-y-2">
+          <h2 className="text-xs font-semibold uppercase tracking-[0.2em] text-white/55">Shop</h2>
+          <ul className="mt-4 space-y-2.5">
             {CATEGORY_SECTIONS.map((section) => (
               <li key={section.slug}>
                 <Link
@@ -45,8 +45,8 @@ export function Footer() {
           </ul>
         </nav>
         <nav aria-label="Company">
-          <h2 className="text-sm font-bold uppercase tracking-wide">Company</h2>
-          <ul className="mt-3 space-y-2">
+          <h2 className="text-xs font-semibold uppercase tracking-[0.2em] text-white/55">Company</h2>
+          <ul className="mt-4 space-y-2.5">
             {COMPANY_LINKS.map((link) => (
               <li key={link.href}>
                 <Link href={link.href} className="text-sm text-[var(--color-light-grey)] hover:text-white">
@@ -57,8 +57,8 @@ export function Footer() {
           </ul>
         </nav>
         <nav aria-label="Help and policies">
-          <h2 className="text-sm font-bold uppercase tracking-wide">Help &amp; Policies</h2>
-          <ul className="mt-3 space-y-2">
+          <h2 className="text-xs font-semibold uppercase tracking-[0.2em] text-white/55">Help &amp; Policies</h2>
+          <ul className="mt-4 space-y-2.5">
             {POLICY_LINKS.map((link) => (
               <li key={link.href}>
                 <Link href={link.href} className="text-sm text-[var(--color-light-grey)] hover:text-white">

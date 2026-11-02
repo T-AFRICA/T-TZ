@@ -51,6 +51,8 @@ export const POLICY_LINKS = [
 
 /** Account, order tracking, wishlist and cart UIs land in W03-W04; routes exist as placeholders. */
 export const TRACK_ORDER_LINK = { href: "/track-order", label: "Track Order" } as const;
+/** Warranty lookup tool (owner request Nov 2026) — placeholder route until the feature is built. */
+export const CHECK_WARRANTY_LINK = { href: "/check-warranty", label: "Check Warranty" } as const;
 export const ACCOUNT_LINK = { href: "/account", label: "Login" } as const;
 export const WISHLIST_LINK = { href: "/wishlist", label: "Wishlist" } as const;
 export const CART_LINK = { href: "/cart", label: "Cart" } as const;
