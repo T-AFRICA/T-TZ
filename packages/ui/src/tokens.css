@@ -1,0 +1,63 @@
+/*
+ * TRONIC design tokens — single source of truth for brand values.
+ *
+ * Sources:
+ *  - TRONIC Tanzania Brand Guidelines v1.0 (Oct 2026): primary palette,
+ *    neutrals, typography pairing.
+ *  - SRS v1.2 NFR-11 + SSD §4: card surface #F4F5F7, proposed accessible
+ *    action red #D71920 (pending brand-owner sign-off; swap here only).
+ *
+ * The wordmark red #EF1C26 is reserved for the logo, headlines and single
+ * accents. Interactive controls use the darker action red for contrast.
+ */
+:root {
+  /* Brand primaries */
+  --color-brand-red: #ef1c26;
+  --color-action-red: #d71920;
+  --color-action-red-dark: #b3141a; /* hover/pressed state of the action red */
+  --color-white: #ffffff;
+  --color-black: #000000;
+
+  /* Supporting neutrals (brand guide §6 + master prompt §5) */
+  --color-premium-black: #111111;
+  --color-dark-grey: #333333;
+  --color-steel-grey: #62666d; /* secondary text (master prompt §5) */
+  --color-mid-grey: #6b7280;
+  --color-light-grey: #e5e7eb;
+  --color-off-white: #f5f5f5;
+
+  /* Surfaces */
+  --surface-page: var(--color-white);
+  --surface-card: #f4f5f7;
+  --surface-alt: #fafafa; /* alternative page sections (master prompt §5) */
+  --surface-footer: var(--color-premium-black);
+
+  /* Text */
+  --text-primary: var(--color-premium-black);
+  --text-secondary: var(--color-steel-grey);
+  --text-muted: var(--color-mid-grey);
+  --text-on-dark: var(--color-white);
+
+  /* Typography — families are injected by next/font as
+     --font-heading (Montserrat) and --font-body (Poppins). */
+  --font-fallback-heading: "Montserrat", "Segoe UI", Arial, sans-serif;
+  --font-fallback-body: "Poppins", "Segoe UI", Arial, sans-serif;
+
+  /* Fluid type scale (master prompt §4.3): desktop ↔ mobile ranges.
+     Display 68→36, H1 48→30, H2 38→24, H3 27→20. */
+  --text-display: clamp(2.25rem, 1.4rem + 2.8vw, 4.25rem);
+  --text-h1: clamp(1.875rem, 1.35rem + 1.75vw, 3rem);
+  --text-h2: clamp(1.5rem, 1.2rem + 1vw, 2.375rem);
+  --text-h3: clamp(1.25rem, 1.1rem + 0.5vw, 1.6875rem);
+
+  /* Focus ring — visible on light and dark surfaces (WCAG 2.2 AA target) */
+  --focus-ring: 2px solid var(--color-action-red);
+  --focus-ring-offset: 2px;
+
+  /* Layout */
+  /* Full-screen layout on phones through full-HD; capped on ultrawide
+     monitors so lines and cards stay readable (master prompt §6). */
+  --container-max: 120rem;
+  --gutter: 1rem;
+  --header-height: 4.5rem;
+}
