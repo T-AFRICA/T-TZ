@@ -209,6 +209,71 @@ details.drawer-acc[open] > ul {
   }
 }
 
+/* Cinematic hero (owner direction Nov 2026, v2): one energy wire carries a
+   light packet toward the featured bulb; the bulb's warm glow peaks as the
+   packet arrives (both run on the same 6s cycle with phase-offset
+   keyframes, so the illumination reads as caused by the current). Solid
+   strokes only — no dotted lines. The paths use pathLength="100", so the
+   dash math below is in percent of the wire. Everything stops under the
+   global reduced-motion override. */
+@keyframes hero-wire-pulse {
+  0% {
+    stroke-dashoffset: 112;
+    opacity: 0;
+  }
+  6% {
+    opacity: 0.9;
+  }
+  70% {
+    opacity: 0.9;
+  }
+  82% {
+    stroke-dashoffset: 0;
+    opacity: 0;
+  }
+  100% {
+    stroke-dashoffset: 0;
+    opacity: 0;
+  }
+}
+
+.hero-wire-pulse {
+  stroke-dasharray: 12 100;
+  animation: hero-wire-pulse 6s linear infinite;
+}
+
+@keyframes hero-bulb-glow {
+  0%,
+  55% {
+    opacity: 0.35;
+  }
+  78% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.45;
+  }
+}
+
+.hero-bulb-glow {
+  animation: hero-bulb-glow 6s ease-in-out infinite;
+}
+
+@keyframes hero-ambient-breathe {
+  from {
+    opacity: 0.55;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0.85;
+    transform: scale(1.06);
+  }
+}
+
+.hero-ambient {
+  animation: hero-ambient-breathe 7s ease-in-out infinite alternate;
+}
+
 /* Mega-menu panel entrance: short fade-and-drop when a category opens.
    Opacity/transform only; closing is instant by design (menus should get
    out of the way immediately). */

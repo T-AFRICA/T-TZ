@@ -3,6 +3,20 @@
 Meaningful implementation changes, newest first. Dates are work dates;
 nothing below is released.
 
+## 2026-11-03 — cinematic energy hero
+
+- The campaign banner carousel is replaced by a cinematic advertising-style
+  hero (owner direction, two iterations in one day): charcoal-to-deep-red
+  environment with vignette, copy + "Explore Products" / "Shop Lighting"
+  CTAs left, and one large featured TRONIC bulb right, feathered out of
+  its studio background inside a warm breathing bloom over a ground
+  shadow. A single solid energy wire carries a light packet toward the
+  bulb, whose glow peaks as the packet arrives (phase-matched 6s CSS
+  cycles); mouse parallax (Motion springs) adds depth. Generic brand copy
+  only — no offers or claims. Fixed per-breakpoint heights (no CLS), the
+  bulb is the priority/LCP image, and every effect stops under reduced
+  motion. Campaign artwork stays in /public/banners for reuse.
+
 ## 2026-11-03 — homepage commerce polish and Motion micro-interactions
 
 - Search upgraded (owner requests): popular-category shortcuts on focus,
