@@ -45,12 +45,19 @@ export function BottomNav() {
               <Link
                 href={tab.href}
                 aria-current={isActive ? "page" : undefined}
-                className={`flex flex-col items-center gap-0.5 py-2 text-[11px] font-medium transition-colors ${
+                className={`relative flex flex-col items-center gap-0.5 py-2 text-[11px] font-medium transition-colors active:scale-95 ${
                   isActive
                     ? "text-[var(--color-action-red)]"
                     : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
                 }`}
               >
+                {/* Active tab marker: short red bar hugging the top border */}
+                {isActive ? (
+                  <span
+                    aria-hidden="true"
+                    className="absolute -top-px left-1/2 h-0.5 w-7 -translate-x-1/2 rounded-b-full bg-[var(--color-action-red)]"
+                  />
+                ) : null}
                 <Icon size={21} />
                 {tab.label}
               </Link>

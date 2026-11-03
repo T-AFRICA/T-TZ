@@ -7,12 +7,32 @@
  * here — not inside components — makes the swap a one-file change.
  */
 
-export const ANNOUNCEMENT = {
-  // PLACEHOLDER promotion copy pending the marketing team's launch offer.
-  message: "Free delivery in Dar es Salaam on qualifying orders.",
-  linkLabel: "See details",
-  href: "/policies/delivery",
-} as const;
+/**
+ * Rotating announcement ticker (owner request Nov 2026). PLACEHOLDER copy
+ * pending the marketing team's launch content — descriptions of planned
+ * platform features only, never invented offers or prices. `shortMessage`
+ * keeps the bar on one line on phones.
+ */
+export const ANNOUNCEMENTS = [
+  {
+    message: "Free delivery in Dar es Salaam on qualifying orders.",
+    shortMessage: "Free delivery in Dar es Salaam.",
+    linkLabel: "See details",
+    href: "/policies/delivery",
+  },
+  {
+    message: "Track your TRONIC order online from dispatch to delivery.",
+    shortMessage: "Track your order online.",
+    linkLabel: "Track Order",
+    href: "/track-order",
+  },
+  {
+    message: "TRONIC Meter — prepaid meter tokens on one dedicated page.",
+    shortMessage: "TRONIC Meter token service.",
+    linkLabel: "Learn more",
+    href: "/meter",
+  },
+] as const;
 
 /** PLACEHOLDER support line (all zeros) — replace with the real number. */
 export const SUPPORT_PHONE = {
@@ -21,21 +41,25 @@ export const SUPPORT_PHONE = {
 } as const;
 
 /**
- * Official Tanzania profile URLs are not confirmed yet. Entries with a null
- * href are not rendered — never invent profile URLs.
+ * Official Tanzania profile URLs are not confirmed yet. PLACEHOLDER "#"
+ * hrefs render the icons without linking anywhere (owner request Nov 2026:
+ * show the social icons in the top bar) — never invent profile URLs; the
+ * owner swaps in the real profiles before launch. A null href hides the
+ * entry entirely.
  */
 export const SOCIAL_LINKS: readonly { label: string; href: string | null }[] = [
-  { label: "Facebook", href: null },
-  { label: "Instagram", href: null },
-  { label: "TikTok", href: null },
+  { label: "Facebook", href: "#" },
+  { label: "Instagram", href: "#" },
+  { label: "TikTok", href: "#" },
 ];
 
-/** Informational pages (SRS §7.1) — built in W06; the catch-all page covers them until then. */
+/** Informational pages (SRS §7.1) — built in W06; the catch-all page covers
+ *  them until then. `navLabel` is the compact form shown in the red navbar. */
 export const COMPANY_LINKS = [
-  { href: "/about", label: "About Us" },
-  { href: "/locations", label: "Our Locations" },
-  { href: "/blog", label: "Engineering Blog" },
-  { href: "/showrooms", label: "Our Showroom Locations" },
+  { href: "/about", label: "About Us", navLabel: "About" },
+  { href: "/locations", label: "Our Locations", navLabel: "Locations" },
+  { href: "/blog", label: "Engineering Blog", navLabel: "Blog" },
+  { href: "/showrooms", label: "Our Showroom Locations", navLabel: "Showrooms" },
 ] as const;
 
 export const POLICY_LINKS = [

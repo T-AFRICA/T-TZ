@@ -3,6 +3,85 @@
 Meaningful implementation changes, newest first. Dates are work dates;
 nothing below is released.
 
+## 2026-11-03 — cinematic energy hero
+
+- The campaign banner carousel is replaced by a cinematic advertising-style
+  hero (owner direction, two iterations in one day): charcoal-to-deep-red
+  environment with vignette, copy + "Explore Products" / "Shop Lighting"
+  CTAs left, and one large featured TRONIC bulb right, feathered out of
+  its studio background inside a warm breathing bloom over a ground
+  shadow. A single solid energy wire carries a light packet toward the
+  bulb, whose glow peaks as the packet arrives (phase-matched 6s CSS
+  cycles); mouse parallax (Motion springs) adds depth. Generic brand copy
+  only — no offers or claims. Fixed per-breakpoint heights (no CLS), the
+  bulb is the priority/LCP image, and every effect stops under reduced
+  motion. Campaign artwork stays in /public/banners for reuse.
+
+## 2026-11-03 — homepage commerce polish and Motion micro-interactions
+
+- Search upgraded (owner requests): popular-category shortcuts on focus,
+  clear button, red focus ring, bolded match highlighting with section
+  chips, Enter opens the top suggestion, "/" focuses search, shorter
+  placeholder. Combobox semantics and the FR-006 state tests unchanged.
+- Social icons (Facebook/Instagram/TikTok, local lucide-style glyphs —
+  this lucide-react dropped brand icons) in the announcement bar with "#"
+  PLACEHOLDER hrefs until real profiles are confirmed; desktop header
+  action order now wishlist, cart, Login last (owner request).
+- Product cards: synthetic numeric TZS pricing with inline was/now prices,
+  computed "Save %" badge, green/grey stock line, disabled out-of-stock
+  state; CTA renamed Add to Cart, with a quick variant-selection dialog
+  for sample products that carry options. Cards compacted; grid now steps
+  2/3/4/5/6 columns from phone to wide desktop. New `--color-success`
+  token.
+- Motion (v14.9) added to the storefront for scroll-reveal sections and
+  spring tap feedback on the CTA; lightweight CSS entrances for the mega
+  menu, search dropdown and dialogs; 3D pointer-tilt `Tilt3D` primitive on
+  card photos (mouse-only). Everything inert under reduced motion.
+- Mobile pass at 320-430px: category circles are a native scroll-snap
+  carousel below lg (desktop keeps the marquee), tighter section rhythm,
+  safe-area-aware page bottom padding, bottom-nav active-tab marker. No
+  horizontal overflow at any audited width.
+
+## 2026-11-03 — desktop category marquee
+
+- The desktop category card grid (and its "Shop by category" heading block)
+  is replaced by the mobile-style rotating circle marquee, now on every
+  breakpoint right after the banner (owner request): larger 96px circles
+  from md, four list copies for a seamless loop on ultrawide, 56s duration
+  keeping the original drift speed, hover/touch pause and reduced-motion
+  stop unchanged.
+
+## 2026-11-03 — desktop merchandising rails
+
+- Two themed product sections added to the desktop homepage ("Light up
+  every room", "Fans & cooling"; hidden below md so the approved app-style
+  mobile homepage keeps its single product section) with 8 more official
+  TRONIC product photos from tronic.co.ke (owner-directed). Prices stay
+  synthetic and SAMPLE-tagged until Module 02.
+- Product card and merchandising section extracted into reusable
+  `ProductCard` / `ProductSection` components with shared sample data in
+  `sampleProducts.ts`; `FeaturedSamples` now composes the three sections.
+
+## 2026-11-02 — brand media, motion and §10 primitives
+
+- Hero replaced with the brand's real campaign banner carousel (desktop
+  1920×500 + mobile 2:1 artwork from tronic.co.ke, owner-directed):
+  full-bleed, autoplay 5s/0.5s fade, pause-on-hover, reduced-motion off,
+  accessible CTA label and inset focus ring, 480px desktop height cap.
+- Official product photography in "Special for you" (now on desktop too,
+  4-up, 8 real products); SAMPLE chips retained for synthetic TZS prices.
+- Red announcement bar with rotating ticker; company links moved into the
+  red navbar (utility row removed); navbar single-line with white-inversion
+  hover and hover-open mega menu; mobile category marquee; drawer premium
+  passes (Lucide icons, grey chips with red active, animated reveal).
+- Completed master prompt §10 primitives in packages/ui: Input, Textarea,
+  Select (shared validation states), Badge, Card, Skeleton, EmptyState,
+  ErrorState, Dialog, Tabs, ToastProvider — documented in DESIGN_SYSTEM
+  and covered by new Vitest cases (15 tests total).
+- Body/UI font is the native system stack (SF Pro on Apple, Segoe UI on
+  Windows, Roboto on Android — owner decision, zero font download);
+  interface icons are lucide-react. Headings remain Montserrat.
+
 ## 2026-11-02 — dependency security updates
 
 - Resolved 10 of 11 Dependabot/pnpm-audit alerts: vitest 3.2.7 → 4.1.12

@@ -4,17 +4,36 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { CATEGORY_SECTIONS } from "@tronic/country-config";
 import { ArrowRightIcon, ChevronDownIcon, Container } from "@tronic/ui";
+import { COMPANY_LINKS } from "@/config/site";
 
 /**
  * Desktop navigation: a solid action-red bar with the eight approved category
  * sections as disclosure buttons opening a mega-menu panel of their groups
- * (SRS FR-002). The dedicated Meter link (FR-003) lives in the main header
- * row next to Track Order. Keyboard: Escape closes an open panel; each panel
- * is a labelled region of plain links.
+ * (SRS FR-002). Mouse users get hover-open with a short close delay (owner
+ * request Nov 2026); click, touch and keyboard behavior are unchanged, so
+ * the menu is never hover-only. Escape closes an open panel; each panel is
+ * a labelled region of plain links.
  */
+const HOVER_CLOSE_DELAY_MS = 160;
+
 export function Navbar() {
   const [openSlug, setOpenSlug] = useState<string | null>(null);
   const navRef = useRef<HTMLElement>(null);
+  const closeTimer = useRef<number | null>(null);
+  /** Section whose panel was opened by mouse hover — its next click keeps it open. */
+  const hoverOpenedSlug = useRef<string | null>(null);
+
+  function cancelScheduledClose() {
+    if (closeTimer.current !== null) {
+      window.clearTimeout(closeTimer.current);
+      closeTimer.current = null;
+    }
+  }
+
+  function scheduleClose() {
+    cancelScheduledClose();
+    closeTimer.current = window.setTimeout(() => setOpenSlug(null), HOVER_CLOSE_DELAY_MS);
+  }
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
@@ -32,6 +51,9 @@ export function Navbar() {
     return () => {
       document.removeEventListener("keydown", onKeyDown);
       document.removeEventListener("pointerdown", onPointerDown);
+      if (closeTimer.current !== null) {
+        window.clearTimeout(closeTimer.current);
+      }
     };
   }, []);
 
@@ -42,20 +64,51 @@ export function Navbar() {
       ref={navRef}
       aria-label="Product categories"
       className="relative hidden bg-[var(--color-action-red)] lg:block"
+      onPointerEnter={cancelScheduledClose}
+      onPointerLeave={(event) => {
+        if (event.pointerType === "mouse") {
+          scheduleClose();
+        }
+      }}
     >
-      <Container>
-        <ul className="flex items-stretch">
+      <Container className="flex items-stretch justify-between gap-2">
+        {/* Natural-width items on one line — no flex-1 stretching, no label
+            wrapping. w-max + mx-auto centers the group when it fits and
+            scrolls from the left edge (never clipping) when it does not;
+            from xl the group sits left of the company links. */}
+        <div className="no-scrollbar min-w-0 flex-1 overflow-x-auto">
+          <ul className="mx-auto flex w-max items-stretch xl:mx-0">
           {CATEGORY_SECTIONS.map((section) => {
             const isOpen = section.slug === openSlug;
             return (
-              <li key={section.slug} className="flex flex-1">
+              <li key={section.slug} className="flex shrink-0">
                 <button
                   type="button"
                   aria-expanded={isOpen}
                   aria-controls={isOpen ? "navbar-mega-panel" : undefined}
-                  onClick={() => setOpenSlug(isOpen ? null : section.slug)}
-                  className={`flex w-full items-center justify-center gap-1.5 px-2 py-3 text-center text-[13px] font-semibold leading-tight text-white transition-colors hover:bg-[var(--color-action-red-dark)] xl:text-sm 2xl:whitespace-nowrap ${
-                    isOpen ? "bg-[var(--color-action-red-dark)]" : ""
+                  onClick={() => {
+                    // A click right after hover-open must not instantly close
+                    // the panel; later clicks (keyboard, touch re-tap, second
+                    // mouse click) toggle it closed as before.
+                    if (isOpen && hoverOpenedSlug.current !== section.slug) {
+                      setOpenSlug(null);
+                    } else {
+                      hoverOpenedSlug.current = null;
+                      setOpenSlug(section.slug);
+                    }
+                  }}
+                  onPointerEnter={(event) => {
+                    // Hover opens for mouse only; touch taps go through onClick.
+                    if (event.pointerType === "mouse") {
+                      cancelScheduledClose();
+                      hoverOpenedSlug.current = section.slug;
+                      setOpenSlug(section.slug);
+                    }
+                  }}
+                  className={`flex items-center gap-1 whitespace-nowrap px-2.5 py-3 text-xs font-semibold transition-colors duration-150 xl:px-2 2xl:gap-1.5 2xl:px-4 2xl:text-sm ${
+                    isOpen
+                      ? "bg-white text-[var(--color-action-red)]"
+                      : "text-white hover:bg-white hover:text-[var(--color-action-red)]"
                   }`}
                 >
                   {section.name}
@@ -67,14 +120,31 @@ export function Navbar() {
               </li>
             );
           })}
-        </ul>
+          </ul>
+        </div>
+        {/* Company links (owner request Nov 2026): moved here from the old
+            utility row; compact labels, full names stay in the footer. */}
+        <nav aria-label="Company" className="hidden shrink-0 items-center xl:flex">
+          <ul className="flex items-center gap-3 2xl:gap-4">
+            {COMPANY_LINKS.map((link) => (
+              <li key={link.href}>
+                <Link
+                  href={link.href}
+                  className="whitespace-nowrap text-xs font-medium text-white/80 transition-colors hover:text-white"
+                >
+                  {link.navLabel}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </nav>
       </Container>
       {openSection ? (
         <div
           id="navbar-mega-panel"
           role="region"
           aria-label={`${openSection.name} groups`}
-          className="absolute left-0 right-0 top-full border-b-2 border-[var(--color-action-red)] bg-white text-[var(--text-primary)] shadow-xl"
+          className="mega-panel-in absolute left-0 right-0 top-full border-b-2 border-[var(--color-action-red)] bg-white text-[var(--text-primary)] shadow-xl"
         >
           <Container className="py-6">
             <div className="flex items-baseline justify-between">

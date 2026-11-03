@@ -11,9 +11,11 @@ import { ChevronDownIcon, GlobeIcon } from "@tronic/ui";
  * selector is a plain label. It never changes pricing, catalog or
  * authorization client-side (SRS FR-059).
  */
-export function CountrySelector() {
+export function CountrySelector({ tone = "light" }: { tone?: "light" | "dark" }) {
   const [isOpen, setIsOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
+  const toneClasses =
+    tone === "dark" ? "text-white/85 [&_.muted]:text-white/50" : "[&_.muted]:text-[var(--text-muted)]";
 
   const linkedCountries = COUNTRIES.filter(
     (country) => country.code !== ACTIVE_COUNTRY.code && country.origin !== null,
@@ -40,17 +42,22 @@ export function CountrySelector() {
 
   const activeLabel = (
     <>
-      <GlobeIcon size={15} className="text-[var(--color-action-red)]" />
+      <GlobeIcon
+        size={15}
+        className={tone === "dark" ? "text-white/80" : "text-[var(--color-action-red)]"}
+      />
       <span>
         {ACTIVE_COUNTRY.name}
-        <span className="text-[var(--text-muted)]"> · {ACTIVE_COUNTRY.currency}</span>
+        <span className="muted"> · {ACTIVE_COUNTRY.currency}</span>
       </span>
     </>
   );
 
   if (linkedCountries.length === 0) {
     return (
-      <span className="flex items-center gap-1.5 px-2 py-1.5 text-xs font-medium">{activeLabel}</span>
+      <span className={`flex items-center gap-1.5 px-2 py-1.5 text-xs font-medium ${toneClasses}`}>
+        {activeLabel}
+      </span>
     );
   }
 
@@ -61,7 +68,7 @@ export function CountrySelector() {
         aria-expanded={isOpen}
         aria-haspopup="true"
         onClick={() => setIsOpen((open) => !open)}
-        className="flex items-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium transition-colors hover:text-[var(--color-action-red)]"
+        className={`flex items-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium transition-colors hover:text-[var(--color-action-red)] ${toneClasses}`}
       >
         {activeLabel}
         <ChevronDownIcon size={12} className={`transition-transform ${isOpen ? "rotate-180" : ""}`} />
