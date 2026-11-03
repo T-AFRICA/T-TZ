@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!-- TRONIC star device (brand guide) on the brand red roundel -->
+  <rect width="32" height="32" rx="7" fill="#ef1c26"/>
+  <polygon
+    fill="#ffffff"
+    points="16,4.5 18,11.17 24.13,7.87 20.83,14 27.5,16 20.83,18 24.13,24.13 18,20.83 16,27.5 14,20.83 7.87,24.13 11.17,18 4.5,16 11.17,14 7.87,7.87 14,11.17"
+  />
+</svg>

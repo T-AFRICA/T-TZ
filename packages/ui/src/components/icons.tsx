@@ -1,171 +1,98 @@
 /**
- * Inline stroke icon set for the storefront shell. Icons inherit
- * `currentColor` and are decorative (aria-hidden) — the consuming component
- * must pair them with visible or visually-hidden text.
+ * Interface icon set, backed by lucide-react (professionally drawn, optically
+ * corrected strokes — owner request Nov 2026 after the hand-drawn set read
+ * as thin at small sizes). The wrapper keeps the original IconProps API so
+ * call sites are unchanged, pins the shared stroke weight, and marks every
+ * icon decorative — the consuming component must pair it with visible or
+ * visually-hidden text.
  */
+import {
+  ArrowLeft,
+  ArrowRight,
+  Bell,
+  ChevronDown,
+  Gauge,
+  Globe,
+  Heart,
+  House,
+  LayoutGrid,
+  Phone,
+  Search,
+  ShieldCheck,
+  ShoppingCart,
+  SlidersHorizontal,
+  TrendingUp,
+  Truck,
+  User,
+  X,
+  type LucideIcon,
+} from "lucide-react";
+
 export interface IconProps {
   size?: number;
   className?: string;
 }
 
-function svgProps({ size = 20, className }: IconProps) {
-  return {
-    width: size,
-    height: size,
-    className,
-    viewBox: "0 0 24 24",
-    fill: "none" as const,
-    stroke: "currentColor",
-    strokeWidth: 1.8,
-    strokeLinecap: "round" as const,
-    strokeLinejoin: "round" as const,
-    "aria-hidden": true,
+function wrap(Icon: LucideIcon) {
+  return function WrappedIcon({ size = 20, className }: IconProps) {
+    return <Icon size={size} className={className} strokeWidth={2} aria-hidden="true" />;
   };
 }
 
-export function SearchIcon(props: IconProps) {
-  return (
-    <svg {...svgProps(props)}>
-      <circle cx="11" cy="11" r="7" />
-      <path d="M16.5 16.5 21 21" />
-    </svg>
-  );
+export const SearchIcon = wrap(Search);
+export const TruckIcon = wrap(Truck);
+export const PhoneIcon = wrap(Phone);
+export const UserIcon = wrap(User);
+export const CartIcon = wrap(ShoppingCart);
+export const HeartIcon = wrap(Heart);
+export const ChevronDownIcon = wrap(ChevronDown);
+export const GlobeIcon = wrap(Globe);
+export const ArrowLeftIcon = wrap(ArrowLeft);
+export const ArrowRightIcon = wrap(ArrowRight);
+export const HomeIcon = wrap(House);
+export const GridIcon = wrap(LayoutGrid);
+export const BellIcon = wrap(Bell);
+export const SlidersIcon = wrap(SlidersHorizontal);
+export const MeterIcon = wrap(Gauge);
+export const ShieldCheckIcon = wrap(ShieldCheck);
+export const TrendingUpIcon = wrap(TrendingUp);
+export const XIcon = wrap(X);
+/**
+ * Social brand glyphs. This lucide-react version has dropped its deprecated
+ * brand icons (and never had TikTok), so these are drawn locally with the
+ * set's stroke conventions; Facebook/Instagram reuse the classic lucide paths.
+ */
+function brand(path: React.ReactNode) {
+  return function BrandIcon({ size = 20, className }: IconProps) {
+    return (
+      <svg
+        width={size}
+        height={size}
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth={2}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className={className}
+        aria-hidden="true"
+      >
+        {path}
+      </svg>
+    );
+  };
 }
 
-export function TruckIcon(props: IconProps) {
-  return (
-    <svg {...svgProps(props)}>
-      <path d="M2 6.5h11.5V16H2zM13.5 9.5h3.8l2.7 3V16h-6.5z" />
-      <circle cx="6" cy="17.8" r="1.7" />
-      <circle cx="16.8" cy="17.8" r="1.7" />
-    </svg>
-  );
-}
+export const FacebookIcon = brand(
+  <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" />,
+);
 
-export function PhoneIcon(props: IconProps) {
-  return (
-    <svg {...svgProps(props)}>
-      <path d="M22 16.9v2.1a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 3.2 2 2 0 0 1 4.1 1h2.1a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.6a2 2 0 0 1-.5 2.1L7.6 8.2a16 16 0 0 0 6 6l.8-.8a2 2 0 0 1 2.1-.5c.8.3 1.7.6 2.6.7a2 2 0 0 1 1.7 2z" />
-    </svg>
-  );
-}
+export const InstagramIcon = brand(
+  <>
+    <rect width="20" height="20" x="2" y="2" rx="5" ry="5" />
+    <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+    <line x1="17.5" x2="17.51" y1="6.5" y2="6.5" />
+  </>,
+);
 
-export function UserIcon(props: IconProps) {
-  return (
-    <svg {...svgProps(props)}>
-      <circle cx="12" cy="8" r="3.8" />
-      <path d="M4.5 20.5c.8-3.6 3.9-5.5 7.5-5.5s6.7 1.9 7.5 5.5" />
-    </svg>
-  );
-}
-
-export function CartIcon(props: IconProps) {
-  return (
-    <svg {...svgProps(props)}>
-      <path d="M2.5 3.5h2.3l2.5 12.1a1.5 1.5 0 0 0 1.5 1.2h8.6a1.5 1.5 0 0 0 1.5-1.2L20.8 8H6" />
-      <circle cx="9.3" cy="20.3" r="1.5" />
-      <circle cx="17.3" cy="20.3" r="1.5" />
-    </svg>
-  );
-}
-
-export function HeartIcon(props: IconProps) {
-  return (
-    <svg {...svgProps(props)}>
-      <path d="M12 20.5 4.7 13A5.1 5.1 0 0 1 12 5.9 5.1 5.1 0 0 1 19.3 13z" />
-    </svg>
-  );
-}
-
-export function ChevronDownIcon(props: IconProps) {
-  return (
-    <svg {...svgProps(props)}>
-      <path d="m6 9 6 6 6-6" />
-    </svg>
-  );
-}
-
-export function GlobeIcon(props: IconProps) {
-  return (
-    <svg {...svgProps(props)}>
-      <circle cx="12" cy="12" r="9" />
-      <path d="M3 12h18M12 3a13.5 13.5 0 0 1 0 18M12 3a13.5 13.5 0 0 0 0 18" />
-    </svg>
-  );
-}
-
-export function ArrowLeftIcon(props: IconProps) {
-  return (
-    <svg {...svgProps(props)}>
-      <path d="m15 18-6-6 6-6" />
-    </svg>
-  );
-}
-
-export function ArrowRightIcon(props: IconProps) {
-  return (
-    <svg {...svgProps(props)}>
-      <path d="m9 6 6 6-6 6" />
-    </svg>
-  );
-}
-
-export function HomeIcon(props: IconProps) {
-  return (
-    <svg {...svgProps(props)}>
-      <path d="m3.5 10.5 8.5-7 8.5 7" />
-      <path d="M5.5 9v11h13V9" />
-      <path d="M10 20v-5.5h4V20" />
-    </svg>
-  );
-}
-
-export function GridIcon(props: IconProps) {
-  return (
-    <svg {...svgProps(props)}>
-      <rect x="4" y="4" width="6.5" height="6.5" rx="1.5" />
-      <rect x="13.5" y="4" width="6.5" height="6.5" rx="1.5" />
-      <rect x="4" y="13.5" width="6.5" height="6.5" rx="1.5" />
-      <rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.5" />
-    </svg>
-  );
-}
-
-export function SlidersIcon(props: IconProps) {
-  return (
-    <svg {...svgProps(props)}>
-      <path d="M5 21v-7M5 10V3M12 21v-9M12 8V3M19 21v-5M19 12V3" />
-      <path d="M2.5 14h5M9.5 8h5M16.5 16h5" />
-    </svg>
-  );
-}
-
-export function ShieldCheckIcon(props: IconProps) {
-  return (
-    <svg {...svgProps(props)}>
-      <path d="M12 2.5 20 5.5v6c0 5-3.2 8.7-8 10-4.8-1.3-8-5-8-10v-6l8-3Z" />
-      <path d="m8.5 11.5 2.5 2.5 4.5-4.5" />
-    </svg>
-  );
-}
-
-export function MeterIcon(props: IconProps) {
-  return (
-    <svg {...svgProps(props)}>
-      {/* gauge: dial arc, needle and base ticks */}
-      <path d="M4 17a8.5 8.5 0 1 1 16 0" />
-      <path d="M12 17l3.5-5" />
-      <circle cx="12" cy="17" r="1.6" />
-      <path d="M5.5 12.5l1.5 1M18.5 12.5l-1.5 1M12 7.5V9" />
-    </svg>
-  );
-}
-
-export function BellIcon(props: IconProps) {
-  return (
-    <svg {...svgProps(props)}>
-      <path d="M18 10a6 6 0 1 0-12 0c0 4-1.5 5.5-2.5 6.5h17c-1-1-2.5-2.5-2.5-6.5" />
-      <path d="M10 20a2.2 2.2 0 0 0 4 0" />
-    </svg>
-  );
-}
+export const TikTokIcon = brand(<path d="M9 12a4 4 0 1 0 4 4V4a5 5 0 0 0 5 5" />);

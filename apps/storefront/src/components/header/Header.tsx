@@ -1,17 +1,31 @@
 import Link from "next/link";
-import { BellIcon, BrandMark, CartIcon, Container, HeartIcon, MeterIcon, PhoneIcon, ShieldCheckIcon, TruckIcon, UserIcon } from "@tronic/ui";
+import {
+  BellIcon,
+  BrandMark,
+  CartIcon,
+  Container,
+  FacebookIcon,
+  HeartIcon,
+  InstagramIcon,
+  MeterIcon,
+  PhoneIcon,
+  ShieldCheckIcon,
+  TikTokIcon,
+  TruckIcon,
+  UserIcon,
+  type IconProps,
+} from "@tronic/ui";
 import { METER_NAV_ITEM } from "@tronic/country-config";
 import { Navbar } from "./Navbar";
 import { MobileNav } from "./MobileNav";
+import { AnnouncementTicker } from "./AnnouncementTicker";
 import { SearchBox } from "@/components/search/SearchBox";
 import { CountrySelector } from "@/components/country/CountrySelector";
 import {
   ACCOUNT_LINK,
-  ANNOUNCEMENT,
   CART_LINK,
   CHECK_WARRANTY_LINK,
   WISHLIST_LINK,
-  COMPANY_LINKS,
   SOCIAL_LINKS,
   SUPPORT_PHONE,
   TRACK_ORDER_LINK,
@@ -24,6 +38,12 @@ import {
  * navbar. Red logo on white per brand guide §9; mobile collapses navigation
  * into the drawer and keeps search on its own row.
  */
+const SOCIAL_ICONS: Record<string, (props: IconProps) => React.JSX.Element> = {
+  Facebook: FacebookIcon,
+  Instagram: InstagramIcon,
+  TikTok: TikTokIcon,
+};
+
 export function Header() {
   const socials = SOCIAL_LINKS.filter(
     (link): link is { label: string; href: string } => link.href !== null,
@@ -31,54 +51,39 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-40 bg-white shadow-sm max-md:bg-[var(--color-off-white)] max-md:shadow-none">
-      {/* Tier 1 — announcement (compact, master prompt §5) */}
-      <p className="bg-[var(--color-premium-black)] px-4 py-1.5 text-center text-xs font-medium tracking-wide text-white/90">
-        {ANNOUNCEMENT.message}{" "}
-        <Link
-          href={ANNOUNCEMENT.href}
-          className="font-semibold text-white underline decoration-[var(--color-brand-red)] decoration-2 underline-offset-4 transition-colors hover:text-[var(--color-light-grey)]"
-        >
-          {ANNOUNCEMENT.linkLabel}
-        </Link>
-      </p>
-
-      {/* Tier 2 — utility row (desktop) */}
-      <div className="hidden border-b border-[var(--color-light-grey)] lg:block">
-        <Container className="flex h-9 items-center justify-between text-xs">
-          <nav aria-label="Company">
-            <ul className="flex items-center gap-6">
-              {COMPANY_LINKS.map((link) => (
-                <li key={link.href}>
-                  <Link
-                    href={link.href}
-                    className="font-medium text-[var(--text-muted)] transition-colors hover:text-[var(--color-action-red)]"
-                  >
-                    {link.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </nav>
-          <div className="flex items-center gap-5">
+      {/* Tier 1 — announcement bar with the utilities folded in (owner
+          request Nov 2026: the old second utility row is gone; company
+          links moved into the red navbar). */}
+      <div className="bg-[var(--color-action-red)] text-white/95">
+        <Container className="flex min-h-8 items-center justify-center gap-6 py-1 lg:justify-between">
+          <AnnouncementTicker />
+          <div className="hidden shrink-0 items-center gap-4 lg:flex">
             {socials.length > 0 ? (
-              <ul className="flex items-center gap-3" aria-label="Social media">
-                {socials.map((link) => (
-                  <li key={link.label}>
-                    <a href={link.href} className="text-[var(--text-muted)] hover:text-[var(--color-action-red)]">
-                      {link.label}
-                    </a>
-                  </li>
-                ))}
+              <ul className="flex items-center gap-1" aria-label="Social media">
+                {socials.map((link) => {
+                  const Icon = SOCIAL_ICONS[link.label];
+                  return (
+                    <li key={link.label}>
+                      <a
+                        href={link.href}
+                        aria-label={link.label}
+                        className="flex h-7 w-7 items-center justify-center rounded-full text-white/75 transition-colors hover:bg-white/15 hover:text-white"
+                      >
+                        {Icon ? <Icon size={15} /> : <span className="text-xs">{link.label}</span>}
+                      </a>
+                    </li>
+                  );
+                })}
               </ul>
             ) : null}
             <a
               href={SUPPORT_PHONE.href}
-              className="flex items-center gap-1.5 font-medium text-[var(--text-muted)] transition-colors hover:text-[var(--color-action-red)]"
+              className="flex items-center gap-1.5 text-xs font-medium text-white/85 transition-colors hover:text-white"
             >
-              <PhoneIcon size={14} />
+              <PhoneIcon size={13} className="text-white/80" />
               {SUPPORT_PHONE.label}
             </a>
-            <CountrySelector />
+            <CountrySelector tone="dark" />
           </div>
         </Container>
       </div>
@@ -101,24 +106,24 @@ export function Header() {
         <div className="ml-auto flex shrink-0 items-center gap-1 md:ml-0 lg:gap-5">
           <Link
             href={TRACK_ORDER_LINK.href}
-            className="hidden items-center gap-2 text-sm font-medium transition-colors hover:text-[var(--color-action-red)] lg:flex"
+            className="group hidden items-center gap-2 text-sm font-medium transition-colors hover:text-[var(--color-action-red)] lg:flex"
           >
-            <TruckIcon size={22} className="text-[var(--color-action-red)]" />
+            <TruckIcon size={22} className="text-[var(--color-dark-grey)] transition-colors group-hover:text-[var(--color-action-red)]" />
             {TRACK_ORDER_LINK.label}
           </Link>
           {/* xl+ only: at lg the search field would be squeezed out */}
           <Link
             href={CHECK_WARRANTY_LINK.href}
-            className="hidden items-center gap-2 text-sm font-medium transition-colors hover:text-[var(--color-action-red)] xl:flex"
+            className="group hidden items-center gap-2 text-sm font-medium transition-colors hover:text-[var(--color-action-red)] xl:flex"
           >
-            <ShieldCheckIcon size={21} className="text-[var(--color-action-red)]" />
+            <ShieldCheckIcon size={21} className="text-[var(--color-dark-grey)] transition-colors group-hover:text-[var(--color-action-red)]" />
             {CHECK_WARRANTY_LINK.label}
           </Link>
           <Link
             href={METER_NAV_ITEM.href}
-            className="hidden items-center gap-2 text-sm font-medium transition-colors hover:text-[var(--color-action-red)] lg:flex"
+            className="group hidden items-center gap-2 text-sm font-medium transition-colors hover:text-[var(--color-action-red)] lg:flex"
           >
-            <MeterIcon size={22} className="text-[var(--color-action-red)]" />
+            <MeterIcon size={22} className="text-[var(--color-dark-grey)] transition-colors group-hover:text-[var(--color-action-red)]" />
             {METER_NAV_ITEM.label}
           </Link>
           <span aria-hidden="true" className="hidden h-6 w-px bg-[var(--color-light-grey)] lg:block" />
@@ -131,14 +136,6 @@ export function Header() {
             className="flex h-10 w-10 items-center justify-center rounded-full bg-white shadow-sm transition-colors hover:bg-[var(--surface-card)] md:hidden"
           >
             <BellIcon size={20} />
-          </Link>
-          {/* Red account CTA (owner request, Nov 2026) */}
-          <Link
-            href={ACCOUNT_LINK.href}
-            className="hidden items-center gap-2 rounded-full bg-[var(--color-action-red)] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[var(--color-action-red-dark)] md:flex"
-          >
-            <UserIcon size={18} />
-            <span className="hidden lg:inline">{ACCOUNT_LINK.label}</span>
           </Link>
           <Link
             href={WISHLIST_LINK.href}
@@ -154,12 +151,21 @@ export function Header() {
           >
             <CartIcon size={24} />
           </Link>
+          {/* Red account CTA (owner request, Nov 2026), placed after the
+              cart (owner request Nov 2026). */}
+          <Link
+            href={ACCOUNT_LINK.href}
+            className="hidden items-center gap-2 rounded-full bg-[var(--color-action-red)] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[var(--color-action-red-dark)] md:flex"
+          >
+            <UserIcon size={18} />
+            <span className="hidden lg:inline">{ACCOUNT_LINK.label}</span>
+          </Link>
         </div>
       </Container>
 
       {/* Mobile search row — seamless on the off-white app background */}
       <div className="md:hidden">
-        <Container className="pb-3 pt-1">
+        <Container className="pb-2.5 pt-0.5">
           <SearchBox />
         </Container>
       </div>

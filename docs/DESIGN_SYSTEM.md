@@ -12,13 +12,13 @@ Two families only, loaded via `next/font/google` in
 | Variable | Family | Weights loaded | Use |
 | --- | --- | --- | --- |
 | `--font-heading` | Montserrat | 500 / 600 / 700 | Hero, page and section headings, brand expression (800/900 deliberately not loaded) |
-| `--font-body` | Inter | 400 / 500 / 600 / 700 | Body, navigation, buttons, prices, forms, tables (700 for selected emphasis only) |
+| body (fallback stack) | System UI (SF Pro on Apple, Segoe UI on Windows, Roboto on Android) | native | Body, navigation, buttons, prices, forms, tables |
 
 Body family history: the master prompt §4 named Poppins; on 2026-11-02 the
-owner asked for an SF Pro look. SF Pro is Apple-proprietary and cannot be
-embedded as a web font, so Inter (its standard open equivalent) replaced
-Poppins as the body/UI family, with the platform UI font (SF Pro on Apple
-devices) in the fallback stack.
+owner asked for SF Pro. SF Pro is Apple-proprietary and cannot be embedded
+as a web font, so after an Inter interim the owner chose the native system
+stack — real SF Pro on Apple devices, zero font download, at the cost of
+minor cross-platform variation.
 
 Fallback stacks live in `--font-fallback-heading` / `--font-fallback-body`.
 
@@ -64,8 +64,9 @@ never communicate state with color alone.
 
 - Single global focus style: `--focus-ring` (2px action red, 2px offset) on
   `:focus-visible`.
-- No hover-only interactions; mega-menu and drawers are click/keyboard
-  operated, Escape closes.
+- No hover-only interactions: the desktop mega-menu opens on mouse hover
+  (short close delay) as a convenience, but click, touch and keyboard all
+  operate it fully; drawers are click/keyboard operated. Escape closes.
 - Carousel is manual (arrows + dots), no autoplay.
 - WCAG 2.2 AA is the target; `prefers-reduced-motion` must be respected as
   motion is added.
@@ -74,8 +75,24 @@ never communicate state with color alone.
 
 Button (primary/outline/ghost), Container, VisuallyHidden, BrandMark
 (official red logo asset for light surfaces; interim white mark pending the
-white artwork), icon set (stroke, currentColor).
+white artwork), icon set (lucide-react, strokeWidth 2).
 
-Pending Module 01 additions per master prompt §10: inputs, textarea, select,
-dialog, tabs, badge, notification/toast, card, validation states, skeleton,
-empty and error states.
+Master prompt §10 primitives (complete, 2026-11-02):
+
+- **Input / Textarea / Select** — shared Field chrome: label, optional hint,
+  validation error with icon, `aria-invalid` + `aria-describedby`; error is
+  never colour-only. Disabled and focus states included.
+- **Badge** — neutral / brand (red, offers only) / dark (SAMPLE marker) /
+  outline variants; paired with text, never the sole state carrier.
+- **Card** — "border" (white pages) and "float" (off-white app shell)
+  variants, optional interactive hover lift matching the tile language.
+- **Skeleton** — pulsing neutral block (reduced-motion safe); consumers add
+  a visually-hidden loading live region.
+- **EmptyState / ErrorState** — centred icon + title + description +
+  optional action; `role="status"` / `role="alert"`.
+- **Dialog** — native `<dialog>` modal: focus containment, Escape and
+  backdrop-click close, labelled title.
+- **Tabs** — WAI-ARIA tablist with roving tabindex (arrows, Home, End),
+  red-underline + bold active pairing.
+- **ToastProvider / useToast** — polite live-region notifications, info /
+  success / error accents, auto-dismiss with manual dismiss.
