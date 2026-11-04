@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Montserrat } from "next/font/google";
+import { ToastProvider } from "@tronic/ui";
 import { ACTIVE_COUNTRY } from "@tronic/country-config";
 import { Header } from "@/components/header/Header";
 import { Footer } from "@/components/footer/Footer";
@@ -62,12 +63,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         >
           Skip to main content
         </a>
-        <Header />
-        <main id="main-content" className="flex-1">
-          {children}
-        </main>
-        <Footer />
-        <BottomNav />
+        <ToastProvider>
+          <Header />
+          <main id="main-content" className="flex-1">
+            {children}
+          </main>
+          <Footer />
+          <BottomNav />
+        </ToastProvider>
       </body>
     </html>
   );

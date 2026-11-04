@@ -3,6 +3,49 @@
 Meaningful implementation changes, newest first. Dates are work dates;
 nothing below is released.
 
+## 2026-11-04 — mobile PDP polish and hydration fixes
+
+- Mobile PDP: gallery shortened to a 5:4 frame (~20% less height, square
+  from md), price/discount/stock/SKU sit directly under the title (the
+  generic short description moved into the overview accordion on phones),
+  tighter option/quantity spacing, swipe-between-images and pagination
+  dots wired for multi-image products, and the sticky purchase bar now
+  offsets by the device safe-area inset so it can never overlap the tab
+  bar. Audited at 320/375/390/430px — no horizontal overflow.
+- Hydration mismatches fixed for reduced-motion users: rendered DOM no
+  longer branches on useReducedMotion() (SSR cannot know the preference).
+  CTA press feedback is plain CSS active:scale (covered by the global
+  reduced-motion override), and Reveal/gallery keep constant DOM while
+  reduced motion only zeroes Motion transition durations, which never
+  serialize into HTML.
+
+## 2026-11-03 — product details page (sample catalogue)
+
+- New `/products/[id]` route over the SAMPLE catalogue: gallery with
+  full-screen zoom dialog, wishlist/share controls and a thumbnail rail
+  that activates when products gain multiple images; buy box with TZS
+  was/now pricing, computed Save badge, stock state, variant pills
+  (selection carried in the displayed SKU), quantity stepper (min 1,
+  disabled when out of stock), Add to Cart (sample-mode toast) and Buy Now
+  (continues to the /cart placeholder — no fake orders).
+- Honest content rules upheld: no fabricated ratings, reviews, specs or
+  inventory — reviews show an EmptyState, overview/specs state that full
+  content arrives with the live catalogue, and no Product JSON-LD is
+  emitted while prices are synthetic.
+- Accordion sections (overview, specifications, delivery, warranty →
+  policy routes), related-products rail, localStorage recently-viewed
+  rail; sticky mobile purchase bar above the bottom tab bar; two-column
+  desktop. Homepage cards now link titles/images to the PDP. ToastProvider
+  mounted in the root layout. 4 new PurchasePanel tests (19 total).
+  Audited at 320/375px — no horizontal overflow.
+- Restyled to the owner's reference (same day): soft rounded gallery frame
+  with prev/next arrows over the image and a thumbnail row below (both
+  appear once a product has multiple photos), crossfade image switching,
+  breadcrumb + short generic description in the info column, electrical
+  option-axis labels on variants ("Color Temperature", "Type" — never
+  generic "Options" when the real axis is known), pill quantity stepper,
+  and large stacked full-width CTAs.
+
 ## 2026-11-03 — cinematic energy hero
 
 - The campaign banner carousel is replaced by a cinematic advertising-style

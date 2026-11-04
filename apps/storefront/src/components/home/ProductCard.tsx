@@ -20,13 +20,20 @@ export function ProductCard({ product }: { product: SampleProduct }) {
     <li className="group/card flex flex-col rounded-xl bg-white p-2 shadow-[0_2px_10px_rgba(17,17,17,0.05)] transition-all duration-300 ease-out hover:z-10 hover:-translate-y-1 hover:scale-[1.02] hover:shadow-[0_0_0_1px_rgba(215,25,32,0.25),0_6px_16px_-6px_rgba(215,25,32,0.25),0_18px_38px_-12px_rgba(215,25,32,0.4)] active:translate-y-0 active:scale-[1.01] md:border md:border-[var(--color-light-grey)] md:p-2.5 md:shadow-none md:hover:border-transparent">
       <div className="relative aspect-square overflow-hidden rounded-lg bg-white">
         <Tilt3D className="absolute inset-0">
-          <Image
-            src={product.image}
-            alt={product.name}
-            fill
-            sizes="(min-width: 1280px) 10rem, (min-width: 768px) 11rem, 45vw"
-            className="object-contain p-2.5 transition-transform duration-300 group-hover/card:scale-105"
-          />
+          <Link
+            href={`/products/${product.id}`}
+            tabIndex={-1}
+            aria-hidden="true"
+            className="relative block h-full w-full"
+          >
+            <Image
+              src={product.image}
+              alt={product.name}
+              fill
+              sizes="(min-width: 1280px) 10rem, (min-width: 768px) 11rem, 45vw"
+              className="object-contain p-2.5 transition-transform duration-300 group-hover/card:scale-105"
+            />
+          </Link>
         </Tilt3D>
         <span className="absolute left-1.5 top-1.5 rounded bg-[var(--color-premium-black)]/85 px-1.5 py-0.5 text-[8px] font-semibold uppercase tracking-wider text-white">
           Sample
@@ -49,7 +56,7 @@ export function ProductCard({ product }: { product: SampleProduct }) {
           {product.categoryName}
         </p>
         <Link
-          href={`/categories/${product.categorySlug}`}
+          href={`/products/${product.id}`}
           className="mt-0.5 line-clamp-2 min-h-[2.5em] text-xs font-semibold leading-snug transition-colors hover:text-[var(--color-action-red)] md:text-[13px]"
         >
           {product.name}

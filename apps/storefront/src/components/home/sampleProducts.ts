@@ -26,6 +26,16 @@ export interface SampleProduct {
    * quick-selection dialog instead of linking straight to the cart.
    */
   variants?: readonly string[];
+  /** What the variant axis is (e.g. "Color Temperature", "Type"); shown on the PDP. */
+  variantLabel?: string;
+  /** Synthetic colour options rendered as swatches on the PDP. */
+  colors?: readonly SampleColor[];
+}
+
+export interface SampleColor {
+  name: string;
+  /** CSS colour for the swatch circle. */
+  swatch: string;
 }
 
 /** Formats a synthetic TZS amount for display, e.g. 28000 → "TZS 28,000". */
@@ -39,6 +49,22 @@ export function discountPercent(product: SampleProduct): number | null {
     return null;
   }
   return Math.round((1 - product.price / product.wasPrice) * 100);
+}
+
+/** Every sample product, for the PDP route and related-product rails. */
+export function allSampleProducts(): readonly SampleProduct[] {
+  return [...SPECIAL_FOR_YOU, ...LIGHTING_PICKS, ...FANS_COOLING_PICKS];
+}
+
+export function getSampleProduct(id: string): SampleProduct | undefined {
+  return allSampleProducts().find((product) => product.id === id);
+}
+
+/** Same-category products (excluding the product itself), newest-first order kept. */
+export function relatedSampleProducts(product: SampleProduct, limit = 6): SampleProduct[] {
+  return allSampleProducts()
+    .filter((other) => other.categorySlug === product.categorySlug && other.id !== product.id)
+    .slice(0, limit);
 }
 
 export const SPECIAL_FOR_YOU: readonly SampleProduct[] = [
@@ -71,6 +97,11 @@ export const SPECIAL_FOR_YOU: readonly SampleProduct[] = [
     wasPrice: 27_500,
     inStock: true,
     variants: ["3-way", "4-way", "6-way"],
+    variantLabel: "Type",
+    colors: [
+      { name: "White", swatch: "#f4f4f2" },
+      { name: "Black", swatch: "#1f1f23" },
+    ],
   },
   {
     id: "sample-armoured-cable",
@@ -91,6 +122,7 @@ export const SPECIAL_FOR_YOU: readonly SampleProduct[] = [
     wasPrice: 8_000,
     inStock: true,
     variants: ["Warm White", "Cool White", "Daylight"],
+    variantLabel: "Color Temperature",
   },
   {
     id: "sample-breaker",
@@ -141,6 +173,11 @@ export const LIGHTING_PICKS: readonly SampleProduct[] = [
     image: "/products/pendant-lamp.jpg",
     price: 65_000,
     inStock: true,
+    colors: [
+      { name: "White", swatch: "#f5f3ee" },
+      { name: "Matte Black", swatch: "#26262a" },
+      { name: "Brass", swatch: "#b98d4f" },
+    ],
   },
   {
     id: "sample-garden-post",
@@ -173,6 +210,10 @@ export const FANS_COOLING_PICKS: readonly SampleProduct[] = [
     price: 145_000,
     wasPrice: 170_000,
     inStock: true,
+    colors: [
+      { name: "White", swatch: "#f4f4f2" },
+      { name: "Graphite", swatch: "#4a4d52" },
+    ],
   },
   {
     id: "sample-wall-fan",
