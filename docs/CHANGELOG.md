@@ -3,6 +3,22 @@
 Meaningful implementation changes, newest first. Dates are work dates;
 nothing below is released.
 
+## 2026-11-04 — self-hosted fonts fix the CI font build failure
+
+- Root cause: the GitHub Actions production build failed inside the
+  next/font/google loader ("Cannot read properties of null (reading
+  '1')", Next 15.5.x) — a known issue where Google Fonts returns
+  extensionless font URLs the loader cannot parse. The build also
+  depended on fonts.googleapis.com being reachable at build time.
+- Fix: Montserrat 500/600/700 (headings) and Poppins 400-700 (body/UI —
+  owner decision 2026-11-04, superseding the interim system-stack body)
+  are now self-hosted WOFF2 (latin subset, ~88 KB total) served via
+  next/font/local; --font-body is injected so the whole UI picks up
+  Poppins through the existing token. SIL OFL 1.1 license texts ship in
+  apps/storefront/src/fonts with a provenance README; filenames are
+  lowercase for Linux path compatibility. No runtime Google Fonts
+  requests remain.
+
 ## 2026-11-04 — mobile PDP polish and hydration fixes
 
 - Mobile PDP: gallery shortened to a 5:4 frame (~20% less height, square

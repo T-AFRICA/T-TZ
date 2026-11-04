@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Montserrat } from "next/font/google";
+import localFont from "next/font/local";
 import { ToastProvider } from "@tronic/ui";
 import { ACTIVE_COUNTRY } from "@tronic/country-config";
 import { Header } from "@/components/header/Header";
@@ -7,15 +7,42 @@ import { Footer } from "@/components/footer/Footer";
 import { BottomNav } from "@/components/nav/BottomNav";
 import "./globals.css";
 
-// Headings: Montserrat 500/600/700 (master prompt §4; 800/900 intentionally
-// not loaded). Body/UI: the native system font stack — owner decision
-// (Nov 2026): real SF Pro on Apple devices, Segoe UI on Windows, Roboto on
-// Android, with zero font download. The stack lives in tokens.css as
-// --font-fallback-body; no --font-body is injected, so the fallback applies.
-const montserrat = Montserrat({
-  subsets: ["latin"],
-  weight: ["500", "600", "700"],
+// Brand typography (owner decision 2026-11-04, supersedes the interim
+// system-stack body): Montserrat 500/600/700 for headings (800/900
+// intentionally not loaded), Poppins 400-700 for body/UI. Served as
+// self-hosted WOFF2 via next/font/local — the next/font/google loader
+// fails intermittently on CI (Next 15.5.x "Cannot read properties of
+// null (reading '1')") and self-hosting removes the build-time network
+// dependency. Assets + SIL OFL licenses live in src/fonts (see its README).
+const montserrat = localFont({
+  src: [
+    { path: "../fonts/montserrat-latin-500.woff2", weight: "500", style: "normal" },
+    { path: "../fonts/montserrat-latin-600.woff2", weight: "600", style: "normal" },
+    { path: "../fonts/montserrat-latin-700.woff2", weight: "700", style: "normal" },
+  ],
   variable: "--font-heading",
+  display: "swap",
+  fallback: ["Segoe UI", "Arial", "sans-serif"],
+});
+
+const poppins = localFont({
+  src: [
+    { path: "../fonts/poppins-latin-400.woff2", weight: "400", style: "normal" },
+    { path: "../fonts/poppins-latin-500.woff2", weight: "500", style: "normal" },
+    { path: "../fonts/poppins-latin-600.woff2", weight: "600", style: "normal" },
+    { path: "../fonts/poppins-latin-700.woff2", weight: "700", style: "normal" },
+  ],
+  variable: "--font-body",
+  display: "swap",
+  fallback: [
+    "-apple-system",
+    "BlinkMacSystemFont",
+    "Segoe UI",
+    "Roboto",
+    "Helvetica Neue",
+    "Arial",
+    "sans-serif",
+  ],
 });
 
 export const metadata: Metadata = {
@@ -55,7 +82,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       {/* max-md bottom padding keeps content clear of the fixed mobile tab
           bar, including the device safe-area inset the bar itself absorbs */}
       <body
-        className={`${montserrat.variable} flex min-h-screen flex-col max-md:pb-[calc(3.5rem+env(safe-area-inset-bottom))]`}
+        className={`${montserrat.variable} ${poppins.variable} flex min-h-screen flex-col max-md:pb-[calc(3.5rem+env(safe-area-inset-bottom))]`}
       >
         <a
           href="#main-content"
