@@ -41,10 +41,11 @@
   --text-muted: var(--color-mid-grey);
   --text-on-dark: var(--color-white);
 
-  /* Typography — Montserrat is injected by next/font as --font-heading.
-     Body/UI uses the native system stack directly (owner decision Nov 2026):
-     real SF Pro on Apple devices, Segoe UI on Windows, Roboto on Android —
-     no webfont download. No --font-body is injected; the fallback applies. */
+  /* Typography — Montserrat (headings) and Poppins (body/UI) are injected
+     by next/font/local as --font-heading / --font-body (owner decision
+     2026-11-04; self-hosted WOFF2 in apps/storefront/src/fonts). The
+     fallback stacks below apply wherever the variables are not injected
+     (tests, isolated component rendering). */
   --font-fallback-heading: "Montserrat", "Segoe UI", Arial, sans-serif;
   --font-fallback-body:
     -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto,
