@@ -3,6 +3,21 @@
 Meaningful implementation changes, newest first. Dates are work dates;
 nothing below is released.
 
+## 2026-11-05 — "Power Every Space" hero (v3)
+
+- The dark single-bulb hero is replaced by a light, gallery-like interior
+  (owner direction): three real TRONIC alabaster pendants — the product
+  photo flood-fill cut from its studio background (pendant-hero.png) —
+  hang at staggered showroom drops over a warm neutral wall/floor. The
+  room starts dimmed, a small energy pulse runs down each cord, each lamp
+  glow and floor light-pool fades in sequentially, then the glows breathe
+  gently. Brand red appears only in the accent word and the CTA.
+- Entirely CSS (hero4-* keyframes) and the Hero is now a server component:
+  no client JS, nothing hidden in SSR output, fixed heights, and reduced
+  motion lands directly on the fully lit room. Mobile gets a centered
+  stacked composition. Headline/copy/CTA exactly per the owner's brief;
+  no floating cards, orbits, particles or neon.
+
 ## 2026-11-05 — agentic browsing 100 and accessibility 100 (Lighthouse)
 
 - Agentic Browsing 25 → 100 (4/4 audits): /robots.txt, /llms.txt and the
