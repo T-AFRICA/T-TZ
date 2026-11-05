@@ -28,9 +28,11 @@ export function AddToCartButton({ productName, variants }: AddToCartButtonProps)
   const [open, setOpen] = useState(false);
   const router = useRouter();
 
+  // Accessible names start with the visible "Add to Cart" text so
+  // voice-control users can activate the button by its label.
   if (!variants || variants.length === 0) {
     return (
-      <Link href={CART_LINK.href} aria-label={`Add ${productName} to cart`} className={CTA_CLASSES}>
+      <Link href={CART_LINK.href} aria-label={`Add to cart: ${productName}`} className={CTA_CLASSES}>
         <CartIcon size={13} />
         Add to Cart
       </Link>
@@ -42,7 +44,7 @@ export function AddToCartButton({ productName, variants }: AddToCartButtonProps)
       <button
         type="button"
         aria-haspopup="dialog"
-        aria-label={`Add ${productName} to cart — choose an option`}
+        aria-label={`Add to cart: ${productName} — choose an option`}
         onClick={() => setOpen(true)}
         className={CTA_CLASSES}
       >

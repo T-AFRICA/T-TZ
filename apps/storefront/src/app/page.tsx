@@ -42,33 +42,21 @@ export default function HomePage() {
     <>
       <Hero />
       <Container id="departments" className="scroll-mt-24 py-5 md:py-10 lg:py-12">
-        {/* Category circles right after the banner. Below lg they are a
-            native swipeable carousel with scroll-snap (premium mobile
-            pattern); from lg the approved continuously-drifting marquee
-            remains (owner request Nov 2026). Touch/hover pauses the drift,
-            reduced-motion stops it. Four identical copies keep the -50%
-            marquee loop seamless on ultrawide screens; copies after the
-            first are hidden from assistive tech and keyboards. */}
-        <nav
-          aria-label="Shop by category"
-          className="no-scrollbar -mx-[var(--gutter)] snap-x snap-mandatory scroll-px-[var(--gutter)] overflow-x-auto px-[var(--gutter)] lg:hidden"
-        >
-          <ul className="flex w-max items-start pb-2">
-            {CATEGORY_SECTIONS.map((section) => (
-              <li key={section.slug} className="mr-4 w-[4.5rem] shrink-0 snap-start md:mr-8 md:w-28">
-                <CategoryCircle section={section} />
-              </li>
-            ))}
-          </ul>
-        </nav>
-        <nav aria-label="Shop by category" className="-mx-8 hidden overflow-hidden lg:block">
+        {/* Continuously rotating category circles right after the banner,
+            on every breakpoint (owner request Nov 2026, reconfirmed
+            2026-11-05 after an interim mobile swipe carousel: the circles
+            must visibly drift on phones too). Touch/hover pauses the
+            drift, reduced-motion stops it. Four identical copies keep the
+            -50% loop seamless on ultrawide screens; copies after the first
+            are hidden from assistive tech and keyboards. */}
+        <nav aria-label="Shop by category" className="-mx-[var(--gutter)] overflow-hidden lg:-mx-8">
           <ul className="category-marquee flex w-max items-start pb-2">
             {[0, 1, 2, 3].map((copy) =>
               CATEGORY_SECTIONS.map((section) => (
                 <li
                   key={`${copy}-${section.slug}`}
                   aria-hidden={copy > 0 ? true : undefined}
-                  className="mr-8 w-28 shrink-0"
+                  className="mr-4 w-[4.5rem] shrink-0 md:mr-8 md:w-28"
                 >
                   <CategoryCircle section={section} tabIndex={copy > 0 ? -1 : undefined} />
                 </li>

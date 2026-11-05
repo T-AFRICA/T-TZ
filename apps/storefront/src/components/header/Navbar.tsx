@@ -105,7 +105,7 @@ export function Navbar() {
                       setOpenSlug(section.slug);
                     }
                   }}
-                  className={`flex items-center gap-1 whitespace-nowrap px-2.5 py-3 text-xs font-semibold transition-colors duration-150 xl:px-2 2xl:gap-1.5 2xl:px-4 2xl:text-sm ${
+                  className={`flex items-center gap-1 whitespace-nowrap px-2.5 py-3 text-xs font-semibold uppercase tracking-[0.04em] transition-colors duration-150 xl:px-2 2xl:gap-1.5 2xl:px-4 2xl:text-[13px] ${
                     isOpen
                       ? "bg-white text-[var(--color-action-red)]"
                       : "text-white hover:bg-white hover:text-[var(--color-action-red)]"
@@ -130,7 +130,7 @@ export function Navbar() {
               <li key={link.href}>
                 <Link
                   href={link.href}
-                  className="whitespace-nowrap text-xs font-medium text-white/80 transition-colors hover:text-white"
+                  className="whitespace-nowrap text-[11px] font-medium uppercase tracking-[0.04em] text-white/80 transition-colors hover:text-white"
                 >
                   {link.navLabel}
                 </Link>

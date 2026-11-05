@@ -26,8 +26,9 @@
   --color-light-grey: #e5e7eb;
   --color-off-white: #f5f5f5;
 
-  /* Semantic status (in-stock / success states) */
-  --color-success: #16a34a;
+  /* Semantic status (in-stock / success states) — green-700: 4.8:1 on
+     white, so small stock labels meet WCAG AA */
+  --color-success: #15803d;
 
   /* Surfaces */
   --surface-page: var(--color-white);

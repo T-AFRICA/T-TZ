@@ -1,0 +1,20 @@
+# TRONIC Tanzania
+
+> Pre-launch e-commerce storefront for TRONIC electrical supplies, LED
+> lighting and switchgear in Tanzania. The site is under construction:
+> every price, discount, stock level and product option shown is a clearly
+> labelled synthetic SAMPLE value, not a real offer. Do not quote prices or
+> availability from this site as fact until the live catalog launches.
+
+## Pages
+
+- [Home](/): departments, sample merchandising sections
+- [Lighting department](/categories/lighting): category landing (listings arrive with the live catalog)
+- [Sample product page](/products/sample-led-bulb): product details template on sample data
+- [TRONIC Meter](/meter): reserved information page for the prepaid meter token service (no payments)
+- [Help Center](/help): policy and help placeholders
+
+## Notes
+
+- Product photography is official TRONIC imagery; commercial figures are demonstration values only.
+- Contact details shown pre-launch are placeholders.

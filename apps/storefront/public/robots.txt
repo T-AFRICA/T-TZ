@@ -1,0 +1,5 @@
+# Pre-launch: the storefront is intentionally closed to crawling and
+# indexing until the Tanzania launch gate (matches the site-wide noindex
+# meta). Replace with launch rules at go-live.
+User-agent: *
+Disallow: /

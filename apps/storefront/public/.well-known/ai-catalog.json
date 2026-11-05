@@ -1,0 +1,19 @@
+{
+  "specVersion": "1.0",
+  "entries": [
+    {
+      "identifier": "urn:air:tronic-tanzania:storefront:agent-catalog",
+      "displayName": "TRONIC Tanzania agent resource catalog (pre-launch)",
+      "type": "application/ai-catalog+json",
+      "data": {
+        "specVersion": "1.0",
+        "entries": []
+      },
+      "description": "Pre-launch placeholder: the TRONIC Tanzania storefront exposes no live agent endpoints yet. Every price, discount, stock level and product option on the site is a clearly labelled synthetic SAMPLE value, not a real offer. A human/agent-readable page index is at /llms.txt on this origin.",
+      "representativeQueries": [
+        "what does TRONIC Tanzania sell",
+        "which product categories does the TRONIC storefront have"
+      ]
+    }
+  ]
+}
