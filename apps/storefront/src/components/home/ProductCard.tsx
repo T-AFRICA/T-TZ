@@ -35,7 +35,9 @@ export function ProductCard({ product }: { product: SampleProduct }) {
             />
           </Link>
         </Tilt3D>
-        <span className="absolute left-1.5 top-1.5 rounded bg-[var(--color-premium-black)]/85 px-1.5 py-0.5 text-[8px] font-semibold uppercase tracking-wider text-white">
+        {/* Badge pair shares one size/radius/padding system (9px, rounded,
+            1.5 inset) so chips read as a family across every card */}
+        <span className="absolute left-1.5 top-1.5 rounded bg-[var(--color-premium-black)]/85 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-white">
           Sample
         </span>
         {saving !== null ? (
