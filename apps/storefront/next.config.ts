@@ -7,6 +7,9 @@ const nextConfig: NextConfig = {
     "@tronic/api-client",
     "@tronic/country-config",
   ],
+  images: {
+    qualities: [75, 85, 90],
+  },
 };
 
 export default nextConfig;

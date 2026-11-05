@@ -209,89 +209,130 @@ details.drawer-acc[open] > ul {
   }
 }
 
-/* "Power Every Space" hero (owner direction 2026-11-05): a light neutral
-   interior where three TRONIC alabaster pendants switch on in sequence.
-   One CSS master timeline — the room starts dimmed, a small energy pulse
-   runs down each cord, its lamp's glow and floor light-pool fade in, then
-   the glows breathe gently. Pure CSS: runs without JS, SSR ships nothing
-   hidden, and every keyframe ENDS fully lit so the reduced-motion
-   override (duration ~0) lands straight on the bright room. */
-@keyframes hero4-dim {
+/* Hero lighting loop: the dim frame sits over the lit frame and fades. Default
+   opacity is 0, so without animation (reduced motion, unsupported, failed
+   image) the visitor gets the fully lit static scene. */
+@keyframes hero-room-dim {
   0%,
-  18% {
+  10% {
     opacity: 1;
   }
-  55%,
+  30% {
+    opacity: 0;
+  }
+  46% {
+    opacity: 0.07;
+  }
+  62% {
+    opacity: 0;
+  }
+  74% {
+    opacity: 0.07;
+  }
+  84% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+.hero-room-dim {
+  opacity: 0;
+  animation: hero-room-dim 18s ease-in-out infinite;
+}
+
+@keyframes hero-cord-flow {
+  0%,
+  4% {
+    stroke-dashoffset: 14;
+    opacity: 0;
+  }
+  7% {
+    opacity: 1;
+  }
+  17% {
+    opacity: 1;
+  }
+  20%,
+  100% {
+    stroke-dashoffset: -100;
+    opacity: 0;
+  }
+}
+
+.hero-cord-flow {
+  opacity: 0;
+  stroke-dasharray: 14 200;
+  animation: hero-cord-flow 18s linear infinite;
+}
+
+/* The inverse of hero-room-dim, for light that must vanish when the room is off. */
+@keyframes hero-room-glow {
+  0%,
+  10% {
+    opacity: 0;
+  }
+  30% {
+    opacity: 1;
+  }
+  46% {
+    opacity: 0.93;
+  }
+  62% {
+    opacity: 1;
+  }
+  74% {
+    opacity: 0.93;
+  }
+  84% {
+    opacity: 1;
+  }
   100% {
     opacity: 0;
   }
 }
 
-.hero4-dim {
-  animation: hero4-dim 5.5s ease-in-out both;
+.hero-room-glow {
+  animation: hero-room-glow 18s ease-in-out infinite;
 }
 
-@keyframes hero4-light-on {
-  from {
-    opacity: 0;
+/* Same 18s cycle as hero-room-dim: stopped while the room is off, spinning up as
+   the lamps come on at about 540deg/s, then coasting down. Faster than that the
+   blades blur into a grey disc and the fan stops reading as running. The eases
+   are exact quadratics so the speed is continuous at each joint. The total is a
+   multiple of 120deg, and the fan has three blades, so the loop has no jump. */
+@keyframes hero-fan-spin {
+  0%,
+  8% {
+    transform: rotate(0deg);
+    animation-timing-function: cubic-bezier(0.333, 0, 0.667, 0.333);
   }
-  to {
-    opacity: 1;
+  30% {
+    transform: rotate(1070deg);
+    animation-timing-function: linear;
   }
-}
-
-@keyframes hero4-breathe {
-  from {
-    opacity: 0.78;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-.hero4-glow {
-  opacity: 0;
-  animation:
-    hero4-light-on 0.9s ease-out var(--on-delay, 1.2s) forwards,
-    hero4-breathe 6s ease-in-out calc(var(--on-delay, 1.2s) + 1.2s) infinite alternate;
-}
-
-/* The shade itself visibly lights up: starts slightly unlit, then warms
-   and brightens as its glow arrives, so the ON state reads clearly. */
-@keyframes hero4-lamp-on {
-  from {
-    filter: brightness(0.82) saturate(0.9);
-  }
-  to {
-    filter: brightness(1.12) saturate(1.12) drop-shadow(0 0 18px rgba(255, 190, 110, 0.55));
-  }
-}
-
-.hero4-lamp {
-  filter: brightness(0.82) saturate(0.9);
-  animation: hero4-lamp-on 0.9s ease-out var(--on-delay, 1.2s) both;
-}
-
-@keyframes hero4-pulse {
-  0% {
-    transform: translateY(0);
-    opacity: 0;
-  }
-  18% {
-    opacity: 1;
-  }
-  85% {
-    opacity: 1;
+  84% {
+    transform: rotate(6319deg);
+    animation-timing-function: cubic-bezier(0.333, 0.667, 0.667, 1);
   }
   100% {
-    transform: translateY(var(--drop, 180px));
-    opacity: 0;
+    transform: rotate(7080deg);
   }
 }
 
-.hero4-pulse {
-  opacity: 0;
-  animation: hero4-pulse 0.7s ease-in calc(var(--on-delay, 1.2s) - 0.65s) both;
+.hero-fan-spin {
+  animation: hero-fan-spin 18s linear infinite;
+  will-change: transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-room-dim,
+  .hero-room-glow,
+  .hero-fan-spin,
+  .hero-cord-flow {
+    animation: none;
+  }
 }
 
 /* Section reveal (CSS-only; see components/motion/Reveal.tsx). The server

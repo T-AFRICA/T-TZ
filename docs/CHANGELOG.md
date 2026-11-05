@@ -3,20 +3,37 @@
 Meaningful implementation changes, newest first. Dates are work dates;
 nothing below is released.
 
-## 2026-11-05 — "Power Every Space" hero (v3)
+## 2026-11-05 — "Power Every Space" hero
 
-- The dark single-bulb hero is replaced by a light, gallery-like interior
-  (owner direction): three real TRONIC alabaster pendants — the product
-  photo flood-fill cut from its studio background (pendant-hero.png) —
-  hang at staggered showroom drops over a warm neutral wall/floor. The
-  room starts dimmed, a small energy pulse runs down each cord, each lamp
-  glow and floor light-pool fades in sequentially, then the glows breathe
-  gently. Brand red appears only in the accent word and the CTA.
-- Entirely CSS (hero4-* keyframes) and the Hero is now a server component:
-  no client JS, nothing hidden in SSR output, fixed heights, and reduced
-  motion lands directly on the fully lit room. Mobile gets a centered
-  stacked composition. Headline/copy/CTA exactly per the owner's brief;
-  no floating cards, orbits, particles or neon.
+- Hero rebuilt around TRONIC's own campaign photograph of its rattan
+  pendants (black-november-pendants, offer text cropped out, wall extended
+  left): on desktop the scene fills the banner with white copy over the
+  wall. No CSS-painted glows.
+- From 1280px the official stand fan stands in the room with a backlit round
+  mirror on its left. Neither is shown below that width, because the copy
+  needs that part of the wall, though phones still download about 13 KB of
+  their small hidden images.
+- The fan's body, logo hub and base are cut from its product photo and relit.
+  Its blades and guard wires could not be lifted cleanly, so they are drawn to
+  match. The blades turn behind the guard: stopped while the room is off,
+  about 1.5 turns a second once lit. The mirror is a render, not a catalogue
+  product; its LED ring, halo and reflection fade with the lamps.
+- Phones (below md) show only the banner, edge to edge with all three
+  lamps, and the CTA centred at its base; the headline and text stay for
+  screen readers and search engines (owner request).
+- The scene frames share one photographic grade (detail and clarity sharpening,
+  S-curve, vignette, fine grain) and are served at higher image quality
+  (images.qualities now declares 85 and 90).
+- hero-room-dim.webp and hero-standfan-dim.webp are pre-rendered from the same
+  photographs (lamps off, light cones removed). The loop crossfades dim to
+  lit over an 18s cycle while a small pulse runs down each cord.
+- Server component with no client JS. The lit frame is the base layer, so
+  reduced motion or a failed animation shows the lit static scene, with the
+  fan's blades still.
+- Limitation: the source photograph is only 500px tall, so the frames are
+  upscaled and will look soft on high-density screens until a higher
+  resolution master is supplied. Owner to confirm these pendants are sold
+  in Tanzania.
 
 ## 2026-11-05 — agentic browsing 100 and accessibility 100 (Lighthouse)
 
