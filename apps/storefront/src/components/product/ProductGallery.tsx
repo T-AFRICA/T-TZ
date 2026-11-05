@@ -29,6 +29,9 @@ export function ProductGallery({ product }: { product: SampleProduct }) {
   const hasMultiple = images.length > 1;
   const zoomRef = useRef<HTMLSpanElement>(null);
   const touchStartX = useRef<number | null>(null);
+  /** True right after a swipe, so the synthetic click that follows the
+   *  touch does not also open the zoom dialog. */
+  const swipedRef = useRef(false);
 
   // Touch swipe between images (no-op while there is a single photo).
   function onTouchStart(event: React.TouchEvent) {
@@ -42,8 +45,17 @@ export function ProductGallery({ product }: { product: SampleProduct }) {
     const delta = (event.changedTouches[0]?.clientX ?? touchStartX.current) - touchStartX.current;
     touchStartX.current = null;
     if (Math.abs(delta) > 40) {
+      swipedRef.current = true;
       step(delta < 0 ? 1 : -1);
     }
+  }
+
+  function onFrameClick() {
+    if (swipedRef.current) {
+      swipedRef.current = false;
+      return;
+    }
+    setZoomOpen(true);
   }
 
   // Magnifier: while a mouse hovers the photo it zooms in around the
@@ -93,20 +105,19 @@ export function ProductGallery({ product }: { product: SampleProduct }) {
   return (
     <div>
       <div className="relative">
-        <motion.button
+        {/* CSS entrance (not Motion): the SSR HTML must never ship the
+            product photo hidden — a JS-gated opacity left the gallery as
+            an empty box until hydration on slow devices. CSS finishes on
+            its own and the reduced-motion override zeroes it. */}
+        <button
           type="button"
           aria-label={`${product.name} — open full-screen view`}
-          onClick={() => setZoomOpen(true)}
+          onClick={onFrameClick}
           onPointerMove={onZoomMove}
           onPointerLeave={onZoomLeave}
           onTouchStart={onTouchStart}
           onTouchEnd={onTouchEnd}
-          initial={{ opacity: 0, scale: 0.985 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={
-            reduceMotion ? { duration: 0 } : { duration: 0.45, ease: [0.21, 0.47, 0.32, 0.98] }
-          }
-          className="group relative block aspect-[5/4] w-full cursor-zoom-in overflow-hidden rounded-3xl bg-[var(--surface-card)] md:aspect-square"
+          className="group relative block aspect-[5/4] w-full cursor-zoom-in overflow-hidden rounded-3xl bg-[var(--surface-card)] animate-[hero-copy-in_450ms_ease-out] md:aspect-square"
         >
           <AnimatePresence mode="wait" initial={false}>
             <motion.span
@@ -138,7 +149,7 @@ export function ProductGallery({ product }: { product: SampleProduct }) {
           <span className="absolute bottom-4 right-4 flex h-9 w-9 items-center justify-center rounded-full bg-white/90 text-[var(--text-secondary)] shadow-sm backdrop-blur transition-colors group-hover:text-[var(--color-action-red)]">
             <SearchIcon size={16} />
           </span>
-        </motion.button>
+        </button>
 
         {/* Prev / next over the image area (reference style) */}
         {hasMultiple ? (

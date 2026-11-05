@@ -4,6 +4,7 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useRef,
   useState,
@@ -48,8 +49,26 @@ export function useToast() {
 export function ToastProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<ToastItem[]>([]);
   const nextId = useRef(0);
+  // Auto-dismiss timers by toast id, cleared on manual dismissal and when
+  // the provider unmounts, so no timer ever fires into a gone component.
+  const timers = useRef(new Map<number, number>());
+
+  useEffect(() => {
+    const pending = timers.current;
+    return () => {
+      for (const timer of pending.values()) {
+        window.clearTimeout(timer);
+      }
+      pending.clear();
+    };
+  }, []);
 
   const dismiss = useCallback((id: number) => {
+    const timer = timers.current.get(id);
+    if (timer !== undefined) {
+      window.clearTimeout(timer);
+      timers.current.delete(id);
+    }
     setToasts((current) => current.filter((toast) => toast.id !== id));
   }, []);
 
@@ -57,7 +76,10 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     (message: string, variant: ToastVariant = "info") => {
       const id = nextId.current++;
       setToasts((current) => [...current, { id, message, variant }]);
-      window.setTimeout(() => dismiss(id), TOAST_DURATION_MS);
+      timers.current.set(
+        id,
+        window.setTimeout(() => dismiss(id), TOAST_DURATION_MS),
+      );
     },
     [dismiss],
   );

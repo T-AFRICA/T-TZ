@@ -7,12 +7,17 @@ What lives where in the `T-AFRICA/T-TZ` monorepo (pnpm + Turborepo).
 - `apps/storefront` — the customer-facing Next.js (App Router) storefront for
   the Tanzania deployment. The only application so far; `apps/admin` (W05)
   and `apps/api` (W07+) are added in their roadmap weeks.
-  - `src/app` — routes: `/` (home), `/categories/[slug]`, `/meter`
-    (reserved single Meter page, no payment), `[...slug]` (noindex
-    placeholder for W06 content pages).
+  - `src/app` — routes: `/` (home), `/categories/[slug]`,
+    `/products/[id]` (product details page over the SAMPLE catalogue),
+    `/meter` (reserved single Meter page, no payment), `[...slug]`
+    (noindex placeholder for W06 content pages).
   - `src/components` — feature-grouped UI: `header/` (Header, Navbar,
-    MobileNav), `search/SearchBox`, `country/CountrySelector`, `home/Hero`,
-    `footer/Footer`.
+    MobileNav, AnnouncementTicker), `search/SearchBox`,
+    `country/CountrySelector`, `home/` (Hero, ProductCard, ProductSection,
+    AddToCartButton, sampleProducts data), `product/` (ProductGallery,
+    PurchasePanel, RecentlyViewed), `motion/Reveal`, `footer/Footer`.
+  - `src/fonts` — self-hosted Montserrat/Poppins WOFF2 + SIL OFL licenses
+    (served via next/font/local; see the folder README).
   - `src/config/site.ts` — deployment-level display content (announcement,
     support phone, social/company/policy links, placeholder routes).
     Placeholder values are marked and must be replaced before launch.

@@ -17,8 +17,10 @@ export function CountrySelector({ tone = "light" }: { tone?: "light" | "dark" })
   const toneClasses =
     tone === "dark" ? "text-white/85 [&_.muted]:text-white/50" : "[&_.muted]:text-[var(--text-muted)]";
 
+  // Predicate narrows origin to string, so no dead fallback is needed below.
   const linkedCountries = COUNTRIES.filter(
-    (country) => country.code !== ACTIVE_COUNTRY.code && country.origin !== null,
+    (country): country is (typeof COUNTRIES)[number] & { origin: string } =>
+      country.code !== ACTIVE_COUNTRY.code && country.origin !== null,
   );
 
   useEffect(() => {
@@ -89,7 +91,7 @@ export function CountrySelector({ tone = "light" }: { tone?: "light" | "dark" })
           {linkedCountries.map((country) => (
             <li key={country.code}>
               <a
-                href={country.origin ?? "#"}
+                href={country.origin}
                 className="block px-3 py-2 text-sm hover:bg-[var(--surface-card)]"
               >
                 {country.name} ({country.currency})

@@ -6,19 +6,22 @@ SRS v1.2 NFR-11, SSD §4, and the engineering master prompt §§3–7.
 
 ## Typography
 
-Two families only, loaded via `next/font/google` in
-`apps/storefront/src/app/layout.tsx` as CSS variables:
+Two families only, self-hosted as WOFF2 via `next/font/local` in
+`apps/storefront/src/app/layout.tsx` as CSS variables (assets and SIL OFL
+licenses in `apps/storefront/src/fonts/` — the `next/font/google` loader
+broke CI builds on Next 15.5.x, and self-hosting removes the build-time
+network dependency):
 
 | Variable | Family | Weights loaded | Use |
 | --- | --- | --- | --- |
 | `--font-heading` | Montserrat | 500 / 600 / 700 | Hero, page and section headings, brand expression (800/900 deliberately not loaded) |
-| body (fallback stack) | System UI (SF Pro on Apple, Segoe UI on Windows, Roboto on Android) | native | Body, navigation, buttons, prices, forms, tables |
+| `--font-body` | Poppins | 400 / 500 / 600 / 700 | Body, navigation, buttons, prices, forms, tables |
 
 Body family history: the master prompt §4 named Poppins; on 2026-11-02 the
-owner asked for SF Pro. SF Pro is Apple-proprietary and cannot be embedded
-as a web font, so after an Inter interim the owner chose the native system
-stack — real SF Pro on Apple devices, zero font download, at the cost of
-minor cross-platform variation.
+owner asked for SF Pro, then (being Apple-proprietary) settled on the
+native system stack after an Inter interim. On 2026-11-04 the owner
+reinstated Poppins as the body family, now self-hosted; the system stack
+remains as the fallback chain.
 
 Fallback stacks live in `--font-fallback-heading` / `--font-fallback-body`.
 
@@ -96,3 +99,15 @@ Master prompt §10 primitives (complete, 2026-11-02):
   red-underline + bold active pairing.
 - **ToastProvider / useToast** — polite live-region notifications, info /
   success / error accents, auto-dismiss with manual dismiss.
+
+## Additions — 2026-11-04
+
+- Token `--color-success` (#16a34a): in-stock / success text states.
+- Icons: `FacebookIcon`, `InstagramIcon`, `TikTokIcon` are drawn locally in
+  the lucide stroke style (this lucide-react dropped brand icons);
+  `TrendingUpIcon`, `XIcon` added from lucide.
+- `Tilt3D` — pointer-following 3D tilt with cursor sheen for product
+  imagery; mouse-only, inert under reduced motion, purely decorative.
+- `AccordionSection` — §10 disclosure row on native `<details>`, used by
+  the product details page (overview/specs/delivery/warranty); the open
+  animation uses the app-level `accordion-in` keyframes.

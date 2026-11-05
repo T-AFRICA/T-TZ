@@ -7,6 +7,7 @@ export { Textarea } from "./components/Textarea";
 export { Select } from "./components/Select";
 export { Badge } from "./components/Badge";
 export { Card } from "./components/Card";
+export { AccordionSection } from "./components/Accordion";
 export { Skeleton } from "./components/Skeleton";
 export { Tilt3D } from "./components/Tilt3D";
 export { EmptyState, ErrorState } from "./components/StatusState";
