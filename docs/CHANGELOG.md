@@ -3,6 +3,23 @@
 Meaningful implementation changes, newest first. Dates are work dates;
 nothing below is released.
 
+## 2026-11-05 — agentic browsing 100 and accessibility 100 (Lighthouse)
+
+- Agentic Browsing 25 → 100 (4/4 audits): /robots.txt, /llms.txt and the
+  ARD manifest (/.well-known/ard.json plus ai-catalog.json aliases) are
+  now real files — previously the [...slug] catch-all served HTML at
+  those paths. robots.txt stays Disallow-all on purpose pre-launch; the
+  manifest honestly declares a pre-launch empty agent catalog and points
+  to llms.txt, which states that all commercial figures are SAMPLE data.
+- Accessibility 93 → 100: toast region given role="region" (bare div may
+  not carry aria-label), Add-to-Cart accessible names now start with the
+  visible "Add to Cart" text, --color-success darkened to green-700 for
+  AA contrast on white, and footer legal lines moved to white/60 on the
+  premium-black band.
+- Remaining Lighthouse SEO failures are intentional pre-launch state:
+  is-crawlable (site-wide noindex until the launch gate) and a dev-server
+  false positive on meta-description (the tag is present in SSR output).
+
 ## 2026-11-05 — code-review fixes across storefront and ui
 
 - Reveal is now CSS-only (scroll-driven on Chromium via

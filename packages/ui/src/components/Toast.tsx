@@ -89,7 +89,11 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   return (
     <ToastContext.Provider value={value}>
       {children}
+      {/* role="region" makes aria-label valid here (a bare div may not
+          carry one), keeping the accessibility tree well-formed for AT
+          and agents alike */}
       <div
+        role="region"
         aria-live="polite"
         aria-label="Notifications"
         className="pointer-events-none fixed inset-x-0 bottom-20 z-50 flex flex-col items-center gap-2 px-4 md:bottom-6"

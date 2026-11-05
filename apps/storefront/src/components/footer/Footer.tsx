@@ -70,7 +70,9 @@ export function Footer() {
         </nav>
       </Container>
       <div className="border-t border-[var(--color-dark-grey)]">
-        <Container className="flex flex-col gap-2 py-4 text-xs text-[var(--color-mid-grey)] sm:flex-row sm:items-center sm:justify-between">
+        {/* white/60 keeps AA contrast on the premium-black footer (the
+            mid-grey token sat at 3.9:1 here) */}
+        <Container className="flex flex-col gap-2 py-4 text-xs text-white/60 sm:flex-row sm:items-center sm:justify-between">
           <p>© {new Date().getFullYear()} TRONIC {ACTIVE_COUNTRY.name}. All rights reserved.</p>
           <p>Founded 1993 · Present in over 10 African countries</p>
         </Container>
