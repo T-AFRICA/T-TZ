@@ -28,12 +28,55 @@ function sceneBox(x: number, y: number, width: number, height: number) {
 }
 
 /**
+ * The stand fan: blades turning behind its still body, with lit and dim frames.
+ * rotorClassName puts the blades' axis on the axis of that frame's own fan.
+ */
+function StandFan({
+  frame,
+  rotorClassName,
+  bodySizes,
+  rotorSizes,
+}: {
+  frame: "floor" | "solo";
+  rotorClassName: string;
+  bodySizes: string;
+  rotorSizes: string;
+}) {
+  return (
+    <>
+      <div className={`hero-fan-spin absolute ${rotorClassName}`}>
+        <Image src="/banners/hero-standfan-rotor-lit.webp" alt="" fill quality={85} sizes={rotorSizes} />
+        <Image
+          src="/banners/hero-standfan-rotor-dim.webp"
+          alt=""
+          fill
+          quality={85}
+          sizes={rotorSizes}
+          className="hero-room-dim"
+        />
+      </div>
+      <Image src={`/banners/hero-standfan-${frame}-lit.webp`} alt="" fill quality={90} sizes={bodySizes} />
+      <Image
+        src={`/banners/hero-standfan-${frame}-dim.webp`}
+        alt=""
+        fill
+        quality={85}
+        sizes={bodySizes}
+        className="hero-room-dim"
+      />
+    </>
+  );
+}
+
+/**
  * "Power Every Space" hero: TRONIC's own campaign photograph of its pendants
- * (offer text cropped out, wall extended left) filling the banner. On wide screens
- * the official stand fan and a backlit mirror join the room. The dim frames are
- * pre-rendered from those photographs, so switching on is a crossfade between
- * real images rather than glows painted over a product. Pure CSS, so the server
- * HTML always shows the lit scene and no client JS is needed.
+ * (offer text cropped out, wall extended left), rebuilt as one room with a floor,
+ * skirting and wall-fixed electrical accessories baked into the frames. The official
+ * stand fan stands in the room: beside a mounted backlit mirror on wide screens, in
+ * front of the slatted wall below that. The dim frames are pre-rendered too, so
+ * switching on is a crossfade between images rather than glows painted over a
+ * product. Pure CSS, so the server HTML always shows the lit scene and no client JS
+ * is needed.
  */
 export function Hero() {
   return (
@@ -80,9 +123,9 @@ export function Hero() {
       >
         {/* On phones this 96:50 box shows all three lamps edge to edge; the
             strip below it, in the wall colour, carries the CTA. */}
-        <div className="relative aspect-[96/50] w-full md:absolute md:inset-0 md:aspect-auto xl:[container-type:size]">
+        <div className="relative aspect-[96/50] w-full [container-type:size] md:absolute md:inset-0 md:aspect-auto">
           <Image
-            src="/banners/hero-room-lit.webp"
+            src="/banners/hero-showroom-lit.webp"
             alt=""
             fill
             priority
@@ -91,7 +134,7 @@ export function Hero() {
             className="object-cover object-right-bottom"
           />
           <Image
-            src="/banners/hero-room-dim.webp"
+            src="/banners/hero-showroom-dim.webp"
             alt=""
             fill
             priority
@@ -104,10 +147,10 @@ export function Hero() {
           <div className="absolute inset-0 hidden bg-[linear-gradient(to_right,rgba(0,0,0,0.42),rgba(0,0,0,0.42)_22%,transparent_38%)] lg:block" />
           {/* Below xl the copy needs this part of the wall. */}
           <div className="absolute inset-0 hidden xl:block">
-            <div className="absolute" style={sceneBox(793, 21, 218, 218)}>
-              <Image src="/banners/hero-wall-mirror.webp" alt="" fill quality={85} sizes="13vw" />
+            <div className="absolute" style={sceneBox(793, 9, 218, 218)}>
+              <Image src="/banners/hero-mirror-mounted.webp" alt="" fill quality={85} sizes="13vw" />
               <Image
-                src="/banners/hero-wall-mirror-glow.webp"
+                src="/banners/hero-mirror-mounted-glow.webp"
                 alt=""
                 fill
                 quality={85}
@@ -115,27 +158,12 @@ export function Hero() {
                 className="hero-room-glow"
               />
             </div>
-            <div className="absolute" style={sceneBox(914, 10, 228.6, 490)}>
-              {/* Percentages put the blades' axis on the fan's own axis. */}
-              <div className="hero-fan-spin absolute left-[29.8%] top-[5.81%] h-[23.62%] w-[50.61%]">
-                <Image src="/banners/hero-standfan-rotor-lit.webp" alt="" fill quality={85} sizes="9vw" />
-                <Image
-                  src="/banners/hero-standfan-rotor-dim.webp"
-                  alt=""
-                  fill
-                  quality={85}
-                  sizes="9vw"
-                  className="hero-room-dim"
-                />
-              </div>
-              <Image src="/banners/hero-standfan-lit.webp" alt="" fill quality={90} sizes="17vw" />
-              <Image
-                src="/banners/hero-standfan-dim.webp"
-                alt=""
-                fill
-                quality={85}
-                sizes="17vw"
-                className="hero-room-dim"
+            <div className="absolute" style={sceneBox(880, 10, 262.6, 490)}>
+              <StandFan
+                frame="floor"
+                rotorClassName="left-[38.9%] top-[5.81%] h-[23.62%] w-[44.05%]"
+                bodySizes="19vw"
+                rotorSizes="9vw"
               />
             </div>
           </div>
@@ -159,6 +187,15 @@ export function Hero() {
             ))}
           </svg>
           <div className="absolute inset-x-0 bottom-0 h-[22%] bg-gradient-to-b from-transparent to-[#2b221e] md:hidden" />
+          {/* In front of the slatted wall, above the fade so its base stays clear. */}
+          <div className="absolute xl:hidden" style={sceneBox(1727, 10, 228.6, 490)}>
+            <StandFan
+              frame="solo"
+              rotorClassName="left-[29.8%] top-[5.81%] h-[23.62%] w-[50.61%]"
+              bodySizes="(min-width: 768px) 17vw, 30vw"
+              rotorSizes="(min-width: 768px) 9vw, 16vw"
+            />
+          </div>
         </div>
       </div>
     </section>

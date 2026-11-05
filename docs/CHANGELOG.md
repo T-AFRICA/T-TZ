@@ -3,6 +3,25 @@
 Meaningful implementation changes, newest first. Dates are work dates;
 nothing below is released.
 
+## 2026-11-05 — hero as one showroom; categories no longer repeat
+
+- The hero is now one room: a floor with soft reflections and each lamp's pool
+  of light, and a skirting line, so objects have something to stand on.
+- Wall-fixed accessories are baked into the room frames with cast shadows and
+  shared lighting: 2-gang switch, dimmer, twin 13A socket and a consumer unit.
+  Their indicators light with the lamps. The consumer unit holds the official
+  TRONIC breaker photo; the plates, enclosure and socket are renders, not
+  catalogue products, so the owner should confirm or replace them.
+- The mirror has a brass bezel and a contact shadow on the wall. The stand fan
+  stands on the floor with a flex to its own wall socket. Below 1280px, where the
+  mirror is hidden, the fan stands in front of the slatted wall on the right
+  instead, without the socket (owner request).
+- Category rail: each category now appears once. Below 1280px the row drifts to
+  its far end and back; from 1280px all eight fit and it stands still. With
+  reduced motion the row can be swiped instead.
+- The hero stays pure CSS with no Motion import: it is a server component, and
+  CSS covers this animation without adding client JS.
+
 ## 2026-11-05 — "Power Every Space" hero
 
 - Hero rebuilt around TRONIC's own campaign photograph of its rattan
