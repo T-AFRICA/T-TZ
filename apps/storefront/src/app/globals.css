@@ -209,69 +209,89 @@ details.drawer-acc[open] > ul {
   }
 }
 
-/* Cinematic hero (owner direction Nov 2026, v2): one energy wire carries a
-   light packet toward the featured bulb; the bulb's warm glow peaks as the
-   packet arrives (both run on the same 6s cycle with phase-offset
-   keyframes, so the illumination reads as caused by the current). Solid
-   strokes only — no dotted lines. The paths use pathLength="100", so the
-   dash math below is in percent of the wire. Everything stops under the
-   global reduced-motion override. */
-@keyframes hero-wire-pulse {
-  0% {
-    stroke-dashoffset: 112;
-    opacity: 0;
-  }
-  6% {
-    opacity: 0.9;
-  }
-  70% {
-    opacity: 0.9;
-  }
-  82% {
-    stroke-dashoffset: 0;
-    opacity: 0;
-  }
-  100% {
-    stroke-dashoffset: 0;
-    opacity: 0;
-  }
-}
-
-.hero-wire-pulse {
-  stroke-dasharray: 12 100;
-  animation: hero-wire-pulse 6s linear infinite;
-}
-
-@keyframes hero-bulb-glow {
+/* "Power Every Space" hero (owner direction 2026-11-05): a light neutral
+   interior where three TRONIC alabaster pendants switch on in sequence.
+   One CSS master timeline — the room starts dimmed, a small energy pulse
+   runs down each cord, its lamp's glow and floor light-pool fade in, then
+   the glows breathe gently. Pure CSS: runs without JS, SSR ships nothing
+   hidden, and every keyframe ENDS fully lit so the reduced-motion
+   override (duration ~0) lands straight on the bright room. */
+@keyframes hero4-dim {
   0%,
-  55% {
-    opacity: 0.35;
+  18% {
+    opacity: 1;
   }
-  78% {
+  55%,
+  100% {
+    opacity: 0;
+  }
+}
+
+.hero4-dim {
+  animation: hero4-dim 5.5s ease-in-out both;
+}
+
+@keyframes hero4-light-on {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes hero4-breathe {
+  from {
+    opacity: 0.78;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.hero4-glow {
+  opacity: 0;
+  animation:
+    hero4-light-on 0.9s ease-out var(--on-delay, 1.2s) forwards,
+    hero4-breathe 6s ease-in-out calc(var(--on-delay, 1.2s) + 1.2s) infinite alternate;
+}
+
+/* The shade itself visibly lights up: starts slightly unlit, then warms
+   and brightens as its glow arrives, so the ON state reads clearly. */
+@keyframes hero4-lamp-on {
+  from {
+    filter: brightness(0.82) saturate(0.9);
+  }
+  to {
+    filter: brightness(1.12) saturate(1.12) drop-shadow(0 0 18px rgba(255, 190, 110, 0.55));
+  }
+}
+
+.hero4-lamp {
+  filter: brightness(0.82) saturate(0.9);
+  animation: hero4-lamp-on 0.9s ease-out var(--on-delay, 1.2s) both;
+}
+
+@keyframes hero4-pulse {
+  0% {
+    transform: translateY(0);
+    opacity: 0;
+  }
+  18% {
+    opacity: 1;
+  }
+  85% {
     opacity: 1;
   }
   100% {
-    opacity: 0.45;
+    transform: translateY(var(--drop, 180px));
+    opacity: 0;
   }
 }
 
-.hero-bulb-glow {
-  animation: hero-bulb-glow 6s ease-in-out infinite;
-}
-
-@keyframes hero-ambient-breathe {
-  from {
-    opacity: 0.55;
-    transform: scale(1);
-  }
-  to {
-    opacity: 0.85;
-    transform: scale(1.06);
-  }
-}
-
-.hero-ambient {
-  animation: hero-ambient-breathe 7s ease-in-out infinite alternate;
+.hero4-pulse {
+  opacity: 0;
+  animation: hero4-pulse 0.7s ease-in calc(var(--on-delay, 1.2s) - 0.65s) both;
 }
 
 /* Section reveal (CSS-only; see components/motion/Reveal.tsx). The server
