@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, type ReactNode } from "react";
+import { useEffect, useId, useRef, type ReactNode } from "react";
 
 export interface DialogProps {
   open: boolean;
@@ -16,6 +16,8 @@ export interface DialogProps {
  */
 export function Dialog({ open, onClose, title, children }: DialogProps) {
   const ref = useRef<HTMLDialogElement>(null);
+  // Unique per instance — several dialogs can be mounted at once.
+  const titleId = useId();
 
   useEffect(() => {
     const dialog = ref.current;
@@ -32,7 +34,7 @@ export function Dialog({ open, onClose, title, children }: DialogProps) {
   return (
     <dialog
       ref={ref}
-      aria-labelledby="ui-dialog-title"
+      aria-labelledby={titleId}
       onClose={onClose}
       onClick={(event) => {
         // A click on the backdrop (the dialog element itself) closes it.
@@ -43,7 +45,7 @@ export function Dialog({ open, onClose, title, children }: DialogProps) {
       className="m-auto w-[calc(100vw-2rem)] max-w-md rounded-2xl bg-white p-0 shadow-xl backdrop:bg-black/50"
     >
       <div className="flex items-center justify-between gap-4 border-b border-[var(--color-light-grey)] px-5 py-4">
-        <h2 id="ui-dialog-title" className="font-semibold">
+        <h2 id={titleId} className="font-semibold">
           {title}
         </h2>
         <button

@@ -120,7 +120,10 @@ export function SearchBox({ client }: SearchBoxProps) {
       if (
         target instanceof HTMLInputElement ||
         target instanceof HTMLTextAreaElement ||
-        target?.isContentEditable
+        target instanceof HTMLSelectElement ||
+        target?.isContentEditable ||
+        // Never steal focus out of an open modal (drawer, quick-select).
+        target?.closest("dialog[open]")
       ) {
         return;
       }
@@ -177,7 +180,7 @@ export function SearchBox({ client }: SearchBoxProps) {
         type="search"
         role="combobox"
         aria-expanded={showPanel && state === "results"}
-        aria-controls={`${listboxId}-listbox`}
+        aria-controls={showPanel && state === "results" ? `${listboxId}-listbox` : undefined}
         aria-activedescendant={activeIndex >= 0 ? `${listboxId}-option-${activeIndex}` : undefined}
         autoComplete="off"
         placeholder="Search products…"

@@ -201,18 +201,16 @@ export function PurchasePanel({ product }: { product: SampleProduct }) {
           3.5rem plus the device safe-area inset tall) */}
       <div className="fixed inset-x-0 bottom-[calc(3.5rem+env(safe-area-inset-bottom))] z-30 border-t border-[var(--color-light-grey)] bg-white/95 px-4 pb-2 pt-2 backdrop-blur md:hidden">
         <div className="flex items-center gap-3">
-          <div className="min-w-0">
-            <p className="truncate text-[11px] text-[var(--text-muted)]">{product.name}</p>
-            <p
-              className={`text-base font-bold leading-tight ${
-                product.wasPrice !== undefined
-                  ? "text-[var(--color-action-red)]"
-                  : "text-[var(--color-premium-black)]"
-              }`}
-            >
-              {formatSamplePrice(product.price)}
-            </p>
-          </div>
+          {/* Price only — the name is on screen already (no duplication) */}
+          <p
+            className={`shrink-0 text-base font-bold leading-tight ${
+              product.wasPrice !== undefined
+                ? "text-[var(--color-action-red)]"
+                : "text-[var(--color-premium-black)]"
+            }`}
+          >
+            {formatSamplePrice(product.price)}
+          </p>
           <div className="ml-auto flex shrink-0 gap-2">
             <button
               type="button"

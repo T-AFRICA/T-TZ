@@ -17,6 +17,15 @@ export interface Tilt3DProps {
  * prefers-reduced-motion, and purely decorative — content and hit targets
  * are unchanged.
  */
+// Cached lazily on first pointer move (client-only code path), instead of
+// constructing a MediaQueryList on every mousemove across every card.
+let reducedMotionQuery: MediaQueryList | null = null;
+
+function prefersReducedMotion(): boolean {
+  reducedMotionQuery ??= window.matchMedia("(prefers-reduced-motion: reduce)");
+  return reducedMotionQuery.matches;
+}
+
 export function Tilt3D({ children, className = "", maxTilt = 8 }: Tilt3DProps) {
   const rootRef = useRef<HTMLDivElement>(null);
   const frameRef = useRef(0);
@@ -28,7 +37,7 @@ export function Tilt3D({ children, className = "", maxTilt = 8 }: Tilt3DProps) {
       return;
     }
     const root = rootRef.current;
-    if (!root || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    if (!root || prefersReducedMotion()) {
       return;
     }
     const rect = root.getBoundingClientRect();

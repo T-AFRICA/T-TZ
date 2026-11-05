@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ChevronDownIcon, Container, EmptyState } from "@tronic/ui";
+import { AccordionSection, Container, EmptyState } from "@tronic/ui";
 import { getCategorySection } from "@tronic/country-config";
 import { ProductGallery } from "@/components/product/ProductGallery";
 import { PurchasePanel } from "@/components/product/PurchasePanel";
@@ -28,34 +28,6 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   };
 }
 
-/** Styled native-details accordion row (uses the global accordion-in keyframes). */
-function AccordionSection({
-  title,
-  defaultOpen = false,
-  children,
-}: {
-  title: string;
-  defaultOpen?: boolean;
-  children: React.ReactNode;
-}) {
-  return (
-    <details
-      open={defaultOpen}
-      className="group border-b border-[var(--color-light-grey)] last:border-b-0"
-    >
-      <summary className="flex cursor-pointer items-center justify-between gap-3 py-4 text-sm font-semibold transition-colors hover:text-[var(--color-action-red)] [&::-webkit-details-marker]:hidden">
-        {title}
-        <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-[var(--surface-card)] text-[var(--text-muted)] transition-transform group-open:rotate-180">
-          <ChevronDownIcon size={13} />
-        </span>
-      </summary>
-      <div className="pb-4 text-sm leading-relaxed text-[var(--text-secondary)] group-open:animate-[accordion-in_240ms_ease-out]">
-        {children}
-      </div>
-    </details>
-  );
-}
-
 function policyHref(label: string): string {
   return POLICY_LINKS.find((link) => link.label === label)?.href ?? "/help";
 }
@@ -79,8 +51,8 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
   const section = getCategorySection(product.categorySlug);
 
   return (
-    <Container className="py-6 pb-24 md:py-10 md:pb-16">
-      <div className="grid gap-7 md:grid-cols-2 md:gap-10 lg:gap-16">
+    <Container className="pt-3 pb-24 sm:pt-4 md:py-10 md:pb-16">
+      <div className="grid gap-5 md:grid-cols-2 md:gap-10 lg:gap-16">
         <ProductGallery product={product} />
 
         <div>
@@ -128,11 +100,11 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
 
           <PurchasePanel product={product} />
 
-          {/* Honest sample-data notice (SRS content rule) */}
-          <p className="mt-5 rounded-xl bg-[var(--surface-card)] px-4 py-3 text-xs leading-relaxed text-[var(--text-secondary)]">
-            Sample catalogue entry: the photo is official TRONIC product imagery, while prices,
-            discounts, options and stock shown here are synthetic demonstration values until the
-            live catalog launches.
+          {/* Honest sample-data notice (SRS content rule) — discreet one-liner;
+              the SAMPLE chip on the photo carries the main signal */}
+          <p className="mt-4 text-[11px] leading-snug text-[var(--text-muted)]">
+            Sample data — prices, options and stock are demonstration values until the live
+            catalog launches.
           </p>
 
           <div className="mt-6 border-t border-[var(--color-light-grey)]">

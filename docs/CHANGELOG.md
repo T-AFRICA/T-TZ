@@ -3,6 +3,40 @@
 Meaningful implementation changes, newest first. Dates are work dates;
 nothing below is released.
 
+## 2026-11-05 — code-review fixes across storefront and ui
+
+- Reveal is now CSS-only (scroll-driven on Chromium via
+  animation-timeline: view(), one-shot fade elsewhere, off under reduced
+  motion): server HTML never ships hidden sections, closing the root cause
+  behind the earlier invisible-gallery regression for every Reveal usage.
+- Gallery: a touch swipe no longer also opens the full-screen zoom dialog
+  (synthetic click suppressed after a swipe).
+- Dialog titles get unique ids via useId (duplicate ui-dialog-title ids
+  when several dialogs mounted); SearchBox's "/" shortcut no longer steals
+  the key from selects or open dialogs, and aria-controls is set only while
+  the results listbox exists; ToastProvider clears auto-dismiss timers on
+  manual dismissal and unmount; Tilt3D caches its reduced-motion
+  MediaQueryList instead of querying per mousemove.
+- AccordionSection promoted into packages/ui (§10 primitive) and reused by
+  the PDP; CountrySelector's dead "#" href fallback removed via a
+  type-narrowing filter. DESIGN_SYSTEM / PROJECT_MAP / PROGRESS brought
+  current (fonts, new primitives, /products route, M01 Done via PRs #5-#6,
+  M02 in progress).
+
+## 2026-11-04 — mobile PDP regression fix (SSR-hidden gallery)
+
+- Root cause of the "missing product image / empty space" report: the
+  gallery frame's Motion entrance shipped `opacity:0` in the server HTML,
+  so until hydration the photo was an invisible grey box. The entrance is
+  now a CSS animation (SSR always renders the image visible; the global
+  reduced-motion override still applies). Verified in the rendered SSR
+  output — no hidden styles remain on the gallery.
+- Mobile polish with it: tighter top spacing above the gallery/breadcrumb,
+  the sample-data disclaimer reduced to a discreet one-liner (the SAMPLE
+  chip stays), and the sticky purchase bar now shows only the price beside
+  the CTAs (the name was duplicate information and truncated at 320px).
+  Re-audited at 320/375/390/430px — no horizontal overflow.
+
 ## 2026-11-04 — self-hosted fonts fix the CI font build failure
 
 - Root cause: the GitHub Actions production build failed inside the

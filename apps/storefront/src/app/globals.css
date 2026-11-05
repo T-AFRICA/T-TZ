@@ -274,6 +274,41 @@ details.drawer-acc[open] > ul {
   animation: hero-ambient-breathe 7s ease-in-out infinite alternate;
 }
 
+/* Section reveal (CSS-only; see components/motion/Reveal.tsx). The server
+   HTML carries no inline hidden styles, so content never depends on JS to
+   appear. Chromium drives the animation from scroll position; browsers
+   without animation-timeline play a one-shot fade on load. Explicitly
+   disabled under reduced motion because scroll-driven progress is not
+   covered by the duration-zeroing override below. */
+@keyframes reveal-in {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.reveal-view {
+  animation: reveal-in 0.55s cubic-bezier(0.21, 0.47, 0.32, 0.98) both;
+}
+
+@supports (animation-timeline: view()) {
+  .reveal-view {
+    animation-duration: auto;
+    animation-timeline: view();
+    animation-range: entry 5% entry 40%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal-view {
+    animation: none;
+  }
+}
+
 /* Mega-menu panel entrance: short fade-and-drop when a category opens.
    Opacity/transform only; closing is instant by design (menus should get
    out of the way immediately). */
