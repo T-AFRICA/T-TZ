@@ -6,18 +6,11 @@ import { CategoryArt } from "@/components/home/CategoryArt";
 import { FeaturedSamples } from "@/components/home/FeaturedSamples";
 import { Reveal } from "@/components/motion/Reveal";
 
-/** One category circle, shared by the mobile snap carousel and the desktop marquee. */
-function CategoryCircle({
-  section,
-  tabIndex,
-}: {
-  section: (typeof CATEGORY_SECTIONS)[number];
-  tabIndex?: number;
-}) {
+/** One category circle in the rail under the hero. */
+function CategoryCircle({ section }: { section: (typeof CATEGORY_SECTIONS)[number] }) {
   return (
     <Link
       href={`/categories/${section.slug}`}
-      tabIndex={tabIndex}
       className="group flex flex-col items-center gap-1.5 text-center md:gap-2.5"
     >
       <span className="grid h-16 w-16 place-items-center rounded-full bg-white text-[var(--color-dark-grey)] shadow-[0_3px_10px_rgba(17,17,17,0.08)] transition-all duration-200 group-hover:scale-105 group-hover:text-[var(--color-action-red)] group-active:scale-105 group-active:text-[var(--color-action-red)] md:h-24 md:w-24 md:shadow-[0_4px_14px_rgba(17,17,17,0.08)]">
@@ -42,26 +35,18 @@ export default function HomePage() {
     <>
       <Hero />
       <Container id="departments" className="scroll-mt-24 py-5 md:py-10 lg:py-12">
-        {/* Continuously rotating category circles right after the banner,
-            on every breakpoint (owner request Nov 2026, reconfirmed
-            2026-11-05 after an interim mobile swipe carousel: the circles
-            must visibly drift on phones too). Touch/hover pauses the
-            drift, reduced-motion stops it. Four identical copies keep the
-            -50% loop seamless on ultrawide screens; copies after the first
-            are hidden from assistive tech and keyboards. */}
-        <nav aria-label="Shop by category" className="-mx-[var(--gutter)] overflow-hidden lg:-mx-8">
-          <ul className="category-marquee flex w-max items-start pb-2">
-            {[0, 1, 2, 3].map((copy) =>
-              CATEGORY_SECTIONS.map((section) => (
-                <li
-                  key={`${copy}-${section.slug}`}
-                  aria-hidden={copy > 0 ? true : undefined}
-                  className="mr-4 w-[4.5rem] shrink-0 md:mr-8 md:w-28"
-                >
-                  <CategoryCircle section={section} tabIndex={copy > 0 ? -1 : undefined} />
-                </li>
-              )),
-            )}
+        {/* Each category appears exactly once (owner request 2026-11-05, replacing
+            the looping marquee and its repeated copies). Where the eight do not
+            fit, the rail drifts to one end and back so all are seen and it still
+            moves; from xl they fit, so it stands still. Touch/hover pauses the
+            drift, reduced-motion stops it. */}
+        <nav aria-label="Shop by category" className="category-rail-frame -mx-[var(--gutter)] overflow-hidden xl:mx-0">
+          <ul className="category-rail flex w-max items-start gap-4 px-[var(--gutter)] pb-2 md:gap-8 xl:w-full xl:justify-between xl:gap-0 xl:px-0">
+            {CATEGORY_SECTIONS.map((section) => (
+              <li key={section.slug} className="w-[4.5rem] shrink-0 md:w-28">
+                <CategoryCircle section={section} />
+              </li>
+            ))}
           </ul>
         </nav>
 
