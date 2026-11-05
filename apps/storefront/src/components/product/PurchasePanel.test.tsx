@@ -70,11 +70,30 @@ describe("PurchasePanel", () => {
     expect(decrease).toBeEnabled();
   });
 
-  it("disables purchasing when the product is out of stock", () => {
+  it("caps the quantity at the maximum and says so", async () => {
+    const user = userEvent.setup();
+    renderPanel(baseProduct);
+    const increase = screen.getByRole("button", { name: "Increase quantity" });
+    for (let step = 0; step < 9; step += 1) {
+      await user.click(increase);
+    }
+    expect(screen.getByText("10")).toBeInTheDocument();
+    expect(increase).toBeDisabled();
+    expect(screen.getByText("Maximum quantity reached")).toBeInTheDocument();
+  });
+
+  it("labels synthetic price and stock as demo data", () => {
+    renderPanel(baseProduct);
+    expect(screen.getByText("Demo price & stock")).toBeInTheDocument();
+  });
+
+  it("disables purchasing and the quantity stepper when out of stock", () => {
     renderPanel({ ...baseProduct, inStock: false, variants: undefined });
     for (const button of screen.getAllByRole("button", { name: /Add to Cart|Buy Now|Out of Stock/ })) {
       expect(button).toBeDisabled();
     }
+    expect(screen.getByRole("button", { name: "Increase quantity" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Decrease quantity" })).toBeDisabled();
   });
 
   it("confirms Add to Cart with a clearly-sample toast", async () => {
