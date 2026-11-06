@@ -3,6 +3,42 @@
 Meaningful implementation changes, newest first. Dates are work dates;
 nothing below is released.
 
+## 2026-11-06 — premium mobile product information panel
+
+- Tighter editorial hierarchy on the product page: compact breadcrumb with
+  quiet separators, 10px brand/category metadata, a 24px product name and a
+  28px price with the was-price and Save badge on its baseline.
+- Availability, SKU and the demo marker share one line. The marker is now a
+  discreet dashed chip with an amber dot (and a tooltip) instead of a grey
+  banner; it stays for as long as demo prices and stock are active.
+- Quantity is one unified pill: a quiet minus, the count, and a filled red
+  plus, each a 40px target inside a 44px pill; the maximum note sits under
+  the label instead of pushing the layout.
+- Accordion rows (shared ui component) have 15px titles and a chevron disc
+  that fills black when open; specification rows show the label muted and
+  the value in primary text.
+- The accordion is now the WAI-ARIA pattern (heading + button with
+  aria-expanded, region with aria-labelledby) and opens with a short Motion
+  height-and-fade in every browser; reduced motion shows the content at
+  once. Open rows still ship their content in the server HTML. The ui
+  package therefore depends on motion (already used by the storefront).
+- Sticky purchase bar: 48px Buy Now (outline) and Add to Cart (filled) with
+  a pressed state each; the page reserves the bar's full height above the
+  tab bar, and toasts rise above it instead of covering the buttons.
+- Less dead space between the accordions and the reviews block on phones.
+- The gallery frame and thumbnails are white instead of grey, so the product
+  photo sits on a clean ground; on desktop a hairline ring keeps the frame
+  edge visible against the white page.
+- Homepage product cards are shorter: the photo area is 4:3 instead of
+  square and the text block is a little tighter, so two-up phone grids and
+  the 5-6 per row desktop grid show more of the section per screen.
+- Each card now has two compact CTAs in one 32px row: Buy Now (outline,
+  fixed width) and Add to Cart (filled, fills the rest; in the two-up phone
+  grid the label is the cart icon plus "Add"). Both still go to the cart placeholder; the variant
+  dialog behaviour is unchanged.
+- No data, cart or checkout behaviour changed; still no invented
+  specifications or warranty terms.
+
 ## 2026-11-06 — crisper, glossier hero scene
 
 - The hero's room frames are re-rendered from the same campaign photograph with
