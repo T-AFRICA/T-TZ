@@ -3,6 +3,15 @@
 Meaningful implementation changes, newest first. Dates are work dates;
 nothing below is released.
 
+## 2026-11-06 — spotlight on the hero's slatted wall
+
+- A three-head black wall spotlight (from the owner's product shot) is mounted on
+  the slatted wall at the right of the hero on wide screens, with a contact shadow
+  and three pools of light down the slats that switch off with the room's lamps.
+- Rendered once as lit, dim and glow frames (about 56KB together), placed with
+  the same scene-box scale as the mirror and fan. Below xl the stand fan already
+  stands in front of that wall, so the spotlight is shown only from xl.
+
 ## 2026-11-06 — category rail runs like a news ticker
 
 - The category rail now moves slowly and continuously from right to left on

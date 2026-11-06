@@ -72,8 +72,9 @@ function StandFan({
  * "Power Every Space" hero: TRONIC's own campaign photograph of its pendants
  * (offer text cropped out, wall extended left), rebuilt as one room with a floor,
  * skirting and wall-fixed electrical accessories baked into the frames. The official
- * stand fan stands in the room: beside a mounted backlit mirror on wide screens, in
- * front of the slatted wall below that. The dim frames are pre-rendered too, so
+ * stand fan stands in the room: beside a mounted backlit mirror on wide screens, with
+ * a three-head spotlight on the slatted wall; below that the fan takes the slatted
+ * wall instead. The dim frames are pre-rendered too, so
  * switching on is a crossfade between images rather than glows painted over a
  * product. Pure CSS, so the server HTML always shows the lit scene and no client JS
  * is needed.
@@ -164,6 +165,27 @@ export function Hero() {
                 rotorClassName="left-[38.9%] top-[5.81%] h-[23.62%] w-[44.05%]"
                 bodySizes="19vw"
                 rotorSizes="9vw"
+              />
+            </div>
+            {/* Three-head spotlight on the slatted wall, with the pools of light it
+                throws down the slats. Below xl the stand fan takes this wall. */}
+            <div className="absolute" style={sceneBox(1795, 35, 205, 400)}>
+              <Image src="/banners/hero-spotlight-lit.webp" alt="" fill quality={85} sizes="12vw" />
+              <Image
+                src="/banners/hero-spotlight-dim.webp"
+                alt=""
+                fill
+                quality={85}
+                sizes="12vw"
+                className="hero-room-dim"
+              />
+              <Image
+                src="/banners/hero-spotlight-glow.webp"
+                alt=""
+                fill
+                quality={85}
+                sizes="12vw"
+                className="hero-room-glow"
               />
             </div>
           </div>
