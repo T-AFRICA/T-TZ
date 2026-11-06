@@ -3,6 +3,20 @@
 Meaningful implementation changes, newest first. Dates are work dates;
 nothing below is released.
 
+## 2026-11-06 — crisper, glossier hero scene
+
+- The hero's room frames are re-rendered from the same campaign photograph with
+  three-radius detail recovery (edges, structure, clarity) and a slightly
+  stronger tone curve, so the rattan slats and cords read crisp instead of soft.
+- The polished floor now carries a foreshortened reflection of the shade rims
+  and their glow, crisp at the skirting and softening outward, plus a hot core
+  in each lamp's pool and a thin specular edge along the skirting.
+- The lit frame is encoded at webp quality 93 (about 280KB, was 155KB) and the
+  dim frame at 86 (about 79KB), so the optimizer has detail to keep.
+- Limitation unchanged: the master is a 1920x500 photograph, so on screens
+  wider than about 2000px the scene is still upscaled; a higher-resolution
+  master would improve it further.
+
 ## 2026-11-06 — spotlight on the hero's slatted wall
 
 - A three-head black wall spotlight (from the owner's product shot) is mounted on
