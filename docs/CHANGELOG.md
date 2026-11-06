@@ -12,6 +12,24 @@ nothing below is released.
   hidden from screen readers and skipped by the keyboard.
 - Hover, touch and keyboard focus pause it. Reduced motion shows one still row.
 
+## 2026-11-05 — compact mobile product information panel
+
+- Phones: the product info is one white edge-to-edge panel with thin dividers.
+  Compact breadcrumb, smaller title, price always in TRONIC red, and a dot for
+  availability with the SKU beside it.
+- Quantity is one pill with 44px buttons. The limit is still the existing cap
+  of 10, because the sample data has no stock counts.
+- Accordions renamed to Product Overview, Technical Specifications, Delivery &
+  Returns and Warranty Information, with height transitions where supported.
+  Only known data is listed; the unrelated department groups row is removed.
+- The long sample-data paragraph is now a small "Demo price & stock" label. It
+  stays visible in production while demo data is active, because the figures
+  are synthetic and the site is public.
+- Sticky bar: fits at 320px (Add to Cart was cut off), and pages with it now
+  reserve its height, so the footer is no longer hidden behind it.
+- CSS only, with no Motion import. Cart and checkout behaviour are unchanged.
+- Removed an editor temp file committed by mistake next to MobileNav.tsx.
+
 ## 2026-11-05 — hero as one showroom; categories no longer repeat
 
 - The hero is now one room: a floor with soft reflections and each lamp's pool
