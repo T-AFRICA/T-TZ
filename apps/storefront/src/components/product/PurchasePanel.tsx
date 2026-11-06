@@ -49,17 +49,14 @@ export function PurchasePanel({ product }: { product: SampleProduct }) {
   const secondaryClasses =
     "inline-flex h-[3.25rem] w-full items-center justify-center gap-2 rounded-full border border-[var(--color-light-grey)] bg-white text-[15px] font-semibold text-[var(--text-primary)] transition-[border-color,color,transform] active:scale-[0.98] hover:border-[var(--color-action-red)] hover:text-[var(--color-action-red)] disabled:cursor-not-allowed disabled:border-[var(--color-light-grey)] disabled:text-[var(--text-muted)] disabled:hover:border-[var(--color-light-grey)]";
 
+  const stepperClasses =
+    "flex h-11 w-11 items-center justify-center rounded-full text-lg transition-colors hover:text-[var(--color-action-red)] focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[var(--color-action-red)] disabled:cursor-not-allowed disabled:text-[var(--color-light-grey)] disabled:hover:text-[var(--color-light-grey)]";
+
   return (
     <div>
       {/* Price block — directly under the title on phones */}
-      <div className="mt-3 flex flex-wrap items-baseline gap-x-3 gap-y-1 md:mt-4">
-        <span
-          className={`text-2xl font-bold md:text-3xl ${
-            product.wasPrice !== undefined
-              ? "text-[var(--color-action-red)]"
-              : "text-[var(--color-premium-black)]"
-          }`}
-        >
+      <div className="mt-3 flex flex-wrap items-center gap-x-2.5 gap-y-1 md:mt-4">
+        <span className="text-[1.625rem] font-bold leading-none text-[var(--color-action-red)] md:text-3xl">
           {formatSamplePrice(product.price)}
         </span>
         {product.wasPrice !== undefined ? (
@@ -73,14 +70,24 @@ export function PurchasePanel({ product }: { product: SampleProduct }) {
           </span>
         ) : null}
       </div>
-      <p
-        className={`mt-1.5 text-sm font-medium ${
-          product.inStock ? "text-[var(--color-success)]" : "text-[var(--text-muted)]"
-        }`}
-      >
-        {product.inStock ? "In stock" : "Out of stock"}
+      <div className="mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
+        <span
+          className={`inline-flex items-center gap-1.5 font-medium ${
+            product.inStock ? "text-[var(--color-success)]" : "text-[var(--text-muted)]"
+          }`}
+        >
+          <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-current" />
+          {product.inStock ? "In stock" : "Out of stock"}
+        </span>
+        <span className="text-[var(--text-muted)]">SKU {sku}</span>
+      </div>
+      {/* Every figure is synthetic until the live catalog, and the site is public,
+          so this stays visible for as long as demo data is active. */}
+      <p className="mt-2">
+        <span className="inline-block rounded bg-[var(--surface-card)] px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--text-secondary)]">
+          Demo price &amp; stock
+        </span>
       </p>
-      <p className="mt-1 text-xs text-[var(--text-muted)]">SKU {sku}</p>
 
       {/* Colour swatches (reference style) — shown only for products with
           real colour options */}
@@ -153,20 +160,26 @@ export function PurchasePanel({ product }: { product: SampleProduct }) {
         </div>
       ) : null}
 
-      {/* Quantity — soft pill with round steppers (reference style) */}
-      <div className="mt-4 md:mt-5">
-        <p className="text-sm font-semibold">Quantity:</p>
-        <div className="mt-2.5 inline-flex items-center gap-1 rounded-full bg-[var(--surface-card)] p-1.5">
+      {/* Quantity — one pill; each button is a full 44px tap target */}
+      <div
+        role="group"
+        aria-label="Quantity"
+        className="mt-4 flex items-center justify-between gap-4 border-t border-[var(--color-light-grey)] pt-3 md:mt-5 md:justify-start md:pt-4"
+      >
+        <p aria-hidden="true" className="text-sm font-semibold">
+          Quantity
+        </p>
+        <div className="inline-flex items-center rounded-full border border-[var(--color-light-grey)] bg-white">
           <button
             type="button"
             aria-label="Decrease quantity"
             onClick={() => setQuantity((q) => Math.max(1, q - 1))}
             disabled={!product.inStock || quantity <= 1}
-            className="flex h-9 w-9 items-center justify-center rounded-full bg-white text-lg shadow-sm transition-colors hover:text-[var(--color-action-red)] disabled:text-[var(--color-light-grey)] disabled:shadow-none disabled:bg-transparent"
+            className={stepperClasses}
           >
             −
           </button>
-          <span aria-live="polite" className="w-10 text-center text-sm font-semibold">
+          <span aria-live="polite" className="w-8 text-center text-sm font-semibold tabular-nums">
             {String(quantity).padStart(2, "0")}
           </span>
           <button
@@ -174,12 +187,17 @@ export function PurchasePanel({ product }: { product: SampleProduct }) {
             aria-label="Increase quantity"
             onClick={() => setQuantity((q) => Math.min(MAX_QUANTITY, q + 1))}
             disabled={!product.inStock || quantity >= MAX_QUANTITY}
-            className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--color-action-red)] text-lg text-white shadow-sm transition-colors hover:bg-[var(--color-action-red-dark)] disabled:bg-transparent disabled:text-[var(--color-light-grey)] disabled:shadow-none"
+            className={stepperClasses}
           >
             +
           </button>
         </div>
       </div>
+      {quantity >= MAX_QUANTITY ? (
+        <p className="mt-1.5 text-right text-[11px] text-[var(--text-muted)] md:text-left">
+          Maximum quantity reached
+        </p>
+      ) : null}
 
       {/* Actions: large stacked CTAs (in-flow on md+; phones use the sticky bar) */}
       <div className="mt-7 hidden flex-col gap-3 md:flex">
@@ -198,17 +216,15 @@ export function PurchasePanel({ product }: { product: SampleProduct }) {
       ) : null}
 
       {/* Sticky mobile purchase bar, above the bottom tab bar (which is
-          3.5rem plus the device safe-area inset tall) */}
-      <div className="fixed inset-x-0 bottom-[calc(3.5rem+env(safe-area-inset-bottom))] z-30 border-t border-[var(--color-light-grey)] bg-white/95 px-4 pb-2 pt-2 backdrop-blur md:hidden">
+          3.5rem plus the device safe-area inset tall). The data attribute lets
+          the page reserve this bar's height, so it never covers the footer. */}
+      <div
+        data-sticky-purchase
+        className="fixed inset-x-0 bottom-[calc(3.5rem+env(safe-area-inset-bottom))] z-30 border-t border-[var(--color-light-grey)] bg-white/95 px-4 pb-2 pt-2 backdrop-blur md:hidden"
+      >
         <div className="flex items-center gap-3">
           {/* Price only — the name is on screen already (no duplication) */}
-          <p
-            className={`shrink-0 text-base font-bold leading-tight ${
-              product.wasPrice !== undefined
-                ? "text-[var(--color-action-red)]"
-                : "text-[var(--color-premium-black)]"
-            }`}
-          >
+          <p className="shrink-0 text-base font-bold leading-tight text-[var(--color-action-red)]">
             {formatSamplePrice(product.price)}
           </p>
           <div className="ml-auto flex shrink-0 gap-2">
@@ -217,7 +233,7 @@ export function PurchasePanel({ product }: { product: SampleProduct }) {
              
               onClick={buyNow}
               disabled={!product.inStock}
-              className="inline-flex h-11 items-center justify-center rounded-full border border-[var(--color-action-red)] px-4 text-xs font-semibold text-[var(--color-action-red)] transition-transform active:scale-[0.97] disabled:border-[var(--color-light-grey)] disabled:text-[var(--text-muted)]"
+              className="inline-flex h-11 items-center justify-center rounded-full border border-[var(--color-action-red)] px-4 text-xs font-semibold text-[var(--color-action-red)] transition-transform active:scale-[0.97] disabled:border-[var(--color-light-grey)] disabled:text-[var(--text-muted)] max-[359px]:px-2.5"
             >
               Buy Now
             </button>
@@ -226,9 +242,11 @@ export function PurchasePanel({ product }: { product: SampleProduct }) {
              
               onClick={addToCart}
               disabled={!product.inStock}
-              className="inline-flex h-11 items-center justify-center gap-1.5 rounded-full bg-[var(--color-action-red)] px-5 text-xs font-semibold text-white transition-transform active:scale-[0.97] disabled:bg-[var(--color-light-grey)] disabled:text-[var(--text-muted)]"
+              className="inline-flex h-11 items-center justify-center gap-1.5 rounded-full bg-[var(--color-action-red)] px-5 text-xs font-semibold text-white transition-transform active:scale-[0.97] disabled:bg-[var(--color-light-grey)] disabled:text-[var(--text-muted)] max-[359px]:px-3"
             >
-              <CartIcon size={15} />
+              <span className="max-[359px]:hidden">
+                <CartIcon size={15} />
+              </span>
               {product.inStock ? "Add to Cart" : "Out of Stock"}
             </button>
           </div>
