@@ -129,6 +129,9 @@ importers:
       lucide-react:
         specifier: ^1.66.0
         version: 1.66.0(@types/react@19.3.0)(react@19.3.1)
+      motion:
+        specifier: ^14.9.0
+        version: 14.9.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
     devDependencies:
       '@types/react':
         specifier: ^19.0.8

@@ -1,9 +1,38 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
-import { Badge, EmptyState, Input, Tabs } from "@tronic/ui";
+import { AccordionSection, Badge, EmptyState, Input, Tabs } from "@tronic/ui";
 
 describe("UI primitives (master prompt §10)", () => {
+  it("exposes the accordion as a labelled button and region", async () => {
+    const user = userEvent.setup();
+    render(
+      <>
+        <AccordionSection title="Product Overview" defaultOpen>
+          <p>Overview body</p>
+        </AccordionSection>
+        <AccordionSection title="Warranty Information">
+          <p>Warranty body</p>
+        </AccordionSection>
+      </>,
+    );
+    const overview = screen.getByRole("button", { name: "Product Overview" });
+    expect(overview).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getByRole("region", { name: "Product Overview" })).toHaveTextContent(
+      "Overview body",
+    );
+    expect(screen.getByRole("heading", { level: 2, name: "Product Overview" })).toBeInTheDocument();
+
+    const warranty = screen.getByRole("button", { name: "Warranty Information" });
+    expect(warranty).toHaveAttribute("aria-expanded", "false");
+    expect(screen.queryByText("Warranty body")).not.toBeInTheDocument();
+    await user.click(warranty);
+    expect(warranty).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getByRole("region", { name: "Warranty Information" })).toHaveTextContent(
+      "Warranty body",
+    );
+  });
+
   it("wires the Input validation state up for assistive tech", () => {
     render(<Input id="meter" label="Meter number" error="Enter a valid meter number" />);
     const input = screen.getByLabelText("Meter number");

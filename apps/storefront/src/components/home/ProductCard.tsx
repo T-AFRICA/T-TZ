@@ -18,7 +18,10 @@ export function ProductCard({ product }: { product: SampleProduct }) {
   const saving = discountPercent(product);
   return (
     <li className="group/card flex flex-col rounded-xl bg-white p-2 shadow-[0_2px_10px_rgba(17,17,17,0.05)] transition-all duration-300 ease-out hover:z-10 hover:-translate-y-1 hover:scale-[1.02] hover:shadow-[0_0_0_1px_rgba(215,25,32,0.25),0_6px_16px_-6px_rgba(215,25,32,0.25),0_18px_38px_-12px_rgba(215,25,32,0.4)] active:translate-y-0 active:scale-[1.01] md:border md:border-[var(--color-light-grey)] md:p-2.5 md:shadow-none md:hover:border-transparent">
-      <div className="relative aspect-square overflow-hidden rounded-lg bg-white">
+      {/* 4:3 photo area (was square) keeps the card shorter on phones and in
+          the 5-6 per row desktop grid; object-contain still shows the whole
+          product. */}
+      <div className="relative aspect-[4/3] overflow-hidden rounded-lg bg-white">
         <Tilt3D className="absolute inset-0">
           <Link
             href={`/products/${product.id}`}
@@ -53,7 +56,7 @@ export function ProductCard({ product }: { product: SampleProduct }) {
           <HeartIcon size={14} />
         </Link>
       </div>
-      <div className="flex flex-1 flex-col px-1 pb-0.5 pt-1.5">
+      <div className="flex flex-1 flex-col px-1 pb-0.5 pt-1">
         <p className="text-[9px] font-semibold uppercase tracking-[0.1em] text-[var(--text-muted)]">
           {product.categoryName}
         </p>
@@ -63,7 +66,7 @@ export function ProductCard({ product }: { product: SampleProduct }) {
         >
           {product.name}
         </Link>
-        <div className="mt-auto pt-1.5">
+        <div className="mt-auto pt-1">
           <p className="flex flex-wrap items-baseline gap-x-1.5">
             <span
               className={`text-[13px] font-bold md:text-sm ${
@@ -92,7 +95,7 @@ export function ProductCard({ product }: { product: SampleProduct }) {
           ) : (
             <span
               aria-disabled="true"
-              className="mt-1.5 flex h-9 w-full cursor-not-allowed items-center justify-center gap-1.5 rounded-full bg-[var(--color-light-grey)] text-[10px] font-semibold uppercase tracking-wide text-[var(--text-muted)] md:h-8 md:text-[11px]"
+              className="mt-1.5 flex h-8 w-full cursor-not-allowed items-center justify-center gap-1.5 rounded-full bg-[var(--color-light-grey)] text-[9px] font-semibold uppercase tracking-[0.04em] text-[var(--text-muted)] md:text-[10px]"
             >
               <CartIcon size={13} />
               Out of Stock

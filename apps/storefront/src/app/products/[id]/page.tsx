@@ -42,9 +42,9 @@ function PolicyLink({ href, children }: { href: string; children: React.ReactNod
 /** One label-and-value row in the specifications list. */
 function SpecRow({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="grid grid-cols-[7rem_1fr] gap-3 border-b border-[var(--color-light-grey)] py-2 last:border-b-0">
-      <dt className="font-medium text-[var(--text-primary)]">{label}</dt>
-      <dd className="min-w-0 break-words">{children}</dd>
+    <div className="grid grid-cols-[6.5rem_1fr] gap-3 border-b border-[var(--color-light-grey)] py-2.5 last:border-b-0 md:grid-cols-[8rem_1fr]">
+      <dt className="text-[var(--text-muted)]">{label}</dt>
+      <dd className="min-w-0 break-words font-medium text-[var(--text-primary)]">{children}</dd>
     </div>
   );
 }
@@ -75,13 +75,15 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
         <div className="min-w-0 max-md:-mx-[var(--gutter)] max-md:bg-white max-md:px-[var(--gutter)] max-md:pt-3.5">
           {/* Breadcrumb lives in the info column (approved reference) */}
           <nav aria-label="Breadcrumb" className="text-[11px] text-[var(--text-muted)] md:text-xs">
-            <ol className="flex items-center gap-1.5 md:flex-wrap">
+            <ol className="flex items-center gap-1 md:flex-wrap">
               <li className="shrink-0">
                 <Link href="/" className="hover:text-[var(--color-action-red)]">
                   Home
                 </Link>
               </li>
-              <li aria-hidden="true">/</li>
+              <li aria-hidden="true" className="text-[var(--color-light-grey)]">
+                /
+              </li>
               <li className="shrink-0">
                 <Link
                   href={`/categories/${product.categorySlug}`}
@@ -90,18 +92,20 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
                   {product.categoryName}
                 </Link>
               </li>
-              <li aria-hidden="true">/</li>
+              <li aria-hidden="true" className="text-[var(--color-light-grey)]">
+                /
+              </li>
               <li aria-current="page" className="min-w-0 truncate text-[var(--text-secondary)]">
                 {product.name}
               </li>
             </ol>
           </nav>
 
-          <p className="mt-3 text-[11px] font-semibold uppercase tracking-[0.15em] text-[var(--text-muted)] md:mt-4">
+          <p className="mt-3.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--text-muted)] md:mt-4 md:text-[11px]">
             TRONIC · {product.categoryName}
           </p>
           <h1
-            className="mt-1 text-[1.375rem] font-bold leading-tight md:mt-1.5 md:text-[length:var(--text-h2)] md:tracking-[-0.01em]"
+            className="mt-1.5 text-[1.5rem] font-bold leading-[1.15] tracking-[-0.015em] md:text-[length:var(--text-h2)] md:tracking-[-0.01em]"
             style={{ fontFamily: "var(--font-heading, var(--font-fallback-heading))" }}
           >
             {product.name}
@@ -119,7 +123,7 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
 
           {/* Only verified facts: no technical figures or warranty terms are stated
               until the live catalogue supplies them. */}
-          <div className="mt-4 border-t border-[var(--color-light-grey)] md:mt-6">
+          <div className="mt-5 border-t border-[var(--color-light-grey)] md:mt-6">
             <AccordionSection title="Product Overview" defaultOpen>
               <p>
                 {product.name} from the TRONIC {product.categoryName.toLowerCase()} range. The
@@ -168,7 +172,7 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
 
       {/* Reviews: no fabricated ratings — an honest empty state until the
           live catalog brings verified reviews */}
-      <section aria-label="Customer reviews" className="mt-10 border-t border-[var(--color-light-grey)] pt-2 md:mt-14">
+      <section aria-label="Customer reviews" className="mt-4 border-t border-[var(--color-light-grey)] md:mt-14 md:pt-2">
         <EmptyState
           title="No reviews yet"
           description="Verified customer reviews appear here once the live catalog launches."
