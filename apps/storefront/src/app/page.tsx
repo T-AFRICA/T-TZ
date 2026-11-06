@@ -6,11 +6,19 @@ import { CategoryArt } from "@/components/home/CategoryArt";
 import { FeaturedSamples } from "@/components/home/FeaturedSamples";
 import { Reveal } from "@/components/motion/Reveal";
 
-/** One category circle in the rail under the hero. */
-function CategoryCircle({ section }: { section: (typeof CATEGORY_SECTIONS)[number] }) {
+/** One category circle in the rail under the hero. The looping copy of the rail
+    stays clickable but is skipped by the keyboard. */
+function CategoryCircle({
+  section,
+  isLoopCopy = false,
+}: {
+  section: (typeof CATEGORY_SECTIONS)[number];
+  isLoopCopy?: boolean;
+}) {
   return (
     <Link
       href={`/categories/${section.slug}`}
+      tabIndex={isLoopCopy ? -1 : undefined}
       className="group flex flex-col items-center gap-1.5 text-center md:gap-2.5"
     >
       <span className="grid h-16 w-16 place-items-center rounded-full bg-white text-[var(--color-dark-grey)] shadow-[0_3px_10px_rgba(17,17,17,0.08)] transition-all duration-200 group-hover:scale-105 group-hover:text-[var(--color-action-red)] group-active:scale-105 group-active:text-[var(--color-action-red)] md:h-24 md:w-24 md:shadow-[0_4px_14px_rgba(17,17,17,0.08)]">
@@ -35,19 +43,28 @@ export default function HomePage() {
     <>
       <Hero />
       <Container id="departments" className="scroll-mt-24 py-5 md:py-10 lg:py-12">
-        {/* Each category appears exactly once (owner request 2026-11-05, replacing
-            the looping marquee and its repeated copies). Where the eight do not
-            fit, the rail drifts to one end and back so all are seen and it still
-            moves; from xl they fit, so it stands still. Touch/hover pauses the
-            drift, reduced-motion stops it. */}
-        <nav aria-label="Shop by category" className="category-rail-frame -mx-[var(--gutter)] overflow-hidden xl:mx-0">
-          <ul className="category-rail flex w-max items-start gap-4 px-[var(--gutter)] pb-2 md:gap-8 xl:w-full xl:justify-between xl:gap-0 xl:px-0">
-            {CATEGORY_SECTIONS.map((section) => (
-              <li key={section.slug} className="w-[4.5rem] shrink-0 md:w-28">
-                <CategoryCircle section={section} />
-              </li>
-            ))}
-          </ul>
+        {/* News-ticker rail (owner request 2026-11-06): moves slowly right to left,
+            on every screen size. The loop needs a second copy, hidden from assistive
+            tech. Each copy is wider than the screen, so a category is never on
+            screen twice (owner request 2026-11-05). Hover, touch and keyboard focus
+            pause it; reduced motion shows one still, swipeable row. */}
+        <nav aria-label="Shop by category" className="category-rail-frame -mx-[var(--gutter)]">
+          <div className="category-rail flex w-max items-start pt-1 pb-2">
+            <ul className="category-rail-group">
+              {CATEGORY_SECTIONS.map((section) => (
+                <li key={section.slug} className="w-[4.5rem] shrink-0 md:w-28">
+                  <CategoryCircle section={section} />
+                </li>
+              ))}
+            </ul>
+            <ul aria-hidden="true" className="category-rail-group category-rail-copy">
+              {CATEGORY_SECTIONS.map((section) => (
+                <li key={section.slug} className="w-[4.5rem] shrink-0 md:w-28">
+                  <CategoryCircle section={section} isLoopCopy />
+                </li>
+              ))}
+            </ul>
+          </div>
         </nav>
 
         <FeaturedSamples />
