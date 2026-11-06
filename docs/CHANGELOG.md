@@ -3,6 +3,15 @@
 Meaningful implementation changes, newest first. Dates are work dates;
 nothing below is released.
 
+## 2026-11-06 — category rail runs like a news ticker
+
+- The category rail now moves slowly and continuously from right to left on
+  every screen size, including large desktops where it used to stand still.
+- The loop needs a second copy of the categories in the page, but each copy is
+  wider than the screen, so a category is never on screen twice. The copy is
+  hidden from screen readers and skipped by the keyboard.
+- Hover, touch and keyboard focus pause it. Reduced motion shows one still row.
+
 ## 2026-11-05 — compact mobile product information panel
 
 - Phones: the product info is one white edge-to-edge panel with thin dividers.
