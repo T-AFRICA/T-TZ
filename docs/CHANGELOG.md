@@ -22,7 +22,7 @@ nothing below is released.
   height-and-fade in every browser; reduced motion shows the content at
   once. Open rows still ship their content in the server HTML. The ui
   package therefore depends on motion (already used by the storefront).
-- Sticky purchase bar: 48px Buy Now (outline) and Add to Cart (filled) with
+- Sticky purchase bar: compact 36px Buy Now (outline) and Add to Cart (filled) with
   a pressed state each; the page reserves the bar's full height above the
   tab bar, and toasts rise above it instead of covering the buttons.
 - Less dead space between the accordions and the reviews block on phones.

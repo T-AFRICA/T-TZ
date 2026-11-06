@@ -45,9 +45,9 @@ export function PurchasePanel({ product }: { product: SampleProduct }) {
   }
 
   const primaryClasses =
-    "inline-flex h-[3.25rem] w-full items-center justify-center gap-2 rounded-full bg-[var(--color-action-red)] text-[15px] font-semibold text-white shadow-[0_10px_26px_-10px_rgba(215,25,32,0.7)] transition-[background-color,transform] active:scale-[0.98] hover:bg-[var(--color-action-red-dark)] disabled:cursor-not-allowed disabled:bg-[var(--color-light-grey)] disabled:text-[var(--text-muted)] disabled:shadow-none";
+    "inline-flex h-10 w-full items-center justify-center gap-2 rounded-full bg-[var(--color-action-red)] text-[13px] font-semibold text-white shadow-[0_10px_26px_-10px_rgba(215,25,32,0.7)] transition-[background-color,transform] active:scale-[0.98] hover:bg-[var(--color-action-red-dark)] disabled:cursor-not-allowed disabled:bg-[var(--color-light-grey)] disabled:text-[var(--text-muted)] disabled:shadow-none";
   const secondaryClasses =
-    "inline-flex h-[3.25rem] w-full items-center justify-center gap-2 rounded-full border border-[var(--color-light-grey)] bg-white text-[15px] font-semibold text-[var(--text-primary)] transition-[border-color,color,transform] active:scale-[0.98] hover:border-[var(--color-action-red)] hover:text-[var(--color-action-red)] disabled:cursor-not-allowed disabled:border-[var(--color-light-grey)] disabled:text-[var(--text-muted)] disabled:hover:border-[var(--color-light-grey)]";
+    "inline-flex h-10 w-full items-center justify-center gap-2 rounded-full border border-[var(--color-light-grey)] bg-white text-[13px] font-semibold text-[var(--text-primary)] transition-[border-color,color,transform] active:scale-[0.98] hover:border-[var(--color-action-red)] hover:text-[var(--color-action-red)] disabled:cursor-not-allowed disabled:border-[var(--color-light-grey)] disabled:text-[var(--text-muted)] disabled:hover:border-[var(--color-light-grey)]";
 
   // One pill holds both steps: a quiet minus, the count, and a filled plus.
   // Buttons are 40px inside a 44px pill, so each is a comfortable tap target.
@@ -209,7 +209,7 @@ export function PurchasePanel({ product }: { product: SampleProduct }) {
       </div>
 
       {/* Actions: large stacked CTAs (in-flow on md+; phones use the sticky bar) */}
-      <div className="mt-7 hidden flex-col gap-3 md:flex">
+      <div className="mt-6 hidden flex-col gap-2.5 md:flex">
         <button type="button" onClick={addToCart} disabled={!product.inStock} className={primaryClasses}>
           <CartIcon size={18} />
           Add to Cart
@@ -229,21 +229,21 @@ export function PurchasePanel({ product }: { product: SampleProduct }) {
           the page reserve this bar's height, so it never covers the footer. */}
       <div
         data-sticky-purchase
-        className="fixed inset-x-0 bottom-[calc(3.5rem+env(safe-area-inset-bottom))] z-30 border-t border-[var(--color-light-grey)] bg-white/95 px-4 py-2.5 backdrop-blur md:hidden"
+        className="fixed inset-x-0 bottom-[calc(3.5rem+env(safe-area-inset-bottom))] z-30 border-t border-[var(--color-light-grey)] bg-white/95 px-4 py-1.5 backdrop-blur md:hidden"
       >
         <div className="flex items-center gap-3">
           {/* Price only — the name is on screen already (no duplication) */}
-          <p className="shrink-0 text-[17px] font-bold leading-tight text-[var(--color-action-red)]">
+          <p className="shrink-0 text-base font-bold leading-tight text-[var(--color-action-red)]">
             {formatSamplePrice(product.price)}
           </p>
-          {/* Secondary outline beside the filled primary: 48px tall, so both
-              are comfortable to tap one-handed above the tab bar. */}
+          {/* Secondary outline beside the filled primary: 36px tall, kept
+              compact so the bar takes as little of the screen as it can. */}
           <div className="ml-auto flex shrink-0 gap-2">
             <button
               type="button"
               onClick={buyNow}
               disabled={!product.inStock}
-              className="inline-flex h-12 items-center justify-center rounded-full border-[1.5px] border-[var(--color-action-red)] px-4 text-[13px] font-semibold text-[var(--color-action-red)] transition-[transform,background-color] active:scale-[0.97] active:bg-[#fdecec] disabled:border-[var(--color-light-grey)] disabled:text-[var(--text-muted)] disabled:active:bg-transparent max-[359px]:px-3"
+              className="inline-flex h-9 items-center justify-center rounded-full border-[1.5px] border-[var(--color-action-red)] px-3.5 text-xs font-semibold text-[var(--color-action-red)] transition-[transform,background-color] active:scale-[0.97] active:bg-[#fdecec] disabled:border-[var(--color-light-grey)] disabled:text-[var(--text-muted)] disabled:active:bg-transparent max-[359px]:px-3"
             >
               Buy Now
             </button>
@@ -251,7 +251,7 @@ export function PurchasePanel({ product }: { product: SampleProduct }) {
               type="button"
               onClick={addToCart}
               disabled={!product.inStock}
-              className="inline-flex h-12 items-center justify-center gap-1.5 rounded-full bg-[var(--color-action-red)] px-5 text-[13px] font-semibold text-white shadow-[0_8px_18px_-10px_rgba(215,25,32,0.8)] transition-[transform,background-color] active:scale-[0.97] active:bg-[var(--color-action-red-dark)] disabled:bg-[var(--color-light-grey)] disabled:text-[var(--text-muted)] disabled:shadow-none max-[359px]:px-3.5"
+              className="inline-flex h-9 items-center justify-center gap-1.5 rounded-full bg-[var(--color-action-red)] px-4 text-xs font-semibold text-white shadow-[0_8px_18px_-10px_rgba(215,25,32,0.8)] transition-[transform,background-color] active:scale-[0.97] active:bg-[var(--color-action-red-dark)] disabled:bg-[var(--color-light-grey)] disabled:text-[var(--text-muted)] disabled:shadow-none max-[359px]:px-3.5"
             >
               <span className="max-[359px]:hidden">
                 <CartIcon size={15} />
