@@ -3,6 +3,19 @@
 Meaningful implementation changes, newest first. Dates are work dates;
 nothing below is released.
 
+## 2026-11-07 — architecture audit, plan and folder skeleton
+
+- docs/architecture/ARCHITECTURE-AUDIT-AND-PLAN.md records the current state
+  (storefront + mock adapters only; no database, API routes or auth yet), the
+  target layout, the existing-to-proposed migration map, the API and admin
+  strategy, the Supabase schema v1 outline, Vercel impact and an 8-phase plan.
+- Empty skeleton folders with a README each name where future work lands:
+  apps/admin, apps/worker, apps/storefront/src/features/{catalog,cart,
+  checkout,orders}, apps/storefront/src/lib, packages/{validation,
+  permissions,database}, supabase/migrations and docs/{database,api,
+  integrations,deployment}. None has a package.json, so the workspace,
+  Turborepo and the Vercel build are unaffected. No code moved.
+
 ## 2026-11-07 — Outfit as the single typeface
 
 - The storefront now sets Outfit (SIL OFL, Google Fonts v15, latin variable
