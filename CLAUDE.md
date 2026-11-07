@@ -10,7 +10,7 @@ Read `README.md` and inspect the current branch and working tree before editing.
 
 ## Project context
 
-- Repository: `T-AFRICA/T-TZ`, a private organization repository.
+- Repository: `T-AFRICA/T-TZ`, a public organization repository since 2026-11-06 (made public so Vercel deploys and GitHub rulesets work on the free plan). Treat everything committed as world-readable: no internal documents, customer data or credentials, even in branches.
 - Product: TRONIC multi-country commerce, including POS, payments, inventory, delivery tracking, and meter token issuance.
 - Intended stack: Next.js and TypeScript for the frontend; NestJS and TypeScript for the backend.
 - At initial setup, the repository has only a README and no application scaffold. The stack is a direction, not a claim that these frameworks or services are installed.
@@ -60,6 +60,6 @@ Once the project is scaffolded:
 
 Instructions in these files guide contributors; they do not enforce GitHub permissions or replace CI.
 
-The initial audit found `protect-main` configured but unenforced on the organization's private-repository plan. Review current GitHub settings before relying on branch protection. A ruleset labelled Active is not proof that GitHub enforces it.
+As of 2026-11-06 the `protect-main` ruleset is enforced (public repository): one approval from someone other than the author and the last pusher, review-thread resolution, squash merges only, no bypass actors. Its required status checks are "Repository hygiene" and "Secret scan"; the CI job "Lint, typecheck, test, build" is not yet required, so a red build can still be merged until an owner adds that check to the ruleset. Review current GitHub settings before relying on branch protection.
 
 Do not deploy to production, execute live payment/refund/token-issuance operations, change production secrets, apply destructive migrations, or change billing/access policies without authorization covering that action. Continue reversible implementation and verification work within the user's requested scope.
