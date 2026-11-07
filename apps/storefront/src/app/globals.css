@@ -160,6 +160,14 @@ h4 {
   .category-rail-frame {
     --rail-fade: var(--color-off-white);
   }
+
+  /* The frame bleeds to the screen edge, so the row starts one gutter in: the
+     first category lines up with the content and sits clear of the edge fade.
+     The padding moves from the right to the left, so the seam gap is unchanged. */
+  .category-rail-group {
+    padding-left: var(--gutter);
+    padding-right: 0;
+  }
 }
 
 /* Soft edges painted in the page colour. A CSS mask would do the same, but it

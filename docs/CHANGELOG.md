@@ -13,6 +13,16 @@ nothing below is released.
   component changed.
 - Fallback stacks, the fonts README and the design system doc follow.
 
+## 2026-11-06 — mobile homepage polish
+
+- The category rail starts one gutter in on phones, so the first category is
+  fully visible and lines up with the content instead of sitting under the
+  edge fade. The seam gap of the loop is unchanged.
+- Slightly tighter rhythm between the rail and the first product section.
+- A three-item service strip sits under the categories (fast delivery, home
+  delivery, hassle-free warranty), each linking to its policy page; no price
+  or threshold is claimed. Three icon-over-label columns on phones, one quiet row from md.
+
 ## 2026-11-06 — governance round one: share card, headers, hygiene
 
 - The social-share card is a neutral 1200x630 crop of the hero scene

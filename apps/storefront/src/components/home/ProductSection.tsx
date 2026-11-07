@@ -19,7 +19,7 @@ interface ProductSectionProps {
  */
 export function ProductSection({ title, seeAllHref, products, className }: ProductSectionProps) {
   return (
-    <section className={`mt-7 md:mt-14 ${className ?? ""}`.trim()} aria-label={`${title} — sample products`}>
+    <section className={`mt-6 md:mt-14 ${className ?? ""}`.trim()} aria-label={`${title} — sample products`}>
       <Reveal>
       <div className="flex items-baseline justify-between gap-3">
         <h2
