@@ -3,6 +3,15 @@
 Meaningful implementation changes, newest first. Dates are work dates;
 nothing below is released.
 
+## 2026-11-06 — compact product page purchase bar (phones)
+
+- The sticky purchase bar's Buy Now (outline) and Add to Cart (filled) are
+  44px pills with 13px semibold text, 8px apart, in a bar with 8px vertical
+  padding (61px in all, was 69px); the price stays on the left. Below 360px
+  the duplicated price steps out and the two buttons share the full width.
+- The page reserves the bar's height above the tab bar and toasts rise above
+  it, as before; desktop buttons are unchanged.
+
 ## 2026-11-06 — mobile homepage polish
 
 - The category rail starts one gutter in on phones, so the first category is
