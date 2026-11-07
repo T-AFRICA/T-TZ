@@ -2,6 +2,7 @@ name: Repository security
 
 on:
   push:
+    branches: [main]
   pull_request:
     branches: [main]
   workflow_dispatch:
@@ -71,7 +72,7 @@ jobs:
               result = subprocess.run(["git", "check-ignore", "--no-index", "--quiet", name])
               if result.returncode != 1:
                   raise SystemExit(f"Example configuration must remain committable: {name}")
-          print("Repository hygiene checks passed. Application lint/tests/build are not configured yet.")
+          print("Repository hygiene checks passed. Application lint, typecheck, tests and build run in ci.yml.")
           PY
 
   secret-scan:

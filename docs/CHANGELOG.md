@@ -12,6 +12,24 @@ nothing below is released.
 - The page reserves the bar's height above the tab bar and toasts rise above
   it, as before; desktop buttons are unchanged.
 
+## 2026-11-06 — governance round one: share card, headers, hygiene
+
+- The social-share card is a neutral 1200x630 crop of the hero scene
+  (public/og/tronic-tanzania.jpg). The campaign banner it replaces carried a
+  "Black November, up to 50% off" claim this pre-launch site does not make.
+- Every response now carries security headers from next.config.ts: a strict
+  Content-Security-Policy (self only, frame-ancestors none, unsafe-eval only
+  in development), nosniff, X-Frame-Options DENY, Referrer-Policy,
+  Permissions-Policy and HSTS; X-Powered-By is off.
+- .gitignore excludes *.pdf and the whole .claude/ folder, so the owner's
+  documents and local tooling cannot reach the public repository.
+- Workflows run on pushes to main and on pull requests, not twice per PR
+  commit. Dependabot also proposes grouped npm updates weekly.
+- CLAUDE.md states the real state: public repository, protect-main enforced,
+  CI job not yet a required check. The UTF-8 BOM is gone from
+  PurchasePanel.tsx.
+- Full review with the remaining findings: docs/REVIEW-2026-11-06.md.
+
 ## 2026-11-06 — premium mobile product information panel
 
 - Tighter editorial hierarchy on the product page: compact breadcrumb with
