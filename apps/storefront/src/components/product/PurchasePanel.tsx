@@ -229,21 +229,23 @@ export function PurchasePanel({ product }: { product: SampleProduct }) {
           the page reserve this bar's height, so it never covers the footer. */}
       <div
         data-sticky-purchase
-        className="fixed inset-x-0 bottom-[calc(3.5rem+env(safe-area-inset-bottom))] z-30 border-t border-[var(--color-light-grey)] bg-white/95 px-4 py-2.5 backdrop-blur md:hidden"
+        className="fixed inset-x-0 bottom-[calc(3.5rem+env(safe-area-inset-bottom))] z-30 border-t border-[var(--color-light-grey)] bg-white/95 px-4 py-2 backdrop-blur md:hidden"
       >
-        <div className="flex items-center gap-3">
-          {/* Price only — the name is on screen already (no duplication) */}
-          <p className="shrink-0 text-[17px] font-bold leading-tight text-[var(--color-action-red)]">
+        <div className="flex items-center gap-2">
+          {/* Price only — the name is on screen already (no duplication). Below
+              360px the two buttons need the whole width, so the price (shown just
+              above in the panel) steps out. */}
+          <p className="shrink-0 text-base font-bold leading-tight text-[var(--color-action-red)] max-[359px]:hidden">
             {formatSamplePrice(product.price)}
           </p>
-          {/* Secondary outline beside the filled primary: 48px tall, so both
-              are comfortable to tap one-handed above the tab bar. */}
-          <div className="ml-auto flex shrink-0 gap-2">
+          {/* Secondary outline beside the filled primary: 44px pills, 8px apart,
+              comfortable to tap one-handed above the tab bar. */}
+          <div className="ml-auto flex shrink-0 gap-2 max-[359px]:w-full">
             <button
               type="button"
               onClick={buyNow}
               disabled={!product.inStock}
-              className="inline-flex h-12 items-center justify-center rounded-full border-[1.5px] border-[var(--color-action-red)] px-4 text-[13px] font-semibold text-[var(--color-action-red)] transition-[transform,background-color] active:scale-[0.97] active:bg-[#fdecec] disabled:border-[var(--color-light-grey)] disabled:text-[var(--text-muted)] disabled:active:bg-transparent max-[359px]:px-3"
+              className="inline-flex h-11 items-center justify-center rounded-full border-[1.5px] border-[var(--color-action-red)] px-4 text-[13px] font-semibold leading-none text-[var(--color-action-red)] transition-[transform,background-color] active:scale-[0.97] active:bg-[#fdecec] disabled:border-[var(--color-light-grey)] disabled:text-[var(--text-muted)] disabled:active:bg-transparent max-[359px]:flex-1 max-[359px]:px-3"
             >
               Buy Now
             </button>
@@ -251,7 +253,7 @@ export function PurchasePanel({ product }: { product: SampleProduct }) {
               type="button"
               onClick={addToCart}
               disabled={!product.inStock}
-              className="inline-flex h-12 items-center justify-center gap-1.5 rounded-full bg-[var(--color-action-red)] px-5 text-[13px] font-semibold text-white shadow-[0_8px_18px_-10px_rgba(215,25,32,0.8)] transition-[transform,background-color] active:scale-[0.97] active:bg-[var(--color-action-red-dark)] disabled:bg-[var(--color-light-grey)] disabled:text-[var(--text-muted)] disabled:shadow-none max-[359px]:px-3.5"
+              className="inline-flex h-11 items-center justify-center gap-1.5 rounded-full bg-[var(--color-action-red)] px-5 text-[13px] font-semibold leading-none text-white shadow-[0_8px_18px_-10px_rgba(215,25,32,0.8)] transition-[transform,background-color] active:scale-[0.97] active:bg-[var(--color-action-red-dark)] disabled:bg-[var(--color-light-grey)] disabled:text-[var(--text-muted)] disabled:shadow-none max-[359px]:flex-1 max-[359px]:px-3"
             >
               <span className="max-[359px]:hidden">
                 <CartIcon size={15} />
