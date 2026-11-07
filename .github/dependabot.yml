@@ -17,3 +17,8 @@ updates:
     groups:
       minor-and-patch:
         update-types: [minor, patch]
+    # Major bumps (framework, test runner, type packages) are planned work with
+    # their own testing, not weekly PRs: ignore them here and upgrade on purpose.
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
