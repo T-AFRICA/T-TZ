@@ -2,7 +2,7 @@
 @import "@tronic/ui/tokens.css";
 
 /* Tailwind only auto-scans this app; include the shared UI package sources. */
-@source "../../../../packages/ui/src";
+@source "../../../packages/ui/src";
 
 /* Map brand tokens into Tailwind utility names (e.g. bg-brand, text-action). */
 @theme inline {

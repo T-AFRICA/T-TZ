@@ -3,6 +3,33 @@
 Meaningful implementation changes, newest first. Dates are work dates;
 nothing below is released.
 
+## 2026-11-07 — architecture audit, plan and folder skeleton
+
+- docs/architecture/ARCHITECTURE-AUDIT-AND-PLAN.md records the current state
+  (storefront + mock adapters only; no database, API routes or auth yet), the
+  target layout, the existing-to-proposed migration map, the API and admin
+  strategy, the Supabase schema v1 outline, Vercel impact and an 8-phase plan.
+- Top-level layout by concern (owner decision): the storefront moved from
+  apps/storefront to frontend/ (git rename, routes and assets unchanged; the
+  Vercel Root Directory must change to frontend with this merge, see
+  docs/deployment/README.md); backend/ (business logic, worker), database/,
+  admin/, apis/ (public API contracts and gateway) and tests/ sit beside it.
+- Fix found while verifying the move: globals.css pointed Tailwind's @source
+  at ../../../../packages/ui/src, one level too high from the new depth, so
+  the shared ui classes (Container padding and max-width among them) were not
+  generated and phones showed clipped titles and a horizontally scrolling
+  page. The path is now ../../../packages/ui/src; verified at 320, 360, 375,
+  390, 430, 768, 1024 and 1440 with no document overflow.
+- Homepage card CTA: the filled button reads cart icon + "Add" at every size
+  (cards are 170-190px wide in every grid, so the long label truncated from
+  md); the accessible name is still "Add to cart: <product>".
+- Empty skeleton folders with a README each name where future work lands:
+  admin, backend/worker, frontend/src/features/{catalog,cart,
+  checkout,orders}, frontend/src/lib, packages/{validation,
+  permissions,database}, database/migrations and docs/{database,api,
+  integrations,deployment}. None has a package.json, so the workspace,
+  Turborepo and the Vercel build are unaffected. No code moved.
+
 ## 2026-11-07 — Outfit as the single typeface
 
 - The storefront now sets Outfit (SIL OFL, Google Fonts v15, latin variable
@@ -30,7 +57,9 @@ nothing below is released.
 - Slightly tighter rhythm between the rail and the first product section.
 - A three-item service strip sits under the categories (fast delivery, home
   delivery, hassle-free warranty), each linking to its policy page; no price
-  or threshold is claimed. Three icon-over-label columns on phones, one quiet row from md.
+  or threshold is claimed. One row at every size with each label on one line:
+  10px labels with bare icons on phones (icons step out below 360px), a quiet
+  row with 14px labels from md.
 
 ## 2026-11-06 — governance round one: share card, headers, hygiene
 
@@ -250,7 +279,7 @@ nothing below is released.
   are now self-hosted WOFF2 (latin subset, ~88 KB total) served via
   next/font/local; --font-body is injected so the whole UI picks up
   Poppins through the existing token. SIL OFL 1.1 license texts ship in
-  apps/storefront/src/fonts with a provenance README; filenames are
+  frontend/src/fonts with a provenance README; filenames are
   lowercase for Linux path compatibility. No runtime Google Fonts
   requests remain.
 
@@ -393,7 +422,7 @@ nothing below is released.
 
 ## 2026-11-02 — Module 01 (unreleased, on feat/module-01-design-system)
 
-- Scaffolded the pnpm + Turborepo monorepo: `apps/storefront` (Next.js 15,
+- Scaffolded the pnpm + Turborepo monorepo: `frontend` (Next.js 15,
   App Router, strict TS, Tailwind v4) and `packages/ui|types|country-config|
   api-client`; CI workflow (lint/typecheck/test/build).
 - Design foundation: brand tokens in `packages/ui/src/tokens.css`,

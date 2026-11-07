@@ -7,8 +7,8 @@ SRS v1.2 NFR-11, SSD §4, and the engineering master prompt §§3–7.
 ## Typography
 
 One family, self-hosted as a variable WOFF2 via `next/font/local` in
-`apps/storefront/src/app/layout.tsx` (asset and SIL OFL license in
-`apps/storefront/src/fonts/` — the `next/font/google` loader broke CI builds
+`frontend/src/app/layout.tsx` (asset and SIL OFL license in
+`frontend/src/fonts/` — the `next/font/google` loader broke CI builds
 on Next 15.5.x, and self-hosting removes the build-time network dependency):
 
 | Variable | Family | Weights loaded | Use |
