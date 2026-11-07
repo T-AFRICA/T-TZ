@@ -3,6 +3,12 @@
 Meaningful implementation changes, newest first. Dates are work dates;
 nothing below is released.
 
+## 2026-11-07 — category showcase follow-ups
+
+- The "Explore Our Categories" heading is visually hidden (it remains for
+  screen readers and the outline); the banners start right under the hero.
+- Tile titles 13px and taglines 11px on phones (15px/12px before).
+
 ## 2026-11-07 — photographic category showcase
 
 - "Explore Our Categories" replaces the circular category rail on the

@@ -65,16 +65,12 @@ const BANNERS: readonly CategoryBanner[] = CATEGORY_SECTIONS.map((section) => {
 export function CategoryShowcase() {
   return (
     <section aria-labelledby="category-showcase-title">
-      <div className="flex items-baseline justify-between gap-3">
-        <h2
-          id="category-showcase-title"
-          className="text-[length:var(--text-h3)] font-bold leading-tight tracking-[-0.01em]"
-          style={{ fontFamily: "var(--font-heading, var(--font-fallback-heading))" }}
-        >
-          Explore Our Categories
-        </h2>
-      </div>
-      <ul className="mt-3 grid grid-cols-[repeat(2,minmax(0,1fr))] gap-3 md:mt-5 md:gap-4">
+      {/* The banners speak for themselves (owner request 2026-11-07): the title
+          stays for assistive tech and the document outline only. */}
+      <h2 id="category-showcase-title" className="sr-only">
+        Explore Our Categories
+      </h2>
+      <ul className="grid grid-cols-[repeat(2,minmax(0,1fr))] gap-3 md:gap-4">
         {BANNERS.map((banner, index) => (
           <li key={banner.slug} className="min-w-0">
             <CategoryBannerCard banner={banner} variant={index < 2 ? "feature" : "compact"} priority={index < 2} />
