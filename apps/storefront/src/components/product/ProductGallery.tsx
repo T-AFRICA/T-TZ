@@ -117,7 +117,7 @@ export function ProductGallery({ product }: { product: SampleProduct }) {
           onPointerLeave={onZoomLeave}
           onTouchStart={onTouchStart}
           onTouchEnd={onTouchEnd}
-          className="group relative block aspect-[5/4] w-full cursor-zoom-in overflow-hidden rounded-3xl bg-[var(--surface-card)] animate-[hero-copy-in_450ms_ease-out] md:aspect-square"
+          className="group relative block aspect-[5/4] w-full cursor-zoom-in overflow-hidden rounded-3xl bg-white animate-[hero-copy-in_450ms_ease-out] md:aspect-square md:ring-1 md:ring-[var(--color-light-grey)]"
         >
           <AnimatePresence mode="wait" initial={false}>
             <motion.span
@@ -217,7 +217,7 @@ export function ProductGallery({ product }: { product: SampleProduct }) {
                 aria-label={`Show image ${index + 1}`}
                 aria-current={index === activeIndex}
                 onClick={() => setActiveIndex(index)}
-                className={`relative block h-20 w-20 overflow-hidden rounded-2xl border bg-[var(--surface-card)] transition-colors ${
+                className={`relative block h-20 w-20 overflow-hidden rounded-2xl border bg-white transition-colors ${
                   index === activeIndex
                     ? "border-[var(--color-action-red)]"
                     : "border-transparent hover:border-[var(--color-mid-grey)]"

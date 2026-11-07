@@ -281,11 +281,17 @@ h4 {
   }
 }
 
-/* Pages with the sticky purchase bar reserve its height (about 3.85rem) on top of
+/* Pages with the sticky purchase bar reserve its height (about 4.3rem) on top of
    the bottom tab bar, so the end of the page is never hidden behind it. */
 @media (max-width: 47.999rem) {
   body:has([data-sticky-purchase]) {
-    padding-bottom: calc(7.35rem + env(safe-area-inset-bottom));
+    padding-bottom: calc(7.8rem + env(safe-area-inset-bottom));
+  }
+
+  /* Toasts rise above the purchase bar instead of covering the buttons that
+     raised them. */
+  body:has([data-sticky-purchase]) [data-toast-region] {
+    bottom: calc(8.55rem + env(safe-area-inset-bottom));
   }
 }
 
@@ -311,8 +317,7 @@ details.drawer-acc[open] > ul {
     interpolate-size: allow-keywords;
   }
 
-  details.drawer-acc::details-content,
-  details.accordion-row::details-content {
+  details.drawer-acc::details-content {
     height: 0;
     overflow: clip;
     transition:
@@ -320,14 +325,12 @@ details.drawer-acc[open] > ul {
       content-visibility 260ms allow-discrete;
   }
 
-  details.drawer-acc[open]::details-content,
-  details.accordion-row[open]::details-content {
+  details.drawer-acc[open]::details-content {
     height: auto;
   }
 
   @media (prefers-reduced-motion: reduce) {
-    details.drawer-acc::details-content,
-    details.accordion-row::details-content {
+    details.drawer-acc::details-content {
       transition: none;
     }
   }
