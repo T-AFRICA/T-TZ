@@ -65,14 +65,17 @@ export const metadata: Metadata = {
       "Electrical supplies, LED lighting and switchgear for homes, businesses and industry in Tanzania.",
     type: "website",
     locale: "en_TZ",
-    images: [{ url: "/banners/black-november-pendants.webp", width: 1920, height: 500 }],
+    // A neutral card cut from the hero scene. The campaign banner carried a
+    // "Black November — up to 50% off" claim that this pre-launch site does
+    // not make, so it must not be what a shared link shows.
+    images: [{ url: "/og/tronic-tanzania.jpg", width: 1200, height: 630, alt: "TRONIC Tanzania" }],
   },
   twitter: {
     card: "summary_large_image",
     title: "TRONIC Tanzania",
     description:
       "Electrical supplies, LED lighting and switchgear for homes, businesses and industry in Tanzania.",
-    images: ["/banners/black-november-pendants.webp"],
+    images: ["/og/tronic-tanzania.jpg"],
   },
 };
 

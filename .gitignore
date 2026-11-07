@@ -23,8 +23,12 @@ id_rsa
 id_ed25519
 .npmrc
 .netrc
-.claude/settings.local.json
+.claude/
 CLAUDE.local.md
+
+# Owner documents (SRS, roadmap, brand guidelines) are shared privately,
+# never through this public repository.
+*.pdf
 gitleaks-report.*
 *.log
 
