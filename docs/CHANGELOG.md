@@ -3,6 +3,16 @@
 Meaningful implementation changes, newest first. Dates are work dates;
 nothing below is released.
 
+## 2026-11-07 — Outfit as the single typeface
+
+- The storefront now sets Outfit (SIL OFL, Google Fonts v15, latin variable
+  WOFF2, 32KB) for headings, body and UI, replacing Montserrat + Poppins
+  (seven files, 88KB). Owner decision after reviewing tz.oraimo.com, which
+  uses Outfit throughout. Self-hosted as before via next/font/local; the
+  body sets --font-body and points --font-heading at the same family, so no
+  component changed.
+- Fallback stacks, the fonts README and the design system doc follow.
+
 ## 2026-11-06 — compact product page purchase bar (phones)
 
 - The sticky purchase bar's Buy Now (outline) and Add to Cart (filled) are
