@@ -6,22 +6,23 @@ SRS v1.2 NFR-11, SSD §4, and the engineering master prompt §§3–7.
 
 ## Typography
 
-Two families only, self-hosted as WOFF2 via `next/font/local` in
-`apps/storefront/src/app/layout.tsx` as CSS variables (assets and SIL OFL
-licenses in `apps/storefront/src/fonts/` — the `next/font/google` loader
-broke CI builds on Next 15.5.x, and self-hosting removes the build-time
-network dependency):
+One family, self-hosted as a variable WOFF2 via `next/font/local` in
+`apps/storefront/src/app/layout.tsx` (asset and SIL OFL license in
+`apps/storefront/src/fonts/` — the `next/font/google` loader broke CI builds
+on Next 15.5.x, and self-hosting removes the build-time network dependency):
 
 | Variable | Family | Weights loaded | Use |
 | --- | --- | --- | --- |
-| `--font-heading` | Montserrat | 500 / 600 / 700 | Hero, page and section headings, brand expression (800/900 deliberately not loaded) |
-| `--font-body` | Poppins | 400 / 500 / 600 / 700 | Body, navigation, buttons, prices, forms, tables |
+| `--font-heading` | Outfit (same file) | variable 100–900; 600/700 used | Hero, page and section headings, brand expression |
+| `--font-body` | Outfit | variable 100–900; 400/500/600 used | Body, navigation, buttons, prices, forms, tables |
 
-Body family history: the master prompt §4 named Poppins; on 2026-11-02 the
-owner asked for SF Pro, then (being Apple-proprietary) settled on the
-native system stack after an Inter interim. On 2026-11-04 the owner
-reinstated Poppins as the body family, now self-hosted; the system stack
-remains as the fallback chain.
+Family history: the master prompt §4 named Montserrat + Poppins; on
+2026-11-02 the owner asked for SF Pro, then (being Apple-proprietary)
+settled on the native system stack after an Inter interim. On 2026-11-04 the
+owner reinstated Poppins as the body family, self-hosted. On 2026-11-07,
+after reviewing tz.oraimo.com (which sets Outfit everywhere), the owner moved
+the whole storefront to Outfit; the system stack remains as the fallback
+chain.
 
 Fallback stacks live in `--font-fallback-heading` / `--font-fallback-body`.
 
@@ -34,7 +35,7 @@ Fallback stacks live in `--font-fallback-heading` / `--font-fallback-body`.
 | `--text-h2` | 24 → 38px | Section H2 |
 | `--text-h3` | 20 → 27px | Sub-sections, feature headings |
 
-Body text is 16px Poppins; labels/captions 12–14px. Line heights: display
+Body text is 16px Outfit; labels/captions 12–14px. Line heights: display
 1.05–1.15, headings 1.15–1.3 (`leading-tight`), body 1.5–1.65.
 
 ## Color

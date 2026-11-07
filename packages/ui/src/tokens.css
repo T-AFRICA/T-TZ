@@ -42,12 +42,13 @@
   --text-muted: var(--color-mid-grey);
   --text-on-dark: var(--color-white);
 
-  /* Typography — Montserrat (headings) and Poppins (body/UI) are injected
-     by next/font/local as --font-heading / --font-body (owner decision
-     2026-11-04; self-hosted WOFF2 in apps/storefront/src/fonts). The
-     fallback stacks below apply wherever the variables are not injected
+  /* Typography — Outfit (one variable family for headings, body and UI;
+     owner decision 2026-11-07, replacing Montserrat + Poppins) is injected
+     by next/font/local as --font-body, and the storefront points
+     --font-heading at it (self-hosted WOFF2 in apps/storefront/src/fonts).
+     The fallback stacks below apply wherever the variables are not injected
      (tests, isolated component rendering). */
-  --font-fallback-heading: "Montserrat", "Segoe UI", Arial, sans-serif;
+  --font-fallback-heading: "Outfit", "Segoe UI", Arial, sans-serif;
   --font-fallback-body:
     -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto,
     "Helvetica Neue", Arial, sans-serif;

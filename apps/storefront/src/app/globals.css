@@ -16,6 +16,9 @@
 }
 
 body {
+  /* One typeface (Outfit, owner decision 2026-11-07): next/font sets
+     --font-body on this element, and headings read the same family. */
+  --font-heading: var(--font-body, var(--font-fallback-heading));
   background: var(--surface-page);
   color: var(--text-primary);
   font-family: var(--font-body, var(--font-fallback-body));

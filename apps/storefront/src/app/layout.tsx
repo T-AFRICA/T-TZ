@@ -7,31 +7,16 @@ import { Footer } from "@/components/footer/Footer";
 import { BottomNav } from "@/components/nav/BottomNav";
 import "./globals.css";
 
-// Brand typography (owner decision 2026-11-04, supersedes the interim
-// system-stack body): Montserrat 500/600/700 for headings (800/900
-// intentionally not loaded), Poppins 400-700 for body/UI. Served as
-// self-hosted WOFF2 via next/font/local — the next/font/google loader
-// fails intermittently on CI (Next 15.5.x "Cannot read properties of
-// null (reading '1')") and self-hosting removes the build-time network
-// dependency. Assets + SIL OFL licenses live in src/fonts (see its README).
-const montserrat = localFont({
-  src: [
-    { path: "../fonts/montserrat-latin-500.woff2", weight: "500", style: "normal" },
-    { path: "../fonts/montserrat-latin-600.woff2", weight: "600", style: "normal" },
-    { path: "../fonts/montserrat-latin-700.woff2", weight: "700", style: "normal" },
-  ],
-  variable: "--font-heading",
-  display: "swap",
-  fallback: ["Segoe UI", "Arial", "sans-serif"],
-});
-
-const poppins = localFont({
-  src: [
-    { path: "../fonts/poppins-latin-400.woff2", weight: "400", style: "normal" },
-    { path: "../fonts/poppins-latin-500.woff2", weight: "500", style: "normal" },
-    { path: "../fonts/poppins-latin-600.woff2", weight: "600", style: "normal" },
-    { path: "../fonts/poppins-latin-700.woff2", weight: "700", style: "normal" },
-  ],
+// Brand typography (owner decision 2026-11-07, supersedes Montserrat +
+// Poppins): Outfit, one variable file for headings, body and UI. It sets
+// --font-body; globals.css points --font-heading at the same family so the
+// components' heading/body variables keep working unchanged. Served as
+// self-hosted WOFF2 via next/font/local — the next/font/google loader fails
+// intermittently on CI (Next 15.5.x "Cannot read properties of null
+// (reading '1')") and self-hosting removes the build-time network
+// dependency. Asset + SIL OFL license live in src/fonts (see its README).
+const outfit = localFont({
+  src: [{ path: "../fonts/outfit-latin-variable.woff2", weight: "100 900", style: "normal" }],
   variable: "--font-body",
   display: "swap",
   fallback: [
@@ -85,7 +70,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       {/* max-md bottom padding keeps content clear of the fixed mobile tab
           bar, including the device safe-area inset the bar itself absorbs */}
       <body
-        className={`${montserrat.variable} ${poppins.variable} flex min-h-screen flex-col max-md:pb-[calc(3.5rem+env(safe-area-inset-bottom))]`}
+        className={`${outfit.variable} flex min-h-screen flex-col max-md:pb-[calc(3.5rem+env(safe-area-inset-bottom))]`}
       >
         <a
           href="#main-content"
