@@ -1,42 +1,15 @@
 import Link from "next/link";
 import { ArrowRightIcon, Container } from "@tronic/ui";
-import { CATEGORY_SECTIONS, METER_NAV_ITEM } from "@tronic/country-config";
+import { METER_NAV_ITEM } from "@tronic/country-config";
 import { Hero } from "@/components/home/Hero";
 import { BenefitsStrip } from "@/components/home/BenefitsStrip";
-import { CategoryArt } from "@/components/home/CategoryArt";
+import { CategoryShowcase } from "@/components/home/CategoryShowcase";
 import { FeaturedSamples } from "@/components/home/FeaturedSamples";
 import { Reveal } from "@/components/motion/Reveal";
 
-/** One category circle in the rail under the hero. The looping copy of the rail
-    stays clickable but is skipped by the keyboard. */
-function CategoryCircle({
-  section,
-  isLoopCopy = false,
-}: {
-  section: (typeof CATEGORY_SECTIONS)[number];
-  isLoopCopy?: boolean;
-}) {
-  return (
-    <Link
-      href={`/categories/${section.slug}`}
-      tabIndex={isLoopCopy ? -1 : undefined}
-      className="group flex flex-col items-center gap-1.5 text-center md:gap-2.5"
-    >
-      <span className="grid h-16 w-16 place-items-center rounded-full bg-white text-[var(--color-dark-grey)] shadow-[0_3px_10px_rgba(17,17,17,0.08)] transition-all duration-200 group-hover:scale-105 group-hover:text-[var(--color-action-red)] group-active:scale-105 group-active:text-[var(--color-action-red)] md:h-24 md:w-24 md:shadow-[0_4px_14px_rgba(17,17,17,0.08)]">
-        <span className="md:scale-125">
-          <CategoryArt slug={section.slug} size={30} />
-        </span>
-      </span>
-      <span className="text-[11px] font-medium leading-tight text-[var(--text-primary)] md:text-[13px]">
-        {section.name}
-      </span>
-    </Link>
-  );
-}
-
 /**
- * Week 1 storefront shell: hero carousel, category grid and the Meter
- * callout. Product listings, promotions and real campaign content
+ * Homepage: hero, photographic category showcase, service strip, sample
+ * product sections and the Meter callout. Product listings, promotions and real campaign content
  * (SRS FR-004) arrive in Week 2; nothing here states prices or offers.
  */
 export default function HomePage() {
@@ -44,29 +17,9 @@ export default function HomePage() {
     <>
       <Hero />
       <Container id="departments" className="scroll-mt-24 py-5 md:py-10 lg:py-12">
-        {/* News-ticker rail (owner request 2026-11-06): moves slowly right to left,
-            on every screen size. The loop needs a second copy, hidden from assistive
-            tech. Each copy is wider than the screen, so a category is never on
-            screen twice (owner request 2026-11-05). Hover, touch and keyboard focus
-            pause it; reduced motion shows one still, swipeable row. */}
-        <nav aria-label="Shop by category" className="category-rail-frame -mx-[var(--gutter)]">
-          <div className="category-rail flex w-max items-start pt-1 pb-1 md:pb-2">
-            <ul className="category-rail-group">
-              {CATEGORY_SECTIONS.map((section) => (
-                <li key={section.slug} className="w-[4.5rem] shrink-0 md:w-28">
-                  <CategoryCircle section={section} />
-                </li>
-              ))}
-            </ul>
-            <ul aria-hidden="true" className="category-rail-group category-rail-copy">
-              {CATEGORY_SECTIONS.map((section) => (
-                <li key={section.slug} className="w-[4.5rem] shrink-0 md:w-28">
-                  <CategoryCircle section={section} isLoopCopy />
-                </li>
-              ))}
-            </ul>
-          </div>
-        </nav>
+        {/* Photographic category banners (owner request 2026-11-07, oraimo
+            reference) replace the circular rail; the navbar keeps the category menu. */}
+        <CategoryShowcase />
 
         <BenefitsStrip />
 

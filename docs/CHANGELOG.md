@@ -3,6 +3,20 @@
 Meaningful implementation changes, newest first. Dates are work dates;
 nothing below is released.
 
+## 2026-11-07 — photographic category showcase
+
+- "Explore Our Categories" replaces the circular category rail on the
+  homepage: the eight navbar categories as 2:1 photographic banners (title
+  and tagline over a soft gradient, whole card a link, hover zoom and arrow,
+  still under reduced motion), two per row at every size; on phones the
+  first two are tall 3:4 feature tiles and the other six compact 2:1 tiles
+  with the title only, as in the reference. The navbar keeps its own category menu.
+- Banners are owner-supplied photographs rendered to 1600x800 WebP in
+  public/categories (the fan is official TRONIC imagery; the others are
+  stock scenes with no TRONIC branding or product claims). Swap a file to
+  change a banner.
+- The rail CSS (ticker, fades, pause rules) is removed with the rail.
+
 ## 2026-11-07 — architecture audit, plan and folder skeleton
 
 - docs/architecture/ARCHITECTURE-AUDIT-AND-PLAN.md records the current state
