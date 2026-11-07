@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ArrowRightIcon, Container } from "@tronic/ui";
 import { CATEGORY_SECTIONS, METER_NAV_ITEM } from "@tronic/country-config";
 import { Hero } from "@/components/home/Hero";
+import { BenefitsStrip } from "@/components/home/BenefitsStrip";
 import { CategoryArt } from "@/components/home/CategoryArt";
 import { FeaturedSamples } from "@/components/home/FeaturedSamples";
 import { Reveal } from "@/components/motion/Reveal";
@@ -49,7 +50,7 @@ export default function HomePage() {
             screen twice (owner request 2026-11-05). Hover, touch and keyboard focus
             pause it; reduced motion shows one still, swipeable row. */}
         <nav aria-label="Shop by category" className="category-rail-frame -mx-[var(--gutter)]">
-          <div className="category-rail flex w-max items-start pt-1 pb-2">
+          <div className="category-rail flex w-max items-start pt-1 pb-1 md:pb-2">
             <ul className="category-rail-group">
               {CATEGORY_SECTIONS.map((section) => (
                 <li key={section.slug} className="w-[4.5rem] shrink-0 md:w-28">
@@ -66,6 +67,8 @@ export default function HomePage() {
             </ul>
           </div>
         </nav>
+
+        <BenefitsStrip />
 
         <FeaturedSamples />
 
