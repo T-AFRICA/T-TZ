@@ -57,10 +57,10 @@ export function CategoryBannerCard({
         className="absolute inset-0 bg-[linear-gradient(135deg,rgba(0,0,0,0.62)_0%,rgba(0,0,0,0.28)_38%,transparent_65%)]"
       />
       <div className="absolute left-3 top-3 max-w-[80%] text-white sm:left-4 sm:top-4 md:left-5 md:top-5">
-        <h3 className="text-[15px] font-semibold leading-tight tracking-[-0.01em] [text-shadow:0_1px_2px_rgba(0,0,0,0.35)] sm:text-lg md:text-xl">
+        <h3 className="text-[13px] font-semibold leading-tight tracking-[-0.01em] [text-shadow:0_1px_2px_rgba(0,0,0,0.35)] sm:text-lg md:text-xl">
           {banner.name}
         </h3>
-        <p className={`mt-1 text-xs leading-snug text-white/85 md:text-[13px] ${feature ? "" : "max-sm:hidden"}`}>
+        <p className={`mt-0.5 text-[11px] leading-snug text-white/85 sm:mt-1 sm:text-xs md:text-[13px] ${feature ? "" : "max-sm:hidden"}`}>
           {banner.tagline}
         </p>
       </div>
