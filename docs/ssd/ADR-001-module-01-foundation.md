@@ -10,9 +10,9 @@ follow the TRONIC Tanzania Brand Guidelines v1.0 and SSD §4.
 
 ## Decisions
 
-1. **Layout**: `apps/storefront` plus `packages/ui`, `packages/types`,
+1. **Layout**: `frontend` plus `packages/ui`, `packages/types`,
    `packages/api-client`, `packages/country-config`, exactly as the SSD
-   proposes. `apps/admin` (W05) and `apps/api` (W07+) are added in their
+   proposes. `admin` (W05) and `apis` (W07+) are added in their
    build weeks, not scaffolded speculatively.
 2. **Source packages**: workspace packages export TypeScript source directly
    (`exports: "./src/index.ts"`) and the storefront transpiles them

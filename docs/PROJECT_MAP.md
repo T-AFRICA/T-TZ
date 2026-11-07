@@ -4,9 +4,9 @@ What lives where in the `T-AFRICA/T-TZ` monorepo (pnpm + Turborepo).
 
 ## Applications
 
-- `apps/storefront` — the customer-facing Next.js (App Router) storefront for
-  the Tanzania deployment. The only application so far; `apps/admin` (W05)
-  and `apps/api` (W07+) are added in their roadmap weeks.
+- `frontend` — the customer-facing Next.js (App Router) storefront for
+  the Tanzania deployment. The only application so far; `admin` (W05)
+  and `apis` (W07+) are added in their roadmap weeks.
   - `src/app` — routes: `/` (home), `/categories/[slug]`,
     `/products/[id]` (product details page over the SAMPLE catalogue),
     `/meter` (reserved single Meter page, no payment), `[...slug]`
