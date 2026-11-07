@@ -26,14 +26,15 @@ export interface AddToCartButtonProps {
   variants?: readonly string[];
 }
 
-/** The filled label; in the two-up phone grid only "Add" fits beside the icon. */
+/** The filled label: cart icon + "Add" at every size. Cards are 170-190px wide
+    in every grid (2-up phones, 4-6 per row from md), so the long label never
+    fits beside Buy Now without truncating; the accessible name still says
+    "Add to cart". */
 function AddLabel() {
   return (
     <>
       <CartIcon size={12} />
-      <span className="truncate">
-        Add<span className="max-sm:hidden"> to Cart</span>
-      </span>
+      <span>Add</span>
     </>
   );
 }

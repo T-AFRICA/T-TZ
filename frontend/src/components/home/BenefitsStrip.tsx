@@ -21,17 +21,19 @@ const BENEFITS = [
 export function BenefitsStrip() {
   return (
     <section aria-label="Why shop with TRONIC" className="mt-3 md:mt-8">
-      {/* Icon beside its label at every size: three tight columns on phones, one
-          quiet row from md. */}
-      <ul className="grid grid-cols-3 gap-1.5 rounded-2xl bg-white px-2.5 py-3 shadow-[0_2px_10px_rgba(17,17,17,0.05)] md:flex md:justify-around md:gap-6 md:border md:border-[var(--color-light-grey)] md:px-6 md:py-4 md:shadow-none">
+      {/* Icon beside its label, one line each, at every size. Phones: one row that
+          scrolls inside the strip if a narrow screen cannot fit all three (the
+          page itself never scrolls sideways; below 360px the icons step out so
+          the three labels fit); md+: one quiet row. */}
+      <ul className="flex items-center justify-between gap-3 overflow-x-auto whitespace-nowrap rounded-2xl bg-white px-3 py-2.5 shadow-[0_2px_10px_rgba(17,17,17,0.05)] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:justify-around md:gap-6 md:overflow-visible md:border md:border-[var(--color-light-grey)] md:px-6 md:py-4 md:shadow-none">
         {BENEFITS.map(({ icon: Icon, label, href }) => (
-          <li key={label} className="min-w-0">
+          <li key={label} className="shrink-0">
             <Link
               href={href}
-              className="group flex items-center gap-1.5 text-left text-[11px] font-medium leading-tight text-[var(--text-primary)] transition-colors hover:text-[var(--color-action-red)] md:gap-3 md:text-sm"
+              className="group flex items-center gap-1.5 text-[10px] font-medium leading-none text-[var(--text-primary)] transition-colors hover:text-[var(--color-action-red)] md:gap-3 md:text-sm"
             >
-              <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-[var(--surface-card)] text-[var(--color-dark-grey)] transition-colors group-hover:text-[var(--color-action-red)] md:h-10 md:w-10 [&>svg]:md:h-5 [&>svg]:md:w-5">
-                <Icon size={16} />
+              <span className="grid shrink-0 place-items-center text-[var(--color-dark-grey)] max-[359px]:hidden transition-colors group-hover:text-[var(--color-action-red)] md:h-10 md:w-10 md:rounded-full md:bg-[var(--surface-card)] [&>svg]:md:h-5 [&>svg]:md:w-5">
+                <Icon size={15} />
               </span>
               {label}
             </Link>

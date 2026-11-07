@@ -14,7 +14,7 @@ One correction up front, because the rest of the plan depends on it:
 > schema to inspect; the database work in this plan starts from an empty
 > Supabase project that the owner creates.
 
-## 1. Current project folder tree
+## 1. Project folder tree at audit time (before the layout move)
 
 ```
 T-TZ/                                   pnpm + Turborepo monorepo
@@ -60,7 +60,7 @@ T-TZ/                                   pnpm + Turborepo monorepo
 └── tsconfig.base.json
 ```
 
-Not in the repository: `apps/api`, `apps/admin`, `supabase/`, `prisma/`,
+Not in the repository: `backend/api`, `admin`, `database/`, `prisma/`,
 `vercel.json`, any `app/api/**/route.ts`, any `"use server"` file, any
 `middleware.ts`/`proxy.ts`.
 
@@ -112,45 +112,53 @@ admins. Nothing in the repo constrains this.
 
 ## 4. Proposed enterprise folder structure
 
-Adapted from the brief to what already exists. Items marked **(exists)** stay
-where they are; **(new)** are added when their phase starts; nothing is moved
-before Phase 3.
+Owner decision 2026-11-07: the concerns are top-level folders (`frontend/`,
+`backend/`, `database/`, `admin/`, `apis/`) with shared code in `packages/`
+and cross-app tests in `tests/`. The storefront moved from `apps/storefront` to `frontend/` in the
+same PR as this plan (git history preserved as a rename; the Vercel Root
+Directory changes to `frontend`, see §9 and `docs/deployment/README.md`).
+Items marked **(exists)** are in place; **(skeleton)** folders hold only a
+README until their phase starts.
 
 ```
 T-TZ/
-├── apps/
-│   ├── storefront/                      (exists) customer frontend — unchanged routes
-│   │   └── src/
-│   │       ├── app/                     (exists) + cart/, checkout/, account/, orders/,
-│   │       │                            track-order/, api/ (route handlers) as built
-│   │       ├── components/              (exists) presentation only
-│   │       ├── features/                (new, Phase 3) catalog/, cart/, checkout/, orders/
-│   │       ├── lib/                     (new) server-only helpers: db client, auth session
-│   │       └── config/                  (exists)
-│   ├── admin/                           (new, Phase 6) Next.js app: super-admin + country admin
-│   └── worker/                          (new, Phase 7/8) SAP/POS sync jobs, outside Vercel
+├── frontend/                            (exists) customer storefront, Next.js — unchanged routes
+│   └── src/
+│       ├── app/                         (exists) + cart/, checkout/, account/, orders/,
+│       │                                track-order/, api/ (route handlers) as built
+│       ├── components/                  (exists) presentation only
+│       ├── features/                    (skeleton, Phase 3) catalog/, cart/, checkout/, orders/
+│       ├── lib/                         (skeleton, Phase 4) server-only: db client, session, env
+│       └── config/                      (exists)
+├── backend/                             business logic: orders, payments, inventory, SAP/POS adapters
+│   └── worker/                          (skeleton, Phase 7) SAP/POS sync jobs, outside Vercel
+├── admin/                               (skeleton, Phase 6) Next.js app: super-admin + country admin
+├── apis/                                (skeleton, Phase 5+) public API contracts (OpenAPI), versioning, gateway
+├── database/
+│   ├── migrations/                      (skeleton, Phase 4) forward-only SQL
+│   ├── client/                          (skeleton, Phase 4) generated types + server-only query layer
+│   └── seed.sql, config.toml            (Phase 4)
 ├── packages/
 │   ├── ui/                              (exists)
 │   ├── types/                           (exists) grows into shared domain types
-│   ├── validation/                      (new, Phase 5) zod schemas shared by storefront, admin, worker
 │   ├── api-client/                      (exists) typed adapters: mock today, live later
 │   ├── country-config/                  (exists) per-country constants
-│   ├── permissions/                     (new, Phase 6) roles, scopes, country isolation helpers
-│   └── database/                        (new, Phase 4) generated types + query layer for Supabase
-├── supabase/                            (new, Phase 4) migrations/, seed.sql, config.toml
+│   ├── validation/                      (skeleton, Phase 4/5) zod schemas shared by all apps
+│   └── permissions/                     (skeleton, Phase 6) roles, scopes, country isolation
+├── tests/                               (skeleton) integration/ and e2e/; unit tests stay next to the code
 ├── docs/
-│   ├── architecture/                    (new) this plan, ADRs
-│   ├── database/ api/ integrations/ deployment/   (new, as each phase lands)
+│   ├── architecture/                    this plan, ADRs
+│   ├── database/ api/ integrations/ deployment/   (skeleton, filled per phase)
 │   └── ssd/                             (exists)
 └── .github/workflows/                   (exists)
 ```
 
 Two deliberate differences from the brief:
 
-- **No `apps/api` (NestJS/Express) in the first phases.** The storefront and
+- **No `backend/api` (NestJS/Express) in the first phases.** The storefront and
   admin are Next.js apps on Vercel; Route Handlers and Server Actions with a
   shared service layer cover products, cart, checkout, orders, payments and
-  admin APIs. A separate long-running service appears only as `apps/worker`
+  admin APIs. A separate long-running service appears only as `backend/worker`
   for SAP/POS synchronisation, which needs persistent connections and retries
   that serverless execution cannot give. The SSD's NestJS API remains the
   option if the worker grows into a full backend.
@@ -161,17 +169,17 @@ Two deliberate differences from the brief:
 
 | Today | Target | When | Risk |
 | --- | --- | --- | --- |
-| `apps/storefront/src/components/home/sampleProducts.ts` (data + type + helpers) | type → `packages/types/product.ts`; helpers → `apps/storefront/src/features/catalog/`; data → `packages/api-client` mock catalog | Phase 3 | low; pure moves with tests |
+| `frontend/src/components/home/sampleProducts.ts` (data + type + helpers) | type → `packages/types/product.ts`; helpers → `frontend/src/features/catalog/`; data → `packages/api-client` mock catalog | Phase 3 | low; pure moves with tests |
 | `packages/api-client` (search only) | add `CatalogClient` (getProduct, listProducts, listByCategory) and later `CartClient`, `OrderClient`; mock + live modes | Phase 3 → 5 | low |
 | `formatSamplePrice` hard-coded `TZS`/`en-US` | `packages/country-config` money formatter using country currency/locale; `{ amount, currency }` shape | Phase 3 | low |
-| `apps/storefront/src/app/[...slug]` catch-all | allow-listed planned routes; real `cart/`, `checkout/`, `account/` pages replace it | Phase 5 | low |
+| `frontend/src/app/[...slug]` catch-all | allow-listed planned routes; real `cart/`, `checkout/`, `account/` pages replace it | Phase 5 | low |
 | `.env.example` placeholders | real variable set per app, validated at startup (`packages/validation/env.ts`) | Phase 4 | low |
 | `packages/types` (category, country, search) | + product, variant, price, inventory, cart, order, payment, delivery, user/role | Phase 4 | low |
-| no `supabase/` | migrations + seed from the sample catalogue (SKUs, images, descriptions preserved) | Phase 4 | medium: first schema |
-| no admin | `apps/admin` on its own Vercel project | Phase 6 | medium: second deployment |
-| no worker | `apps/worker` (Node service; host TBD) | Phase 7 | medium: hosting decision |
+| no `database/` | migrations + seed from the sample catalogue (SKUs, images, descriptions preserved) | Phase 4 | medium: first schema |
+| no admin | `admin` on its own Vercel project | Phase 6 | medium: second deployment |
+| no worker | `backend/worker` (Node service; host TBD) | Phase 7 | medium: hosting decision |
 
-What never moves: `apps/storefront` as the Vercel root, the approved TRONIC UI
+What never moves: the approved TRONIC UI
 components, public assets and routes, the sample-data labelling until live data
 replaces it.
 
@@ -179,13 +187,13 @@ replaces it.
 
 Principle: **one service layer, two transports.**
 
-- `apps/storefront/src/features/<domain>/service.ts` holds business logic
+- `frontend/src/features/<domain>/service.ts` holds business logic
   (pricing, stock checks, order state machine) and is server-only.
 - Transports: Server Actions for first-party forms (add to cart, checkout
   steps) and Route Handlers under `app/api/v1/*` for anything called by the
   admin app, the worker, webhooks or future mobile clients. Both validate with
   `packages/validation` and call the same services.
-- Database access only through `packages/database` with the service-role key
+- Database access only through `database/client` with the service-role key
   on the server; the browser never holds a privileged key. If the anon key is
   used at all, RLS policies must make it safe for read-only public catalogue
   data.
@@ -197,14 +205,14 @@ Principle: **one service layer, two transports.**
   `countryCode` (from the deployment's configuration, never from the request),
   and every table that is country-scoped has a `country_code` column with
   policies and indexes on it.
-- When it earns its place: `apps/worker` for SAP/POS sync, scheduled
+- When it earns its place: `backend/worker` for SAP/POS sync, scheduled
   reconciliation and retries (BullMQ + Redis as the SSD proposes, or Supabase
-  cron + queues if the volume is small). It shares `packages/database`,
+  cron + queues if the volume is small). It shares `database/client`,
   `packages/validation` and `packages/types`.
 
 ## 7. Super Admin and Country Admin architecture
 
-- One app, `apps/admin`, deployed as a second Vercel project on an admin
+- One app, `admin`, deployed as a second Vercel project on an admin
   subdomain; it is never part of the storefront bundle.
 - Authentication: Supabase Auth (email + password with MFA for admins) if the
   owner accepts Supabase Auth; sessions are server-verified on every request.
@@ -259,7 +267,7 @@ indexes on SKU, provider references and idempotency keys; RLS enabled on every
 table with explicit policies (public read on published catalogue rows only;
 customers see their own carts/orders; admins by role + country); privileged
 writes via the service role from server code only; migrations are forward-only
-SQL files under `supabase/migrations`, reviewed in PRs; a `seed.sql` loads the
+SQL files under `database/migrations`, reviewed in PRs; a `seed.sql` loads the
 current sample catalogue so SKUs, images and descriptions carry over; no
 destructive migration without explicit owner approval.
 
@@ -269,19 +277,21 @@ Known from the repository and the GitHub API: Vercel deploys `main` to
 production and builds a preview per PR; the status context is "Vercel";
 previews sit behind Vercel SSO. **Not in the repository and to be confirmed in
 the Vercel dashboard before any restructuring:** the project's Root
-Directory (expected `apps/storefront`), install command (expected
+Directory (was `apps/storefront`; must become `frontend` when the layout PR merges), install command (expected
 `pnpm install --frozen-lockfile`), build command, Node version, and the
 environment variables set (names only; `NEXT_PUBLIC_SITE_URL` at least).
 
 Impact of this plan:
 
-- Phases 1–3 and 5 change nothing about the Vercel project: the storefront
-  stays at `apps/storefront` with the same routes and assets.
+- The layout PR needs one dashboard change: Root Directory from
+  `apps/storefront` to `frontend` (see docs/deployment/README.md). After that,
+  Phases 1–3 and 5 change nothing about the Vercel project: the storefront
+  stays at `frontend` with the same routes and assets.
 - Phase 4 adds server-side environment variables to the storefront project
   (`DATABASE_URL`/Supabase URL + service-role key, later payment secrets).
   They are added in the dashboard, never committed; `.env.example` lists the
   names.
-- Phase 6 adds a **second** Vercel project for `apps/admin` with its own
+- Phase 6 adds a **second** Vercel project for `admin` with its own
   domain and variables; the storefront project is untouched.
 - Phase 7 adds a worker outside Vercel (host to be decided); no storefront
   impact.
@@ -317,10 +327,10 @@ and `docs/database/schema-v1.md` (ERD + table list from §8) for review.
 **Phase 4 — Supabase foundation.**
 1. Owner creates the Supabase project; names of the variables go into
    `.env.example`; `packages/validation/env.ts` validates them at startup.
-2. `supabase/migrations/0001_core.sql` (reference + catalogue + inventory
+2. `database/migrations/0001_core.sql` (reference + catalogue + inventory
    tables, RLS enabled, public read policy on published products), `seed.sql`
    from the sample catalogue.
-3. `packages/database` with generated types and a server-only client; a
+3. `database/client` with generated types and a server-only client; a
    `CatalogClient` live mode behind the existing adapter; `mock` stays the
    default until the owner flips the deployment variable.
 4. Preview deployment reads from Supabase; production stays on mock until
@@ -333,14 +343,14 @@ idempotency key, server-computed totals), order tracking; Route Handlers under
 with signature verification and reconciliation job stub. Replace the
 catch-all with real routes.
 
-**Phase 6 — admin app.** `apps/admin`, Supabase Auth, `packages/permissions`,
+**Phase 6 — admin app.** `admin`, Supabase Auth, `packages/permissions`,
 RBAC + country isolation enforced in services and RLS; super-admin and
 country-admin screens in the order: products/inventory → orders/delivery →
 payments reports → users/roles → integrations monitor → audit log → settings.
 Second Vercel project.
 
 **Phase 7 — single product POC.** One real SKU, sandbox payment provider,
-`apps/worker` with SAP and POS adapters as configurable modules (TZ/UG shared
+`backend/worker` with SAP and POS adapters as configurable modules (TZ/UG shared
 SAP environment, KE separate), idempotent sync records, retries with backoff,
 error logging; end-to-end: browse → cart → checkout → sandbox payment →
 order → stock movement → SAP/POS sync record → delivery status.
