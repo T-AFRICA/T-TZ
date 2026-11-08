@@ -17,6 +17,15 @@ export interface CategorySection {
   slug: string;
   /** Display name, e.g. "Cables & Wiring". */
   name: string;
+  /** One line under the name on homepage banners and listing headers. */
+  description?: string;
+  /**
+   * "department" (default) owns products through its groups. "use-case"
+   * (Shop by Use) collects products from every department by who they are
+   * for: its groups are use cases and products reference them in
+   * `useCases`, so no product is duplicated into a second category.
+   */
+  kind?: "department" | "use-case";
   /** Second-level groups shown in the mega-menu and on the category page. */
   groups: CategoryGroup[];
 }

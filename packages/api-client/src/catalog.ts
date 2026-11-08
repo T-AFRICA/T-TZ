@@ -1,0 +1,109 @@
+import type { CountryCode, Product, ProductPage, ProductQuery, ProductSort } from "@tronic/types";
+import { ALL_SAMPLE_PRODUCTS } from "./mock/catalog-data";
+
+/**
+ * Typed catalogue boundary (SSD §4): the storefront only ever talks to this
+ * interface. The mock implementation filters, sorts and pages the sample set
+ * in memory with exactly the semantics the live client must reproduce in SQL
+ * (Phase 4, Supabase), so swapping the client changes no UI code.
+ *
+ * Country isolation is enforced here: every call carries the server-derived
+ * country, and a product outside that country's list is never returned, not
+ * even by id.
+ */
+export interface CatalogClient {
+  listProducts(query: ProductQuery): Promise<ProductPage>;
+  getProduct(slug: string, country: CountryCode): Promise<Product | null>;
+  /** Same-category products (excluding the product itself), catalogue order. */
+  getRelatedProducts(product: Product, country: CountryCode, limit?: number): Promise<readonly Product[]>;
+}
+
+export type CatalogClientMode = "mock";
+
+export const DEFAULT_PAGE_SIZE = 12;
+export const MAX_PAGE_SIZE = 48;
+export const PRODUCT_SORTS: readonly ProductSort[] = ["newest", "price-asc", "price-desc", "name-asc"];
+
+function visibleIn(country: CountryCode) {
+  return (product: Product) => product.active && product.countries.includes(country);
+}
+
+function sortProducts(items: Product[], sort: ProductSort): Product[] {
+  const sorted = [...items];
+  switch (sort) {
+    case "price-asc":
+      return sorted.sort((a, b) => a.price - b.price || a.sequence - b.sequence);
+    case "price-desc":
+      return sorted.sort((a, b) => b.price - a.price || a.sequence - b.sequence);
+    case "name-asc":
+      return sorted.sort((a, b) => a.name.localeCompare(b.name, "en") || a.sequence - b.sequence);
+    case "newest":
+    default:
+      return sorted.sort((a, b) => b.sequence - a.sequence);
+  }
+}
+
+export class MockCatalogClient implements CatalogClient {
+  constructor(private readonly products: readonly Product[] = ALL_SAMPLE_PRODUCTS) {}
+
+  async listProducts(query: ProductQuery): Promise<ProductPage> {
+    const scope = this.products
+      .filter(visibleIn(query.country))
+      .filter((product) => !query.category || product.categorySlug === query.category)
+      .filter((product) => !query.group || product.groupSlug === query.group)
+      .filter((product) => !query.useCases || (product.useCases ?? []).some((u) => query.useCases?.includes(u)));
+
+    const brands = [...new Set(scope.map((product) => product.brand).filter((b): b is string => !!b))].sort();
+    const prices = scope.map((product) => product.price);
+    const facets = {
+      brands,
+      priceMin: prices.length ? Math.min(...prices) : 0,
+      priceMax: prices.length ? Math.max(...prices) : 0,
+    };
+
+    const wanted = new Set(query.brands ?? []);
+    const filtered = scope
+      .filter((product) => wanted.size === 0 || (product.brand !== undefined && wanted.has(product.brand)))
+      .filter((product) => query.minPrice === undefined || product.price >= query.minPrice)
+      .filter((product) => query.maxPrice === undefined || product.price <= query.maxPrice)
+      .filter((product) => !query.inStockOnly || product.inStock);
+
+    const sorted = sortProducts(filtered, query.sort ?? "newest");
+    const pageSize = Math.min(Math.max(query.pageSize ?? DEFAULT_PAGE_SIZE, 1), MAX_PAGE_SIZE);
+    const pageCount = Math.max(1, Math.ceil(sorted.length / pageSize));
+    const page = Math.min(Math.max(query.page ?? 1, 1), pageCount);
+    const start = (page - 1) * pageSize;
+
+    return {
+      items: sorted.slice(start, start + pageSize),
+      total: sorted.length,
+      page,
+      pageSize,
+      pageCount,
+      facets,
+    };
+  }
+
+  async getProduct(slug: string, country: CountryCode): Promise<Product | null> {
+    return this.products.find((product) => product.slug === slug && visibleIn(country)(product)) ?? null;
+  }
+
+  async getRelatedProducts(product: Product, country: CountryCode, limit = 6): Promise<readonly Product[]> {
+    return this.products
+      .filter(visibleIn(country))
+      .filter((other) => other.categorySlug === product.categorySlug && other.id !== product.id)
+      .slice(0, limit);
+  }
+}
+
+/**
+ * Factory for the storefront's catalogue adapter. Only "mock" exists today;
+ * requesting anything else is a programming error, not a silent fallback, so
+ * sample data can never masquerade as live records (SSD §4 rule).
+ */
+export function createCatalogClient(mode: CatalogClientMode = "mock"): CatalogClient {
+  if (mode !== "mock") {
+    throw new Error(`Unknown catalog client mode: ${String(mode)}`);
+  }
+  return new MockCatalogClient();
+}
