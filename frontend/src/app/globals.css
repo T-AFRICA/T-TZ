@@ -68,15 +68,30 @@ h4 {
   }
 }
 
-/* Mobile drawer entrance: panel slides in, backdrop fades (master prompt §10). */
+/* Mobile drawer motion (owner request 2026-11-08): the panel slides in from
+   the left on one eased curve, the backdrop fades and blurs with it, the
+   contents reveal in order, and closing plays in reverse before the dialog
+   actually closes (MobileNav keeps the dialog open until drawer-out ends).
+   Transform and opacity only, so the work stays on the compositor. */
+:root {
+  --drawer-ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
 @keyframes drawer-in {
   from {
-    opacity: 0;
-    transform: translateX(-18px);
+    transform: translateX(-100%);
   }
   to {
-    opacity: 1;
     transform: translateX(0);
+  }
+}
+
+@keyframes drawer-out {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-100%);
   }
 }
 
@@ -89,8 +104,23 @@ h4 {
   }
 }
 
+@keyframes backdrop-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
 .mobile-drawer[open] {
-  animation: drawer-in 240ms ease-out;
+  animation: drawer-in 400ms var(--drawer-ease) both;
+  will-change: transform;
+}
+
+.mobile-drawer[open][data-closing] {
+  animation: drawer-out 280ms var(--drawer-ease) both;
+  pointer-events: none;
 }
 
 /* The drawer scrolls, but a visible scrollbar breaks the card composition. */
@@ -112,13 +142,52 @@ h4 {
 }
 
 .mobile-drawer[open]::backdrop {
-  animation: backdrop-in 200ms ease-out;
+  animation: backdrop-in 250ms ease-out both;
   background: rgba(0, 0, 0, 0.45);
-  backdrop-filter: blur(3px);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
 }
 
-/* Drawer content staggers in after the panel (premium micro-interaction). */
+.mobile-drawer[open][data-closing]::backdrop {
+  animation: backdrop-out 250ms ease-out both;
+}
+
+/* The page behind the open drawer must not scroll. */
+body:has(.mobile-drawer[open]) {
+  overflow: hidden;
+}
+
+/* Contents reveal in document order once the panel starts moving: each
+   element carries --i, giving a 40ms stagger with a 10px upward settle. */
 @keyframes drawer-item-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.mobile-drawer[open] .drawer-reveal {
+  animation: drawer-item-in 300ms var(--drawer-ease) both;
+  animation-delay: calc(80ms + var(--i, 0) * 40ms);
+}
+
+.mobile-drawer[open][data-closing] .drawer-reveal {
+  animation: none;
+}
+
+/* Accordion chevron and the subcategory list's own small stagger. */
+.drawer-acc summary .drawer-chevron {
+  transition:
+    transform 280ms var(--drawer-ease),
+    background-color 200ms,
+    color 200ms;
+}
+
+@keyframes accordion-item-in {
   from {
     opacity: 0;
     transform: translateY(6px);
@@ -129,20 +198,24 @@ h4 {
   }
 }
 
-.mobile-drawer[open] .drawer-stagger {
-  animation: drawer-item-in 320ms ease-out both;
+details.drawer-acc[open] > ul > li {
+  animation: accordion-item-in 260ms var(--drawer-ease) both;
+  animation-delay: calc(40ms + var(--i, 0) * 35ms);
 }
 
-.mobile-drawer[open] .drawer-stagger:nth-child(2) {
-  animation-delay: 60ms;
-}
+@media (prefers-reduced-motion: reduce) {
+  .mobile-drawer[open],
+  .mobile-drawer[open][data-closing],
+  .mobile-drawer[open]::backdrop,
+  .mobile-drawer[open][data-closing]::backdrop,
+  .mobile-drawer[open] .drawer-reveal,
+  details.drawer-acc[open] > ul > li {
+    animation: none;
+  }
 
-.mobile-drawer[open] .drawer-stagger:nth-child(3) {
-  animation-delay: 120ms;
-}
-
-.mobile-drawer[open] .drawer-stagger:nth-child(4) {
-  animation-delay: 180ms;
+  .drawer-acc summary .drawer-chevron {
+    transition: none;
+  }
 }
 
 /* Announcement ticker: each message slides up into place like a news line. */
@@ -184,10 +257,6 @@ h4 {
   }
 }
 
-details.drawer-acc[open] > ul {
-  animation: accordion-in 240ms ease-out;
-}
-
 @supports (interpolate-size: allow-keywords) {
   :root {
     interpolate-size: allow-keywords;
@@ -197,7 +266,7 @@ details.drawer-acc[open] > ul {
     height: 0;
     overflow: clip;
     transition:
-      height 260ms ease,
+      height 280ms var(--drawer-ease),
       content-visibility 260ms allow-discrete;
   }
 

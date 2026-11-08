@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { CATEGORY_SECTIONS, METER_NAV_ITEM } from "@tronic/country-config";
@@ -13,17 +13,86 @@ import { ACCOUNT_LINK, CHECK_WARRANTY_LINK, TRACK_ORDER_LINK, WISHLIST_LINK } fr
  * Mobile navigation drawer built on the native <dialog> element, which
  * provides focus containment and Escape handling for free. Premium app
  * styling (owner iterations, Nov 2026): off-white canvas with white cards,
- * per-category icon chips, slide-in motion (reduced-motion safe via the
- * global override). Order per owner: categories, Meter Token Issuer,
+ * per-category icon chips. Order per owner: categories, Meter Token Issuer,
  * Track Order, Check Warranty, Wishlist, country, red Login last; company
  * links live in the footer.
+ *
+ * Motion (owner request 2026-11-08): the panel slides in over 400ms with the
+ * backdrop fading and blurring, the contents reveal in document order (each
+ * carries a --i stagger index for globals.css), and closing plays the slide
+ * back before the dialog really closes: close() marks the dialog
+ * data-closing, waits for the drawer-out animation to end, then calls
+ * dialog.close(). Escape, the X button, a backdrop tap and a leftward swipe
+ * all go through that path. Reduced motion skips every animation and closes
+ * at once.
  */
 export function MobileNav() {
   const dialogRef = useRef<HTMLDialogElement>(null);
+  const touchStart = useRef<{ x: number; y: number } | null>(null);
   const pathname = usePathname();
 
-  function close() {
-    dialogRef.current?.close();
+  const close = useCallback(() => {
+    const dialog = dialogRef.current;
+    if (!dialog || !dialog.open || dialog.dataset.closing !== undefined) {
+      return;
+    }
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      dialog.close();
+      return;
+    }
+    dialog.dataset.closing = "";
+    let done = false;
+    const finish = () => {
+      if (done) {
+        return;
+      }
+      done = true;
+      dialog.removeEventListener("animationend", onEnd);
+      delete dialog.dataset.closing;
+      dialog.close();
+    };
+    const onEnd = (event: AnimationEvent) => {
+      if (event.target === dialog) {
+        finish();
+      }
+    };
+    dialog.addEventListener("animationend", onEnd);
+    // Safety net if the animation never fires (for example in a hidden tab).
+    window.setTimeout(finish, 400);
+  }, []);
+
+  // Escape would close the dialog instantly; route it through the animated close.
+  useEffect(() => {
+    const dialog = dialogRef.current;
+    if (!dialog) {
+      return;
+    }
+    const onCancel = (event: Event) => {
+      event.preventDefault();
+      close();
+    };
+    dialog.addEventListener("cancel", onCancel);
+    return () => dialog.removeEventListener("cancel", onCancel);
+  }, [close]);
+
+  function onTouchStart(event: React.TouchEvent) {
+    const touch = event.touches[0];
+    touchStart.current = touch ? { x: touch.clientX, y: touch.clientY } : null;
+  }
+
+  function onTouchEnd(event: React.TouchEvent) {
+    const start = touchStart.current;
+    const touch = event.changedTouches[0];
+    touchStart.current = null;
+    if (!start || !touch) {
+      return;
+    }
+    const dx = touch.clientX - start.x;
+    const dy = touch.clientY - start.y;
+    // A clear leftward swipe closes the drawer; vertical scrolling does not.
+    if (dx < -60 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+      close();
+    }
   }
 
   return (
@@ -42,6 +111,8 @@ export function MobileNav() {
         ref={dialogRef}
         className="mobile-drawer m-0 h-full max-h-none w-[85vw] max-w-[22rem] overflow-y-auto rounded-r-2xl bg-[var(--color-off-white)] p-0 backdrop:bg-black/50"
         aria-label="Site menu"
+        onTouchStart={onTouchStart}
+        onTouchEnd={onTouchEnd}
         onClick={(event) => {
           // Click on the backdrop (the dialog element itself) closes the drawer.
           if (event.target === dialogRef.current) {
@@ -49,7 +120,7 @@ export function MobileNav() {
           }
         }}
       >
-        <div className="sticky top-0 z-10 flex items-center justify-between border-b-2 border-transparent bg-white p-4 shadow-sm [border-image:linear-gradient(90deg,var(--color-brand-red),rgba(239,28,38,0.25)_55%,transparent)_1]">
+        <div className="drawer-reveal sticky top-0 z-10 flex items-center justify-between border-b-2 border-transparent bg-white p-4 shadow-sm [border-image:linear-gradient(90deg,var(--color-brand-red),rgba(239,28,38,0.25)_55%,transparent)_1]">
           <BrandMark tone="light" />
           <button
             type="button"
@@ -70,14 +141,18 @@ export function MobileNav() {
           </button>
         </div>
 
-        <nav aria-label="Product categories" className="drawer-stagger p-3">
-          <h2 className="flex items-center gap-3 px-2 pb-2.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--text-secondary)]">
+        <nav aria-label="Product categories" className="p-3">
+          <h2 style={{ "--i": 1 } as React.CSSProperties} className="drawer-reveal flex items-center gap-3 px-2 pb-2.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--text-secondary)]">
             Categories
             <span aria-hidden="true" className="h-px flex-1 bg-[var(--color-light-grey)]" />
           </h2>
           <ul className="overflow-hidden rounded-2xl bg-white shadow-[0_3px_14px_rgba(17,17,17,0.06)]">
-            {CATEGORY_SECTIONS.map((section) => (
-              <li key={section.slug} className="border-b border-[var(--color-off-white)] last:border-b-0">
+            {CATEGORY_SECTIONS.map((section, index) => (
+              <li
+                key={section.slug}
+                style={{ "--i": 2 + index } as React.CSSProperties}
+                className="drawer-reveal border-b border-[var(--color-off-white)] last:border-b-0"
+              >
                 <details className="group drawer-acc">
                   <summary className="group/row flex cursor-pointer items-center gap-3 px-3 py-1.5 font-medium transition-colors hover:bg-[var(--surface-alt)] active:bg-[var(--surface-card)]">
                     <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-[var(--surface-card)] text-[var(--color-dark-grey)] shadow-[inset_0_0_0_1px_rgba(17,17,17,0.04)] transition-all duration-200 group-hover/row:scale-110 group-hover/row:bg-[#fdecec] group-hover/row:text-[var(--color-action-red)] group-active/row:scale-110 group-active/row:bg-[#fdecec] group-active/row:text-[var(--color-action-red)] group-open:bg-[#fdecec] group-open:text-[var(--color-action-red)]">
@@ -86,14 +161,14 @@ export function MobileNav() {
                     <span className="flex-1 text-sm transition-transform duration-200 group-hover/row:translate-x-0.5">
                       {section.name}
                     </span>
-                    <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-[var(--surface-card)] text-[var(--text-muted)] transition-all group-open:rotate-180 group-open:bg-[#fdecec] group-open:text-[var(--color-action-red)]">
+                    <span className="drawer-chevron grid h-6 w-6 shrink-0 place-items-center rounded-full bg-[var(--surface-card)] text-[var(--text-muted)] group-open:rotate-180 group-open:bg-[#fdecec] group-open:text-[var(--color-action-red)]">
                       <svg aria-hidden="true" width="12" height="12" viewBox="0 0 14 14" fill="none">
                         <path d="M3 5l4 4 4-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
                       </svg>
                     </span>
                   </summary>
                   <ul className="mx-3 mb-3 ml-[26px] border-l-2 border-[var(--color-light-grey)] py-0.5 pl-6">
-                    <li>
+                    <li style={{ "--i": 0 } as React.CSSProperties}>
                       <Link
                         href={`/categories/${section.slug}`}
                         onClick={close}
@@ -102,8 +177,8 @@ export function MobileNav() {
                         All {section.name}
                       </Link>
                     </li>
-                    {section.groups.map((group) => (
-                      <li key={group.slug}>
+                    {section.groups.map((group, groupIndex) => (
+                      <li key={group.slug} style={{ "--i": groupIndex + 1 } as React.CSSProperties}>
                         <Link
                           href={`/categories/${section.slug}`}
                           onClick={close}
@@ -120,8 +195,8 @@ export function MobileNav() {
           </ul>
         </nav>
 
-        <nav aria-label="Quick links" className="drawer-stagger px-3 pb-3">
-          <h2 className="flex items-center gap-3 px-2 pb-2.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--text-secondary)]">
+        <nav aria-label="Quick links" className="px-3 pb-3">
+          <h2 style={{ "--i": 2 + CATEGORY_SECTIONS.length } as React.CSSProperties} className="drawer-reveal flex items-center gap-3 px-2 pb-2.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--text-secondary)]">
             Quick links
             <span aria-hidden="true" className="h-px flex-1 bg-[var(--color-light-grey)]" />
           </h2>
@@ -131,11 +206,15 @@ export function MobileNav() {
               { ...TRACK_ORDER_LINK, icon: TruckIcon },
               { ...CHECK_WARRANTY_LINK, icon: ShieldCheckIcon },
               { ...WISHLIST_LINK, icon: HeartIcon },
-            ].map((item) => {
+            ].map((item, index) => {
               const Icon = item.icon;
               const isActive = pathname === item.href;
               return (
-                <li key={item.href} className="border-b border-[var(--color-off-white)] last:border-b-0">
+                <li
+                  key={item.href}
+                  style={{ "--i": 3 + CATEGORY_SECTIONS.length + index } as React.CSSProperties}
+                  className="drawer-reveal border-b border-[var(--color-off-white)] last:border-b-0"
+                >
                   <Link
                     href={item.href}
                     onClick={close}
@@ -173,7 +252,7 @@ export function MobileNav() {
           </ul>
         </nav>
 
-        <div className="drawer-stagger px-3 pb-5">
+        <div style={{ "--i": 7 + CATEGORY_SECTIONS.length } as React.CSSProperties} className="drawer-reveal px-3 pb-5">
           <div className="rounded-2xl bg-white p-3 shadow-[0_3px_14px_rgba(17,17,17,0.06)]">
             <CountrySelector />
             <Link
