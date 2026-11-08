@@ -3,6 +3,19 @@
 Meaningful implementation changes, newest first. Dates are work dates;
 nothing below is released.
 
+## 2026-11-08 — mobile drawer motion
+
+- The menu drawer slides in from the left over 400ms on cubic-bezier(0.22,
+  1, 0.36, 1) while the backdrop fades and blurs (250ms); its contents reveal
+  in document order (logo row, Categories heading, each category, Quick links
+  heading and items, country and Login) with a 40ms stagger and a 10px
+  settle. Closing plays the slide back (280ms) and the backdrop fade before
+  the dialog really closes, whether by the X, a backdrop tap, Escape or a
+  leftward swipe. The page behind cannot scroll while it is open.
+- Accordion chevrons rotate on the same curve and subcategory links stagger
+  in (35ms). Everything is transform/opacity only; reduced motion skips all
+  of it and closes at once. UI, colours, sizes and order are unchanged.
+
 ## 2026-11-07 — category showcase follow-ups
 
 - The "Explore Our Categories" heading is visually hidden (it remains for
