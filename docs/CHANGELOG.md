@@ -3,6 +3,46 @@
 Meaningful implementation changes, newest first. Dates are work dates;
 nothing below is released.
 
+## 2026-11-08 — category navigation and product browsing (Module 03)
+
+- Department pages (`/categories/[slug]`) list products instead of the
+  "coming soon" group tiles, and every group has its own page
+  (`/categories/[slug]/[group]`): breadcrumb, group chips with the active one
+  highlighted, result count, brand / price-range / in-stock filters, sort
+  (newest, price up or down, name) and pagination (12 per page). Filters are
+  a plain GET form, so the URL is the state: shareable, back-button safe,
+  works without JavaScript. Desktop keeps a sidebar; phones open the same
+  form in a bottom sheet that slides up on the drawer curve. Unknown
+  category or group pairs return the branded 404; loading skeletons cover
+  server renders.
+- Catalogue boundary: `Product`, `ProductQuery`, `ProductPage` types in
+  `packages/types`; `CatalogClient` (`listProducts`, `getProduct`,
+  `getRelatedProducts`) with a mock implementation in `packages/api-client`
+  that enforces country isolation (a product outside the active country is
+  never returned, not even by slug) and computes facets from the unfiltered
+  section; `formatMoney` in `packages/country-config` using the country's
+  locale and the currency's own precision (TZS/KES/UGX have none). The
+  homepage sample set moved into the mock catalogue with slug, SKU, brand,
+  group and catalogue order; the old `sampleProducts` module is a thin
+  compatibility layer.
+- Product page reads through the client by slug, shows the group in the
+  breadcrumb and specification rows, brand and description when present,
+  and a canonical URL. Mega menu and drawer group links point at the group
+  pages; product cards link by slug.
+- Shop by Use is modelled as use cases, not a ninth department: products
+  carry `useCases` (homeowners, contractors, commercial) and its pages list
+  matching products from every department, so nothing is duplicated.
+  Department pages show the section's one-line description (the same text
+  as the homepage banners, now a single source in `country-config`).
+- SEO: listing metadata with canonical URLs (filters stripped, page kept)
+  and `noindex, follow` on filtered or sorted views.
+- Draft schema `database/migrations/0001_catalog.sql` and
+  `docs/database/schema-v1.md` describe the Phase 4 tables and the exact
+  query the live adapter must reproduce. Not applied: no Supabase project
+  exists yet.
+- Tests: 14 new (catalogue client filters, sort, pagination, country
+  isolation, URL parsing against hostile input, metadata, money).
+
 ## 2026-11-08 — mobile drawer motion
 
 - The menu drawer slides in from the left over 400ms on cubic-bezier(0.22,

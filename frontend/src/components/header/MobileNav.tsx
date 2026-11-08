@@ -180,7 +180,7 @@ export function MobileNav() {
                     {section.groups.map((group, groupIndex) => (
                       <li key={group.slug} style={{ "--i": groupIndex + 1 } as React.CSSProperties}>
                         <Link
-                          href={`/categories/${section.slug}`}
+                          href={`/categories/${section.slug}/${group.slug}`}
                           onClick={close}
                           className="block rounded py-2 text-sm text-[var(--text-secondary)]"
                         >
