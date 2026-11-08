@@ -24,7 +24,7 @@ export function ProductCard({ product }: { product: SampleProduct }) {
       <div className="relative aspect-[4/3] overflow-hidden rounded-lg bg-white">
         <Tilt3D className="absolute inset-0">
           <Link
-            href={`/products/${product.id}`}
+            href={`/products/${product.slug}`}
             tabIndex={-1}
             aria-hidden="true"
             className="relative block h-full w-full"
@@ -61,7 +61,7 @@ export function ProductCard({ product }: { product: SampleProduct }) {
           {product.categoryName}
         </p>
         <Link
-          href={`/products/${product.id}`}
+          href={`/products/${product.slug}`}
           className="mt-0.5 line-clamp-2 min-h-[2.5em] text-xs font-semibold leading-snug transition-colors hover:text-[var(--color-action-red)] md:text-[13px]"
         >
           {product.name}

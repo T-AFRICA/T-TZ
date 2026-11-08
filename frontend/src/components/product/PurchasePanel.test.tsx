@@ -11,13 +11,20 @@ vi.mock("next/navigation", () => ({
 
 const baseProduct: SampleProduct = {
   id: "sample-test-bulb",
+  slug: "sample-test-bulb",
+  sku: "SAMPLE-TEST-BULB",
   name: "Test Bulb",
+  brand: "TRONIC",
   categorySlug: "lighting",
   categoryName: "Lighting",
   image: "/products/led-bulb.png",
   price: 10_000,
+  currency: "TZS",
   wasPrice: 12_500,
   inStock: true,
+  countries: ["TZ"],
+  active: true,
+  sequence: 1,
   variants: ["Warm White", "Cool White"],
 };
 

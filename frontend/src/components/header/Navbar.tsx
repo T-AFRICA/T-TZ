@@ -161,7 +161,7 @@ export function Navbar() {
               {openSection.groups.map((group) => (
                 <li key={group.slug}>
                   <Link
-                    href={`/categories/${openSection.slug}`}
+                    href={`/categories/${openSection.slug}/${group.slug}`}
                     className="block rounded px-2 py-1.5 text-sm text-[var(--text-secondary)] hover:bg-[var(--surface-card)] hover:text-[var(--color-action-red)]"
                     onClick={() => setOpenSlug(null)}
                   >

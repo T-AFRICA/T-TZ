@@ -5,25 +5,24 @@ import { ProductGallery } from "@/components/product/ProductGallery";
 import { PurchasePanel } from "@/components/product/PurchasePanel";
 import { RecentlyViewed } from "@/components/product/RecentlyViewed";
 import { ProductSection } from "@/components/home/ProductSection";
-import {
-  allSampleProducts,
-  getSampleProduct,
-  relatedSampleProducts,
-} from "@/components/home/sampleProducts";
+import { allSampleProducts } from "@/components/home/sampleProducts";
+import { catalogClient } from "@/features/catalog/catalog";
+import { ACTIVE_COUNTRY, getCategorySection } from "@tronic/country-config";
 import { POLICY_LINKS, CHECK_WARRANTY_LINK } from "@/config/site";
 
 export function generateStaticParams() {
-  return allSampleProducts().map((product) => ({ id: product.id }));
+  return allSampleProducts().map((product) => ({ id: product.slug }));
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const product = getSampleProduct(id);
+  const product = await catalogClient.getProduct(id, ACTIVE_COUNTRY.code);
   return {
     title: product ? product.name : "Product",
     description: product
-      ? `${product.name} — ${product.categoryName} at TRONIC Tanzania (sample catalogue entry).`
+      ? (product.description ?? `${product.name} — ${product.categoryName} at TRONIC Tanzania (sample catalogue entry).`)
       : undefined,
+    alternates: product ? { canonical: `/products/${product.slug}` } : undefined,
   };
 }
 
@@ -59,12 +58,15 @@ function SpecRow({ label, children }: { label: string; children: React.ReactNode
  */
 export default async function ProductPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const product = getSampleProduct(id);
+  const product = await catalogClient.getProduct(id, ACTIVE_COUNTRY.code);
   if (!product) {
     notFound();
   }
 
-  const related = relatedSampleProducts(product);
+  const related = await catalogClient.getRelatedProducts(product, ACTIVE_COUNTRY.code);
+  const group = product.groupSlug
+    ? getCategorySection(product.categorySlug)?.groups.find((g) => g.slug === product.groupSlug)
+    : undefined;
 
   return (
     <Container className="pt-3 pb-8 sm:pt-4 md:py-10 md:pb-16">
@@ -92,6 +94,21 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
                   {product.categoryName}
                 </Link>
               </li>
+              {group ? (
+                <>
+                  <li aria-hidden="true" className="text-[var(--color-light-grey)]">
+                    /
+                  </li>
+                  <li className="shrink-0 max-[359px]:hidden">
+                    <Link
+                      href={`/categories/${product.categorySlug}/${group.slug}`}
+                      className="hover:text-[var(--color-action-red)]"
+                    >
+                      {group.name}
+                    </Link>
+                  </li>
+                </>
+              ) : null}
               <li aria-hidden="true" className="text-[var(--color-light-grey)]">
                 /
               </li>
@@ -102,7 +119,7 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
           </nav>
 
           <p className="mt-3.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--text-muted)] md:mt-4 md:text-[11px]">
-            TRONIC · {product.categoryName}
+            {product.brand ?? "TRONIC"} · {product.categoryName}
           </p>
           <h1
             className="mt-1.5 text-[1.5rem] font-bold leading-[1.15] tracking-[-0.015em] md:text-[length:var(--text-h2)] md:tracking-[-0.01em]"
@@ -115,8 +132,8 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
               phones the price moves directly under the title, so this line
               lives in the Product overview accordion instead. */}
           <p className="mt-3 hidden max-w-md text-sm leading-relaxed text-[var(--text-secondary)] md:block">
-            Reliable {product.categoryName.toLowerCase()} for homes, businesses and industry. The
-            full product description arrives with the live catalogue.
+            {product.description ??
+              `Reliable ${product.categoryName.toLowerCase()} for homes, businesses and industry. The full product description arrives with the live catalogue.`}
           </p>
 
           <PurchasePanel product={product} />
@@ -126,14 +143,16 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
           <div className="mt-5 border-t border-[var(--color-light-grey)] md:mt-6">
             <AccordionSection title="Product Overview" defaultOpen>
               <p>
-                {product.name} from the TRONIC {product.categoryName.toLowerCase()} range. The
-                full description is added with the live catalogue.
+                {product.description ??
+                  `${product.name} from the ${product.brand ?? "TRONIC"} ${product.categoryName.toLowerCase()} range. The full description is added with the live catalogue.`}
               </p>
             </AccordionSection>
             <AccordionSection title="Technical Specifications">
               <dl>
+                {product.brand ? <SpecRow label="Brand">{product.brand}</SpecRow> : null}
                 <SpecRow label="Category">{product.categoryName}</SpecRow>
-                <SpecRow label="SKU">{product.id.toUpperCase()}</SpecRow>
+                {group ? <SpecRow label="Group">{group.name}</SpecRow> : null}
+                <SpecRow label="SKU">{product.sku}</SpecRow>
                 {product.variants ? (
                   <SpecRow label={product.variantLabel ?? "Options"}>
                     {product.variants.join(", ")}
@@ -144,10 +163,17 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
                     {product.colors.map((option) => option.name).join(", ")}
                   </SpecRow>
                 ) : null}
+                {product.specifications?.map((spec) => (
+                  <SpecRow key={spec.label} label={spec.label}>
+                    {spec.value}
+                  </SpecRow>
+                ))}
               </dl>
-              <p className="mt-2 text-xs text-[var(--text-muted)]">
-                Full technical specifications are added with the live catalogue.
-              </p>
+              {!product.specifications?.length ? (
+                <p className="mt-2 text-xs text-[var(--text-muted)]">
+                  Full technical specifications are added with the live catalogue.
+                </p>
+              ) : null}
             </AccordionSection>
             <AccordionSection title="Delivery & Returns">
               <p>

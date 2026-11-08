@@ -1,0 +1,134 @@
+import type { CategoryGroup, CategorySection, ProductQuery, ProductSort } from "@tronic/types";
+import { createCatalogClient, DEFAULT_PAGE_SIZE, PRODUCT_SORTS } from "@tronic/api-client";
+import { ACTIVE_COUNTRY } from "@tronic/country-config";
+
+/**
+ * Catalogue feature: the one place the storefront talks to the catalogue
+ * adapter and turns listing URLs into queries. Routes call these from server
+ * components; the country is always the deployment's active country.
+ */
+export const catalogClient = createCatalogClient("mock");
+
+/** Query-string keys of a listing URL; the URL is the filter state, so the
+ *  browser's back button restores filters and pagination for free. */
+export const LISTING_PARAMS = {
+  brand: "brand",
+  min: "min",
+  max: "max",
+  stock: "stock",
+  sort: "sort",
+  page: "page",
+} as const;
+
+export const SORT_LABELS: Record<ProductSort, string> = {
+  newest: "Newest",
+  "price-asc": "Price: Low to High",
+  "price-desc": "Price: High to Low",
+  "name-asc": "Name: A to Z",
+};
+
+export type SearchParams = Record<string, string | string[] | undefined>;
+
+export interface ListingFilters {
+  brands: readonly string[];
+  minPrice?: number;
+  maxPrice?: number;
+  inStockOnly: boolean;
+  sort: ProductSort;
+  page: number;
+}
+
+function first(value: string | string[] | undefined): string | undefined {
+  return Array.isArray(value) ? value[0] : value;
+}
+
+function all(value: string | string[] | undefined): string[] {
+  if (value === undefined) {
+    return [];
+  }
+  return (Array.isArray(value) ? value : [value]).flatMap((v) => v.split(",")).map((v) => v.trim()).filter(Boolean);
+}
+
+function positiveInt(value: string | undefined): number | undefined {
+  if (value === undefined || value === "") {
+    return undefined;
+  }
+  const n = Number(value);
+  return Number.isFinite(n) && n >= 0 ? Math.floor(n) : undefined;
+}
+
+/** Reads and validates listing filters from untrusted search params. */
+export function parseListingFilters(searchParams: SearchParams): ListingFilters {
+  const sortRaw = first(searchParams[LISTING_PARAMS.sort]);
+  const sort = PRODUCT_SORTS.find((s) => s === sortRaw) ?? "newest";
+  const minPrice = positiveInt(first(searchParams[LISTING_PARAMS.min]));
+  const maxPrice = positiveInt(first(searchParams[LISTING_PARAMS.max]));
+  return {
+    brands: all(searchParams[LISTING_PARAMS.brand]).slice(0, 20),
+    minPrice,
+    maxPrice: maxPrice !== undefined && minPrice !== undefined && maxPrice < minPrice ? undefined : maxPrice,
+    inStockOnly: first(searchParams[LISTING_PARAMS.stock]) === "1",
+    sort,
+    page: Math.max(positiveInt(first(searchParams[LISTING_PARAMS.page])) ?? 1, 1),
+  };
+}
+
+/**
+ * Query for a section listing. A department scopes by category and group; a
+ * use-case section (Shop by Use) scopes by the products' use cases instead,
+ * across every department, so nothing is duplicated into a second category.
+ */
+export function toProductQuery(
+  filters: ListingFilters,
+  section: CategorySection,
+  group?: CategoryGroup,
+): ProductQuery {
+  const scope =
+    section.kind === "use-case"
+      ? { useCases: group ? [group.slug] : section.groups.map((g) => g.slug) }
+      : { category: section.slug, group: group?.slug };
+  return {
+    country: ACTIVE_COUNTRY.code,
+    ...scope,
+    brands: filters.brands,
+    minPrice: filters.minPrice,
+    maxPrice: filters.maxPrice,
+    inStockOnly: filters.inStockOnly,
+    sort: filters.sort,
+    page: filters.page,
+    pageSize: DEFAULT_PAGE_SIZE,
+  };
+}
+
+/** Builds a listing href from filters, omitting defaults so URLs stay clean. */
+export function listingHref(basePath: string, filters: Partial<ListingFilters>): string {
+  const params = new URLSearchParams();
+  for (const brand of filters.brands ?? []) {
+    params.append(LISTING_PARAMS.brand, brand);
+  }
+  if (filters.minPrice !== undefined) {
+    params.set(LISTING_PARAMS.min, String(filters.minPrice));
+  }
+  if (filters.maxPrice !== undefined) {
+    params.set(LISTING_PARAMS.max, String(filters.maxPrice));
+  }
+  if (filters.inStockOnly) {
+    params.set(LISTING_PARAMS.stock, "1");
+  }
+  if (filters.sort && filters.sort !== "newest") {
+    params.set(LISTING_PARAMS.sort, filters.sort);
+  }
+  if (filters.page && filters.page > 1) {
+    params.set(LISTING_PARAMS.page, String(filters.page));
+  }
+  const query = params.toString();
+  return query ? `${basePath}?${query}` : basePath;
+}
+
+export function activeFilterCount(filters: ListingFilters): number {
+  return (
+    filters.brands.length +
+    (filters.minPrice !== undefined || filters.maxPrice !== undefined ? 1 : 0) +
+    (filters.inStockOnly ? 1 : 0)
+  );
+}
