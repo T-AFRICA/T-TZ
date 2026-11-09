@@ -8,7 +8,7 @@ import { FeaturedSamples } from "@/components/home/FeaturedSamples";
 import { Reveal } from "@/components/motion/Reveal";
 
 /**
- * Homepage: hero, photographic category showcase, service strip, sample
+ * Homepage: hero, service strip, photographic category showcase, sample
  * product sections and the Meter callout. Product listings, promotions and real campaign content
  * (SRS FR-004) arrive in Week 2; nothing here states prices or offers.
  */
@@ -17,11 +17,12 @@ export default function HomePage() {
     <>
       <Hero />
       <Container id="departments" className="scroll-mt-24 py-5 md:py-10 lg:py-12">
+        {/* Service promises sit directly under the hero (owner request 2026-11-09). */}
+        <BenefitsStrip />
+
         {/* Photographic category banners (owner request 2026-11-07, oraimo
             reference) replace the circular rail; the navbar keeps the category menu. */}
         <CategoryShowcase />
-
-        <BenefitsStrip />
 
         <FeaturedSamples />
 
