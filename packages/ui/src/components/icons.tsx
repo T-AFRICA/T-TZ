@@ -96,3 +96,17 @@ export const InstagramIcon = brand(
 );
 
 export const TikTokIcon = brand(<path d="M9 12a4 4 0 1 0 4 4V4a5 5 0 0 0 5 5" />);
+
+/**
+ * WhatsApp-style glyph: the lucide MessageCircle bubble with the lucide Phone
+ * scaled into it (both paths verbatim from lucide-react 1.68). The inner
+ * stroke is widened to compensate for the scale so both read at 2px.
+ */
+export const WhatsAppIcon = brand(
+  <>
+    <path d="M2.992 16.342a2 2 0 0 1 .094 1.167l-1.065 3.29a1 1 0 0 0 1.236 1.168l3.413-.998a2 2 0 0 1 1.099.092 10 10 0 1 0-4.777-4.719" />
+    <g transform="translate(12 12) scale(0.42) translate(-12 -12)" strokeWidth={4.4}>
+      <path d="M13.832 16.568a1 1 0 0 0 1.213-.303l.355-.465A2 2 0 0 1 17 15h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2A18 18 0 0 1 2 4a2 2 0 0 1 2-2h3a2 2 0 0 1 2 2v3a2 2 0 0 1-.8 1.6l-.468.351a1 1 0 0 0-.292 1.233 14 14 0 0 0 6.392 6.384" />
+    </g>
+  </>,
+);

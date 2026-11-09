@@ -41,6 +41,22 @@ export const SUPPORT_PHONE = {
 } as const;
 
 /**
+ * PLACEHOLDER WhatsApp chat number (international digits, no "+"), the same
+ * all-zeros placeholder as SUPPORT_PHONE. Replace it with the real business
+ * WhatsApp number before launch; never guess one. `greeting` pre-fills the
+ * customer's first message.
+ */
+export const WHATSAPP = {
+  number: "255000000000",
+  greeting: "Hello TRONIC, I have a question.",
+} as const;
+
+/** wa.me chat link with a pre-filled, URL-encoded message. */
+export function whatsappHref(message: string = WHATSAPP.greeting): string {
+  return `https://wa.me/${WHATSAPP.number}?text=${encodeURIComponent(message)}`;
+}
+
+/**
  * Official Tanzania profile URLs are not confirmed yet. PLACEHOLDER "#"
  * hrefs render the icons without linking anywhere (owner request Nov 2026;
  * shown in the footer since 2026-11-09) — never invent profile URLs; the

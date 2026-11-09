@@ -6,6 +6,7 @@ import { Header } from "@/components/header/Header";
 import { Navbar } from "@/components/header/Navbar";
 import { Footer } from "@/components/footer/Footer";
 import { BottomNav } from "@/components/nav/BottomNav";
+import { WhatsAppButton } from "@/components/whatsapp/WhatsAppButton";
 import "./globals.css";
 
 // Brand typography (owner decision 2026-11-07, supersedes Montserrat +
@@ -89,6 +90,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </main>
           <Footer />
           <BottomNav />
+          <WhatsAppButton />
         </ToastProvider>
       </body>
     </html>

@@ -124,7 +124,9 @@ export function Footer() {
             mid-grey token sat at 3.9:1 here) */}
         <Container className="flex flex-col gap-2 py-4 text-xs text-white/60 sm:flex-row sm:items-center sm:justify-between">
           <p>© {new Date().getFullYear()} TRONIC {ACTIVE_COUNTRY.name}. All rights reserved.</p>
-          <p>Founded 1993</p>
+          {/* Right margin keeps the line clear of the floating WhatsApp button
+              when the page is scrolled to the very bottom. */}
+          <p className="sm:mr-20">Founded 1993</p>
         </Container>
       </div>
     </footer>
