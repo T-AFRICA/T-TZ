@@ -51,6 +51,7 @@ export class MockCatalogClient implements CatalogClient {
       .filter(visibleIn(query.country))
       .filter((product) => !query.category || product.categorySlug === query.category)
       .filter((product) => !query.group || product.groupSlug === query.group)
+      .filter((product) => !query.subcategory || product.subcategorySlug === query.subcategory)
       .filter((product) => !query.useCases || (product.useCases ?? []).some((u) => query.useCases?.includes(u)));
 
     const brands = [...new Set(scope.map((product) => product.brand).filter((b): b is string => !!b))].sort();

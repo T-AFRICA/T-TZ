@@ -5,11 +5,21 @@
  * the dedicated Meter item. The hierarchy is configuration, not code: category
  * pages built in later weeks consume these same types.
  */
+/** Third level of the taxonomy, e.g. "Panel Lights" under Indoor Lighting. */
+export interface CategorySubcategory {
+  /** URL-safe identifier, unique within its group. Route: /categories/[section]/[group]/[slug]. */
+  slug: string;
+  /** Display name, e.g. "Panel Lights". */
+  name: string;
+}
+
 export interface CategoryGroup {
   /** URL-safe identifier, unique within its section. */
   slug: string;
   /** Display name, e.g. "Power Cables". */
   name: string;
+  /** Subcategories from the Website Content Structure; absent where the diagrams stop at the group. */
+  subcategories?: CategorySubcategory[];
 }
 
 export interface CategorySection {

@@ -3,6 +3,37 @@
 Meaningful implementation changes, newest first. Dates are work dates;
 nothing below is released.
 
+## 2026-11-09 — subcategories from the Website Content Structure
+
+- The taxonomy gains its third level: every group of the six product
+  departments lists its subcategories from the owner's diagrams (Tools and
+  Shop by Use stop at the group level there). Data lives in
+  `country-config` only; "Earthing & Surge" is now named "Earthing & Surge
+  Protection" as in the diagram.
+- Desktop mega-menu shows each group as a heading with its subcategories
+  beneath (section > group > subcategory). The mobile drawer still lists
+  groups; the group page shows the subcategories as chips.
+- Subcategory pages at `/categories/[slug]/[group]/[subcategory]` reuse the
+  listing (breadcrumb, chips, filters, sort, pagination, metadata, 404 for
+  unknown slugs). Products carry an optional `subcategorySlug`; the sample
+  products are assigned one so the pages are not all empty.
+- Draft migration and schema notes add `category_subcategories`.
+- Listing sidebar: an expandable "Product Categories" tree (section >
+  group > subcategory) sits above Brand, Price and Availability, sticky on
+  desktop and inside the Filters sheet on phones. Labels navigate; the
+  separate chevron expands or collapses; the active level and its ancestor
+  stay open across navigation and refresh; links keep the current filters
+  and sort. The horizontal group and subcategory chips are gone, since the
+  tree covers them; heading and breadcrumb stay.
+- Listing design pass: compact white header (breadcrumb, parent label,
+  28/32px title, one-line description) replaces the grey band and its
+  decorative icon; a hairline toolbar carries the count, removable active
+  filter chips with "Clear all", the Filters button and a 36px sort control;
+  the filter form uses 12px section labels, 36px inputs, a charcoal Apply
+  and a text Clear; pages with one or two products list the sibling ranges
+  under the grid; sidebar sticks only on tall viewports; grid gains a fifth
+  column from 1536px. Verified at 320–1920px.
+
 ## 2026-11-08 — category navigation and product browsing (Module 03)
 
 - Department pages (`/categories/[slug]`) list products instead of the

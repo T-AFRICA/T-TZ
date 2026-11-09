@@ -45,6 +45,18 @@ create table if not exists category_groups (
   unique (category_id, slug)
 );
 
+create table if not exists category_subcategories (
+  id            uuid primary key default gen_random_uuid(),
+  group_id      uuid not null references category_groups (id) on delete restrict,
+  slug          text not null,                     -- e.g. 'panel-lights' (unique within the group)
+  name          text not null,
+  sort_order    integer not null default 0,
+  active        boolean not null default true,
+  created_at    timestamptz not null default now(),
+  updated_at    timestamptz not null default now(),
+  unique (group_id, slug)
+);
+
 create table if not exists brands (
   id          uuid primary key default gen_random_uuid(),
   slug        text not null unique,
@@ -62,6 +74,7 @@ create table if not exists products (
   brand_id          uuid references brands (id) on delete set null,
   category_id       uuid not null references categories (id) on delete restrict,
   group_id          uuid references category_groups (id) on delete set null,
+  subcategory_id    uuid references category_subcategories (id) on delete set null,
   variant_label     text,                          -- e.g. 'Wattage', shown above variant pills
   active            boolean not null default true,
   sequence          integer not null default 0,    -- catalogue order; "newest" sorts descending
@@ -152,6 +165,7 @@ select
   c.slug            as category_slug,
   c.name            as category_name,
   g.slug            as group_slug,
+  sc.slug           as subcategory_slug,
   p.variant_label,
   p.sequence,
   (select array_agg(u.use_case order by u.use_case) from product_use_cases u where u.product_id = p.id) as use_cases,
@@ -164,6 +178,7 @@ select
 from products p
 join categories c            on c.id = p.category_id and c.active
 left join category_groups g  on g.id = p.group_id
+left join category_subcategories sc on sc.id = p.subcategory_id
 left join brands b           on b.id = p.brand_id
 join product_country_prices pcp on pcp.product_id = p.id and pcp.active
 where p.active;

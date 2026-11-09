@@ -1,4 +1,4 @@
-import type { CategoryGroup, CategorySection, ProductQuery, ProductSort } from "@tronic/types";
+import type { CategoryGroup, CategorySection, CategorySubcategory, ProductQuery, ProductSort } from "@tronic/types";
 import { createCatalogClient, DEFAULT_PAGE_SIZE, PRODUCT_SORTS } from "@tronic/api-client";
 import { ACTIVE_COUNTRY } from "@tronic/country-config";
 
@@ -74,19 +74,21 @@ export function parseListingFilters(searchParams: SearchParams): ListingFilters 
 }
 
 /**
- * Query for a section listing. A department scopes by category and group; a
- * use-case section (Shop by Use) scopes by the products' use cases instead,
- * across every department, so nothing is duplicated into a second category.
+ * Query for a section listing. A department scopes by category, group and
+ * subcategory; a use-case section (Shop by Use) scopes by the products' use
+ * cases instead, across every department, so nothing is duplicated into a
+ * second category.
  */
 export function toProductQuery(
   filters: ListingFilters,
   section: CategorySection,
   group?: CategoryGroup,
+  subcategory?: CategorySubcategory,
 ): ProductQuery {
   const scope =
     section.kind === "use-case"
       ? { useCases: group ? [group.slug] : section.groups.map((g) => g.slug) }
-      : { category: section.slug, group: group?.slug };
+      : { category: section.slug, group: group?.slug, subcategory: subcategory?.slug };
   return {
     country: ACTIVE_COUNTRY.code,
     ...scope,
@@ -98,6 +100,16 @@ export function toProductQuery(
     page: filters.page,
     pageSize: DEFAULT_PAGE_SIZE,
   };
+}
+
+/** Path of a listing: department, group inside it, or subcategory inside the group. */
+export function listingBasePath(
+  section: CategorySection,
+  group?: CategoryGroup,
+  subcategory?: CategorySubcategory,
+): string {
+  const parts = [section.slug, group?.slug, group ? subcategory?.slug : undefined].filter(Boolean);
+  return `/categories/${parts.join("/")}`;
 }
 
 /** Builds a listing href from filters, omitting defaults so URLs stay clean. */

@@ -17,6 +17,7 @@ function fixture(): Product[] {
     categorySlug: "lighting",
     categoryName: "Lighting",
     groupSlug: i % 2 === 0 ? "indoor-lighting" : "outdoor-lighting",
+    subcategorySlug: i % 2 === 0 ? (i % 4 === 0 ? "panel-lights" : "spotlights") : "floodlights",
     image: "/products/x.png",
     price: (i + 1) * 1_000,
     currency: "TZS",
@@ -55,6 +56,14 @@ describe("MockCatalogClient", () => {
     expect(none.total).toBe(0);
     expect(none.pageCount).toBe(1);
     expect(none.facets).toEqual({ brands: [], priceMin: 0, priceMax: 0 });
+  });
+
+  it("scopes to a subcategory inside the group", async () => {
+    const page = await client.listProducts({ country: "TZ", category: "lighting", group: "indoor-lighting", subcategory: "panel-lights", pageSize: 48 });
+    expect(page.total).toBe(8);
+    expect(page.items.every((p) => p.subcategorySlug === "panel-lights")).toBe(true);
+    const none = await client.listProducts({ country: "TZ", category: "lighting", group: "outdoor-lighting", subcategory: "panel-lights" });
+    expect(none.total).toBe(0);
   });
 
   it("filters by brand, price range and stock while facets describe the whole scope", async () => {
@@ -113,7 +122,31 @@ describe("sample catalogue data", () => {
       expect(section, product.id).toBeDefined();
       expect(section?.groups.map((g) => g.slug), product.id).toContain(product.groupSlug);
       expect(product.countries).toContain("TZ");
+      if (product.subcategorySlug) {
+        const group = section?.groups.find((g) => g.slug === product.groupSlug);
+        expect(group?.subcategories?.map((s) => s.slug), product.id).toContain(product.subcategorySlug);
+      }
     }
+  });
+
+  it("gives every subcategory a unique, URL-safe slug within its group (Website Content Structure)", () => {
+    const slugPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+    let count = 0;
+    for (const section of CATEGORY_SECTIONS) {
+      for (const group of section.groups) {
+        const slugs = (group.subcategories ?? []).map((s) => s.slug);
+        expect(new Set(slugs).size, `${section.slug}/${group.slug}`).toBe(slugs.length);
+        for (const sub of group.subcategories ?? []) {
+          expect(sub.slug, `${group.slug}/${sub.name}`).toMatch(slugPattern);
+          expect(sub.name.trim().length).toBeGreaterThan(0);
+          count += 1;
+        }
+      }
+    }
+    expect(count).toBeGreaterThan(100);
+    expect(getCategorySection("lighting")?.groups[0]?.subcategories?.map((s) => s.slug)).toContain("panel-lights");
+    expect(getCategorySection("tools")?.groups.every((g) => !g.subcategories)).toBe(true);
+    expect(getCategorySection("shop-by-use")?.groups.every((g) => !g.subcategories)).toBe(true);
   });
 
   it("has unique ids and slugs", () => {
@@ -170,6 +203,9 @@ describe("parseListingFilters", () => {
     const filters = parseListingFilters({ brand: "Alpha", sort: "name-asc", page: "3" });
     const lighting = getCategorySection("lighting")!;
     const query = toProductQuery(filters, lighting, lighting.groups[0]);
+    expect(query.subcategory).toBeUndefined();
+    const sub = toProductQuery(filters, lighting, lighting.groups[0], lighting.groups[0]!.subcategories![1]);
+    expect(sub).toMatchObject({ category: "lighting", group: "indoor-lighting", subcategory: "panel-lights" });
     expect(query.country).toBe("TZ");
     expect(query.category).toBe("lighting");
     expect(query.group).toBe("indoor-lighting");

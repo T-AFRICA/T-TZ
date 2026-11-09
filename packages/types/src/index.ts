@@ -1,4 +1,4 @@
-export type { CategoryGroup, CategorySection, NavLink } from "./category";
+export type { CategoryGroup, CategorySection, CategorySubcategory, NavLink } from "./category";
 export type { CountryCode, CountryConfig, CountryStatus } from "./country";
 export type { SearchResultItem, SearchResponse, SearchState } from "./search";
 export type {

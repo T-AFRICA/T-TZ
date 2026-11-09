@@ -29,6 +29,8 @@ export interface Product {
   categoryName: string;
   /** Second-level group (subcategory) slug within the category, when assigned. */
   groupSlug?: string;
+  /** Third-level subcategory slug within the group, when assigned. */
+  subcategorySlug?: string;
   /** Use-case slugs (groups of the "use-case" section, e.g. for-homeowners). */
   useCases?: readonly string[];
   image: string;
@@ -64,6 +66,7 @@ export interface ProductQuery {
   country: CountryCode;
   category?: string;
   group?: string;
+  subcategory?: string;
   /** Any of these use cases; set instead of category/group for Shop by Use. */
   useCases?: readonly string[];
   brands?: readonly string[];

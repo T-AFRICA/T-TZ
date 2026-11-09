@@ -60,7 +60,7 @@ export function FilterSheet({ activeCount, children }: { activeCount: number; ch
       <button
         type="button"
         onClick={() => dialogRef.current?.showModal()}
-        className="inline-flex h-10 items-center gap-2 rounded-full border border-[var(--color-light-grey)] bg-white px-4 text-sm font-medium transition-colors hover:border-[var(--color-action-red)] hover:text-[var(--color-action-red)]"
+        className="inline-flex h-9 items-center gap-2 rounded-md border border-[var(--color-light-grey)] bg-white px-3.5 text-[13px] font-medium transition-colors duration-150 hover:border-[var(--color-premium-black)]"
       >
         <SlidersIcon size={16} />
         Filters
@@ -72,7 +72,7 @@ export function FilterSheet({ activeCount, children }: { activeCount: number; ch
       </button>
       <dialog
         ref={dialogRef}
-        aria-label="Filters"
+        aria-label="Categories and filters"
         className="filter-sheet m-0 mt-auto max-h-[85vh] w-full max-w-none overflow-y-auto rounded-t-2xl bg-white p-0 backdrop:bg-black/45"
         onClick={(event) => {
           if (event.target === dialogRef.current) {
@@ -82,7 +82,7 @@ export function FilterSheet({ activeCount, children }: { activeCount: number; ch
       >
         <div className="sticky top-0 z-10 flex items-center justify-between border-b border-[var(--color-light-grey)] bg-white px-4 py-3">
           <span aria-hidden="true" className="absolute left-1/2 top-1.5 h-1 w-10 -translate-x-1/2 rounded-full bg-[var(--color-light-grey)]" />
-          <h2 className="pt-1 text-base font-semibold">Filters</h2>
+          <h2 className="pt-1 text-base font-semibold">Categories &amp; Filters</h2>
           <button
             type="button"
             onClick={close}
