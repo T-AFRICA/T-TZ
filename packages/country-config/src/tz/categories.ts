@@ -10,6 +10,7 @@ export const CATEGORY_SECTIONS: readonly CategorySection[] = [
   {
     slug: "cables-wiring",
     name: "Cables & Wiring",
+    description: "Power cables and copper wiring",
     groups: [
       { slug: "power-cables", name: "Power Cables" },
       { slug: "data-signal", name: "Data & Signal" },
@@ -19,6 +20,7 @@ export const CATEGORY_SECTIONS: readonly CategorySection[] = [
   {
     slug: "lighting",
     name: "Lighting",
+    description: "LED, decorative and architectural lighting",
     groups: [
       { slug: "indoor-lighting", name: "Indoor Lighting" },
       { slug: "outdoor-lighting", name: "Outdoor Lighting" },
@@ -28,6 +30,7 @@ export const CATEGORY_SECTIONS: readonly CategorySection[] = [
   {
     slug: "switches-sockets",
     name: "Switches & Sockets",
+    description: "Wall switches, sockets and outlets",
     groups: [
       { slug: "switches-sockets", name: "Switches & Sockets" },
       { slug: "power-outlets-extensions", name: "Power Outlets & Extensions" },
@@ -37,6 +40,7 @@ export const CATEGORY_SECTIONS: readonly CategorySection[] = [
   {
     slug: "switchgear-protection",
     name: "Switchgear & Protection",
+    description: "Breakers, panels and protection gear",
     groups: [
       { slug: "distribution-panels", name: "Distribution & Panels" },
       { slug: "circuit-breakers", name: "Circuit Breakers" },
@@ -47,6 +51,7 @@ export const CATEGORY_SECTIONS: readonly CategorySection[] = [
   {
     slug: "home-appliances",
     name: "Home & Appliances",
+    description: "Fans and home electrical appliances",
     groups: [
       { slug: "fans-cooling", name: "Fans & Cooling" },
       { slug: "heating-water", name: "Heating & Water" },
@@ -57,6 +62,7 @@ export const CATEGORY_SECTIONS: readonly CategorySection[] = [
   {
     slug: "cable-management",
     name: "Cable Management",
+    description: "Trays, trunking and conduits",
     groups: [
       { slug: "trunkings", name: "Trunkings" },
       { slug: "cable-trays", name: "Cable Trays" },
@@ -67,6 +73,7 @@ export const CATEGORY_SECTIONS: readonly CategorySection[] = [
   {
     slug: "tools",
     name: "Tools",
+    description: "Installation and testing tools",
     groups: [
       { slug: "hand-tools", name: "Hand Tools" },
       { slug: "power-tools", name: "Power Tools" },
@@ -76,6 +83,8 @@ export const CATEGORY_SECTIONS: readonly CategorySection[] = [
   {
     slug: "shop-by-use",
     name: "Shop by Use",
+    description: "Home, commercial and industrial",
+    kind: "use-case",
     groups: [
       { slug: "for-homeowners", name: "For Homeowners" },
       { slug: "for-contractors", name: "For Contractors" },
