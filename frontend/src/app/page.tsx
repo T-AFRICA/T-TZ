@@ -2,28 +2,22 @@ import Link from "next/link";
 import { ArrowRightIcon, Container } from "@tronic/ui";
 import { METER_NAV_ITEM } from "@tronic/country-config";
 import { Hero } from "@/components/home/Hero";
-import { BenefitsStrip } from "@/components/home/BenefitsStrip";
-import { CategoryShowcase } from "@/components/home/CategoryShowcase";
 import { FeaturedSamples } from "@/components/home/FeaturedSamples";
 import { Reveal } from "@/components/motion/Reveal";
 
 /**
- * Homepage: hero, service strip, photographic category showcase, sample
- * product sections and the Meter callout. Product listings, promotions and real campaign content
- * (SRS FR-004) arrive in Week 2; nothing here states prices or offers.
+ * Homepage: hero, sample product sections and the Meter callout. The category
+ * banners and the service strip left the homepage on 2026-11-09 (owner
+ * request); departments stay reachable from the navbar menus, and the
+ * "departments" anchor keeps the existing "Browse" links working. Product
+ * listings, promotions and real campaign content (SRS FR-004) arrive in
+ * Week 2; nothing here states prices or offers.
  */
 export default function HomePage() {
   return (
     <>
       <Hero />
       <Container id="departments" className="scroll-mt-24 py-5 md:py-10 lg:py-12">
-        {/* Service promises sit directly under the hero (owner request 2026-11-09). */}
-        <BenefitsStrip />
-
-        {/* Photographic category banners (owner request 2026-11-07, oraimo
-            reference) replace the circular rail; the navbar keeps the category menu. */}
-        <CategoryShowcase />
-
         <FeaturedSamples />
 
         {/* Meter callout — reserved single-page service, no payment flows (SRS FR-035/036) */}
