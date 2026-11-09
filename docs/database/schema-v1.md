@@ -12,6 +12,7 @@ adapter maps onto it, so Phase 4 is a translation job rather than a redesign.
 | `countries` | Countries served (TZ first) | currency + locale drive money formatting |
 | `categories` | The eight departments | `slug` is the route segment `/categories/[slug]` |
 | `category_groups` | Groups inside a department | unique `(category_id, slug)`; route `/categories/[slug]/[group]` |
+| `category_subcategories` | Subcategories inside a group (Website Content Structure 2026-11-09) | unique `(group_id, slug)`; route `/categories/[slug]/[group]/[subcategory]` |
 | `brands` | Brand facet | optional per product |
 | `products` | One row per sellable product | `slug` is the route `/products/[slug]`; `sequence` orders "newest" |
 | `product_images` | Gallery, `sort_order` 0 is primary | storage path or URL |
@@ -34,6 +35,7 @@ shilling amount. Formatting uses the country's locale
 | `brand` | `brands.name` |
 | `categorySlug`, `categoryName` | `categories` |
 | `groupSlug` | `category_groups.slug` |
+| `subcategorySlug` | `category_subcategories.slug` |
 | `image`, `images` | `product_images` ordered by `sort_order` |
 | `price`, `wasPrice`, `currency`, `inStock` | `product_country_prices` for the request country |
 | `countries` | all active `product_country_prices.country_code` for the product |
@@ -46,7 +48,7 @@ shilling amount. Formatting uses the country's locale
 is the same shape against `storefront_products`:
 
 1. `country_code = :country and active` (never optional).
-2. `category_slug = :category`, `group_slug = :group` when given; for the
+2. `category_slug = :category`, `group_slug = :group`, `subcategory_slug = :subcategory` when given; for the
    Shop by Use section instead `use_cases && :useCases` (any of the chosen
    use cases, across every department).
 3. Facets (`brands`, `priceMin`, `priceMax`) are computed on the result of

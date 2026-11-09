@@ -9,7 +9,8 @@ import { COMPANY_LINKS } from "@/config/site";
 /**
  * Desktop navigation: a solid action-red bar with the eight approved category
  * sections as disclosure buttons opening a mega-menu panel of their groups
- * (SRS FR-002). Mouse users get hover-open with a short close delay (owner
+ * and, under each group, its subcategories (SRS FR-002; Website Content
+ * Structure 2026-11-09). Mouse users get hover-open with a short close delay (owner
  * request Nov 2026); click, touch and keyboard behavior are unchanged, so
  * the menu is never hover-only. Escape closes an open panel; each panel is
  * a labelled region of plain links.
@@ -144,7 +145,7 @@ export function Navbar() {
           id="navbar-mega-panel"
           role="region"
           aria-label={`${openSection.name} groups`}
-          className="mega-panel-in absolute left-0 right-0 top-full border-b-2 border-[var(--color-action-red)] bg-white text-[var(--text-primary)] shadow-xl"
+          className="mega-panel-in absolute left-0 right-0 top-full max-h-[calc(100vh-10rem)] overflow-y-auto border-b-2 border-[var(--color-action-red)] bg-white text-[var(--text-primary)] shadow-xl"
         >
           <Container className="py-6">
             <div className="flex items-baseline justify-between">
@@ -157,16 +158,34 @@ export function Navbar() {
                 <ArrowRightIcon size={16} />
               </Link>
             </div>
-            <ul className="mt-3 grid grid-cols-2 gap-2 md:grid-cols-4">
+            {/* One column per group: the group link as heading, its subcategories
+                beneath. Groups without subcategories (Tools, Shop by Use) are
+                plain links. */}
+            <ul className="mt-4 grid grid-cols-2 gap-x-6 gap-y-5 md:grid-cols-4">
               {openSection.groups.map((group) => (
-                <li key={group.slug}>
+                <li key={group.slug} className="min-w-0">
                   <Link
                     href={`/categories/${openSection.slug}/${group.slug}`}
-                    className="block rounded px-2 py-1.5 text-sm text-[var(--text-secondary)] hover:bg-[var(--surface-card)] hover:text-[var(--color-action-red)]"
+                    className="block rounded px-2 py-1 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-card)] hover:text-[var(--color-action-red)]"
                     onClick={() => setOpenSlug(null)}
                   >
                     {group.name}
                   </Link>
+                  {group.subcategories?.length ? (
+                    <ul className="mt-1 border-l border-[var(--color-light-grey)]">
+                      {group.subcategories.map((subcategory) => (
+                        <li key={subcategory.slug}>
+                          <Link
+                            href={`/categories/${openSection.slug}/${group.slug}/${subcategory.slug}`}
+                            className="block rounded-r px-3 py-1 text-[13px] leading-snug text-[var(--text-secondary)] hover:bg-[var(--surface-card)] hover:text-[var(--color-action-red)]"
+                            onClick={() => setOpenSlug(null)}
+                          >
+                            {subcategory.name}
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : null}
                 </li>
               ))}
             </ul>

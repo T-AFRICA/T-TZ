@@ -540,3 +540,25 @@ body:has(.filter-sheet[open]) {
     animation: none;
   }
 }
+
+/* Category tree (listing sidebar): grid-rows accordion so the panel height
+   animates without measuring; closed panels are inert and hidden to keyboard
+   and screen readers once the collapse has played. */
+.cat-tree-panel {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 240ms var(--drawer-ease);
+}
+.cat-tree-panel[data-open="true"] {
+  grid-template-rows: 1fr;
+}
+.cat-tree-panel[data-open="false"] > div {
+  visibility: hidden;
+  transition: visibility 0s linear 240ms;
+}
+@media (prefers-reduced-motion: reduce) {
+  .cat-tree-panel,
+  .cat-tree-panel[data-open="false"] > div {
+    transition: none;
+  }
+}

@@ -20,6 +20,10 @@ describe("Navbar", () => {
     await user.click(lighting);
     expect(lighting).toHaveAttribute("aria-expanded", "true");
     expect(screen.getByRole("link", { name: "Indoor Lighting" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Panel Lights" })).toHaveAttribute(
+      "href",
+      "/categories/lighting/indoor-lighting/panel-lights",
+    );
     await user.keyboard("{Escape}");
     expect(lighting).toHaveAttribute("aria-expanded", "false");
   });

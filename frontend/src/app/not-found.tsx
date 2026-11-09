@@ -33,7 +33,7 @@ export default function NotFound() {
           href="/#departments"
           className="inline-flex items-center gap-1.5 rounded-full border border-[var(--color-light-grey)] bg-white px-6 py-2.5 text-sm font-medium transition-colors hover:border-[var(--color-action-red)] hover:text-[var(--color-action-red)]"
         >
-          Browse departments
+          Browse categories
           <ArrowRightIcon size={14} />
         </Link>
       </div>
