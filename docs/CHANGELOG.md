@@ -3,6 +3,23 @@
 Meaningful implementation changes, newest first. Dates are work dates;
 nothing below is released.
 
+## 2026-11-10 — floating WhatsApp chat button
+
+- A green WhatsApp button floats bottom-right on every page and opens a
+  wa.me chat with a short greeting in a new tab. It eases in shortly after
+  load, sends a few soft pulse rings, lifts and wiggles its icon on hover,
+  and shows a "Chat with us" label on hover or keyboard focus (pointer
+  devices only). Reduced-motion users get a static button.
+- On phones it sits above the bottom tab bar. Phone product pages hide it,
+  since their sticky purchase bar holds the actions and the button covered
+  the quantity stepper (owner decision). Hidden when printing.
+- The footer's "Founded 1993" line keeps a right margin from 640px so the
+  button never covers it when the page is scrolled to the very bottom.
+- The number is a placeholder (`WHATSAPP` in `config/site.ts`, the same
+  zeros as the support phone) until the owner supplies the real one.
+- `WhatsAppIcon` joins the brand icons in `@tronic/ui`, built from the
+  lucide MessageCircle and Phone paths.
+
 ## 2026-11-09 — slimmer desktop header
 
 - The red top bar (announcement ticker, social links, support phone, desktop

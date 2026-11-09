@@ -37,6 +37,7 @@ export {
   TrendingUpIcon,
   TruckIcon,
   UserIcon,
+  WhatsAppIcon,
   XIcon,
 } from "./components/icons";
 export type { IconProps } from "./components/icons";
