@@ -4,9 +4,10 @@ import { ACTIVE_COUNTRY, CATEGORY_SECTIONS, METER_NAV_ITEM } from "@tronic/count
 import { COMPANY_LINKS, POLICY_LINKS } from "@/config/site";
 
 /**
- * Global footer: white-on-dark per brand guide §9 ("Footer on dark: White
- * logo"). Link targets map to the SRS §7.1 informational and policy pages,
- * which are built in Week 6.
+ * Global footer on the dark surface. Brand guide §9 asks for the white logo
+ * here; the owner chose the red artwork (2026-11-09) until the white version
+ * is supplied, see BrandMark. Link targets map to the SRS §7.1 informational
+ * and policy pages, which are built in Week 6.
  */
 export function Footer() {
   return (
@@ -74,7 +75,7 @@ export function Footer() {
             mid-grey token sat at 3.9:1 here) */}
         <Container className="flex flex-col gap-2 py-4 text-xs text-white/60 sm:flex-row sm:items-center sm:justify-between">
           <p>© {new Date().getFullYear()} TRONIC {ACTIVE_COUNTRY.name}. All rights reserved.</p>
-          <p>Founded 1993 · Present in over 10 African countries</p>
+          <p>Founded 1993</p>
         </Container>
       </div>
     </footer>
