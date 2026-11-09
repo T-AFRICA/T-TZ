@@ -7,10 +7,11 @@ function policyHref(label: string): string {
 }
 
 /**
- * Three service promises under the category rail (owner request 2026-11-07,
- * after the oraimo reference). Copy makes no price or threshold claim (owner
- * choice 2026-11-07: "Fast Delivery" rather than a free-delivery line) and
- * each item links to the policy page that will carry the real terms.
+ * Three service promises directly under the hero (owner request 2026-11-07,
+ * after the oraimo reference; moved above the category banners 2026-11-09).
+ * Copy makes no price or threshold claim (owner choice 2026-11-07: "Fast
+ * Delivery" rather than a free-delivery line) and each item links to the
+ * policy page that will carry the real terms.
  */
 const BENEFITS = [
   { icon: TruckIcon, label: "Fast Delivery", href: policyHref("Delivery Information") },
@@ -20,7 +21,7 @@ const BENEFITS = [
 
 export function BenefitsStrip() {
   return (
-    <section aria-label="Why shop with TRONIC" className="mt-3 md:mt-8">
+    <section aria-label="Why shop with TRONIC">
       {/* Icon beside its label, one line each, at every size. Phones: one row that
           scrolls inside the strip if a narrow screen cannot fit all three (the
           page itself never scrolls sideways; below 360px the icons step out so

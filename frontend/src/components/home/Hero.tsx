@@ -89,22 +89,18 @@ export function Hero() {
         <div className="lg:max-w-[32%] xl:max-w-[24rem]">
           {/* Phones show only the banner and CTA; the copy stays for screen
               readers and search engines. */}
-          <p className="flex animate-[hero-copy-in_500ms_ease-out_both] items-center gap-3 text-[11px] font-semibold uppercase tracking-[0.3em] text-[var(--text-secondary)] max-lg:justify-center max-md:sr-only lg:text-white/75">
-            <span aria-hidden="true" className="hidden h-px w-8 bg-[var(--color-brand-red)] xl:block" />
-            TRONIC · Lighting &amp; Electrical
-          </p>
           <h1
-            className="mt-3 animate-[hero-copy-in_500ms_ease-out_120ms_both] text-[length:var(--text-display)] font-bold leading-[1.04] tracking-[-0.015em] max-md:sr-only"
+            className="animate-[hero-copy-in_500ms_ease-out_both] text-[length:var(--text-display)] font-bold leading-[1.04] tracking-[-0.015em] max-md:sr-only"
             style={{ fontFamily: "var(--font-heading, var(--font-fallback-heading))" }}
           >
             Power Every
             <span className="block text-[var(--color-brand-red)]">Space.</span>
           </h1>
-          <p className="mt-4 max-w-md animate-[hero-copy-in_500ms_ease-out_240ms_both] text-sm leading-relaxed text-[var(--text-secondary)] max-lg:mx-auto max-md:sr-only md:text-[15px] lg:text-white/80">
+          <p className="mt-4 max-w-md animate-[hero-copy-in_500ms_ease-out_120ms_both] text-sm leading-relaxed text-[var(--text-secondary)] max-lg:mx-auto max-md:sr-only md:text-[15px] lg:text-white/80">
             Discover premium lighting, wiring, and electrical solutions for homes, businesses, and
             industries.
           </p>
-          <div className="animate-[hero-copy-in_500ms_ease-out_360ms_both] md:mt-6">
+          <div className="animate-[hero-copy-in_500ms_ease-out_240ms_both] md:mt-6">
             <Link
               href="/#departments"
               className="inline-flex items-center gap-2 rounded-full bg-[var(--color-action-red)] px-7 py-3.5 text-sm font-semibold text-white shadow-[0_12px_28px_-12px_rgba(215,25,32,0.65)] transition-all duration-200 hover:-translate-y-0.5 hover:bg-[var(--color-action-red-dark)]"

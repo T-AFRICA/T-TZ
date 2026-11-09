@@ -64,7 +64,7 @@ const BANNERS: readonly CategoryBanner[] = CATEGORY_SECTIONS.map((section) => {
  */
 export function CategoryShowcase() {
   return (
-    <section aria-labelledby="category-showcase-title">
+    <section aria-labelledby="category-showcase-title" className="mt-3 md:mt-8">
       {/* The banners speak for themselves (owner request 2026-11-07): the title
           stays for assistive tech and the document outline only. */}
       <h2 id="category-showcase-title" className="sr-only">
