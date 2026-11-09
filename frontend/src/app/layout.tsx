@@ -3,6 +3,7 @@ import localFont from "next/font/local";
 import { ToastProvider } from "@tronic/ui";
 import { ACTIVE_COUNTRY } from "@tronic/country-config";
 import { Header } from "@/components/header/Header";
+import { Navbar } from "@/components/header/Navbar";
 import { Footer } from "@/components/footer/Footer";
 import { BottomNav } from "@/components/nav/BottomNav";
 import "./globals.css";
@@ -80,6 +81,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         </a>
         <ToastProvider>
           <Header />
+          {/* Outside the sticky header on purpose: on desktop the category
+              navbar scrolls away with the page and is back at the top. */}
+          <Navbar />
           <main id="main-content" className="flex-1">
             {children}
           </main>

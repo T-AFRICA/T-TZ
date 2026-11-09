@@ -42,8 +42,8 @@ export const SUPPORT_PHONE = {
 
 /**
  * Official Tanzania profile URLs are not confirmed yet. PLACEHOLDER "#"
- * hrefs render the icons without linking anywhere (owner request Nov 2026:
- * show the social icons in the top bar) — never invent profile URLs; the
+ * hrefs render the icons without linking anywhere (owner request Nov 2026;
+ * shown in the footer since 2026-11-09) — never invent profile URLs; the
  * owner swaps in the real profiles before launch. A null href hides the
  * entry entirely.
  */

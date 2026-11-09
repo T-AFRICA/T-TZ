@@ -14,6 +14,12 @@ import { COMPANY_LINKS } from "@/config/site";
  * request Nov 2026); click, touch and keyboard behavior are unchanged, so
  * the menu is never hover-only. Escape closes an open panel; each panel is
  * a labelled region of plain links.
+ *
+ * The bar is rendered after the sticky header, not inside it (owner request
+ * 2026-11-09): it scrolls away with the page and is visible again at the
+ * top. z-30 keeps an open panel above page content and below the header;
+ * the scroll margin keeps a focused item clear of the sticky header when
+ * the keyboard brings the bar back into view.
  */
 const HOVER_CLOSE_DELAY_MS = 160;
 
@@ -64,7 +70,7 @@ export function Navbar() {
     <nav
       ref={navRef}
       aria-label="Product categories"
-      className="relative hidden bg-[var(--color-action-red)] lg:block"
+      className="relative z-30 hidden bg-[var(--color-action-red)] shadow-sm lg:block [&_a]:scroll-mt-[calc(var(--header-height)_+_0.5rem)] [&_button]:scroll-mt-[calc(var(--header-height)_+_0.5rem)]"
       onPointerEnter={cancelScheduledClose}
       onPointerLeave={(event) => {
         if (event.pointerType === "mouse") {
@@ -145,7 +151,7 @@ export function Navbar() {
           id="navbar-mega-panel"
           role="region"
           aria-label={`${openSection.name} groups`}
-          className="mega-panel-in absolute left-0 right-0 top-full max-h-[calc(100vh-10rem)] overflow-y-auto border-b-2 border-[var(--color-action-red)] bg-white text-[var(--text-primary)] shadow-xl"
+          className="mega-panel-in absolute left-0 right-0 top-full max-h-[calc(100vh-7.75rem)] overflow-y-auto border-b-2 border-[var(--color-action-red)] bg-white text-[var(--text-primary)] shadow-xl"
         >
           <Container className="py-6">
             <div className="flex items-baseline justify-between">

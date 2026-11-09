@@ -4,91 +4,42 @@ import {
   BrandMark,
   CartIcon,
   Container,
-  FacebookIcon,
   HeartIcon,
-  InstagramIcon,
   MeterIcon,
-  PhoneIcon,
   ShieldCheckIcon,
-  TikTokIcon,
   TruckIcon,
   UserIcon,
-  type IconProps,
 } from "@tronic/ui";
 import { METER_NAV_ITEM } from "@tronic/country-config";
-import { Navbar } from "./Navbar";
 import { MobileNav } from "./MobileNav";
-import { AnnouncementTicker } from "./AnnouncementTicker";
 import { SearchBox } from "@/components/search/SearchBox";
-import { CountrySelector } from "@/components/country/CountrySelector";
 import {
   ACCOUNT_LINK,
   CART_LINK,
   CHECK_WARRANTY_LINK,
   WISHLIST_LINK,
-  SOCIAL_LINKS,
-  SUPPORT_PHONE,
   TRACK_ORDER_LINK,
 } from "@/config/site";
 
 /**
- * Global header, three tiers matching the TRONIC storefront layout:
- * announcement bar (premium black), utility row (company links + country),
- * main row (logo, search, order/account actions), then the red category
- * navbar. Red logo on white per brand guide §9; mobile collapses navigation
- * into the drawer and keeps search on its own row.
+ * Sticky global header: the main row (logo, search, order/account actions)
+ * and, on phones, the search row. Red logo on white per brand guide §9;
+ * mobile collapses navigation into the drawer.
+ *
+ * The red category navbar is not in here: the root layout renders it right
+ * after this header, outside the sticky element, so on desktop it scrolls
+ * away with the page and is back when the page is at the top (owner request
+ * 2026-11-09). No scroll listener and no layout shift.
+ *
+ * The red top bar (announcement ticker, social links, support phone, country
+ * selector) is hidden by owner request (2026-11-09). AnnouncementTicker and
+ * the SOCIAL_LINKS / SUPPORT_PHONE config stay in the codebase so it can
+ * return; the country selector is still in the mobile drawer.
  */
-const SOCIAL_ICONS: Record<string, (props: IconProps) => React.JSX.Element> = {
-  Facebook: FacebookIcon,
-  Instagram: InstagramIcon,
-  TikTok: TikTokIcon,
-};
-
 export function Header() {
-  const socials = SOCIAL_LINKS.filter(
-    (link): link is { label: string; href: string } => link.href !== null,
-  );
-
   return (
     <header className="sticky top-0 z-40 bg-white shadow-sm max-md:bg-[var(--color-off-white)] max-md:shadow-none">
-      {/* Tier 1 — announcement bar with the utilities folded in (owner
-          request Nov 2026: the old second utility row is gone; company
-          links moved into the red navbar). */}
-      <div className="bg-[var(--color-action-red)] text-white/95">
-        <Container className="flex min-h-8 items-center justify-center gap-6 py-1 lg:justify-between">
-          <AnnouncementTicker />
-          <div className="hidden shrink-0 items-center gap-4 lg:flex">
-            {socials.length > 0 ? (
-              <ul className="flex items-center gap-1" aria-label="Social media">
-                {socials.map((link) => {
-                  const Icon = SOCIAL_ICONS[link.label];
-                  return (
-                    <li key={link.label}>
-                      <a
-                        href={link.href}
-                        aria-label={link.label}
-                        className="flex h-7 w-7 items-center justify-center rounded-full text-white/75 transition-colors hover:bg-white/15 hover:text-white"
-                      >
-                        {Icon ? <Icon size={15} /> : <span className="text-xs">{link.label}</span>}
-                      </a>
-                    </li>
-                  );
-                })}
-              </ul>
-            ) : null}
-            <a
-              href={SUPPORT_PHONE.href}
-              className="flex items-center gap-1.5 text-xs font-medium text-white/85 transition-colors hover:text-white"
-            >
-              <PhoneIcon size={13} className="text-white/80" />
-              {SUPPORT_PHONE.label}
-            </a>
-            <CountrySelector tone="dark" />
-          </div>
-        </Container>
-      </div>
-
-      {/* Tier 3 — main row */}
+      {/* Main row */}
       <Container className="relative flex h-[var(--header-height)] items-center gap-3 lg:gap-8">
         <MobileNav />
         {/* Below md the logo sits dead-centre (burger left, actions right);
@@ -169,8 +120,6 @@ export function Header() {
           <SearchBox />
         </Container>
       </div>
-
-      <Navbar />
     </header>
   );
 }

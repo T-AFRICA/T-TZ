@@ -1,15 +1,37 @@
 import Link from "next/link";
-import { BrandMark, Container } from "@tronic/ui";
+import {
+  BrandMark,
+  Container,
+  FacebookIcon,
+  InstagramIcon,
+  PhoneIcon,
+  TikTokIcon,
+  type IconProps,
+} from "@tronic/ui";
 import { ACTIVE_COUNTRY, CATEGORY_SECTIONS, METER_NAV_ITEM } from "@tronic/country-config";
-import { COMPANY_LINKS, POLICY_LINKS } from "@/config/site";
+import { COMPANY_LINKS, POLICY_LINKS, SOCIAL_LINKS, SUPPORT_PHONE } from "@/config/site";
 
 /**
  * Global footer on the dark surface. Brand guide §9 asks for the white logo
  * here; the owner chose the red artwork (2026-11-09) until the white version
  * is supplied, see BrandMark. Link targets map to the SRS §7.1 informational
  * and policy pages, which are built in Week 6.
+ *
+ * The brand column also carries the support phone and the social links
+ * since the header's top bar was hidden (owner decision 2026-11-09). Both
+ * are still placeholders in config/site.ts until the owner supplies them.
  */
+const SOCIAL_ICONS: Record<string, (props: IconProps) => React.JSX.Element> = {
+  Facebook: FacebookIcon,
+  Instagram: InstagramIcon,
+  TikTok: TikTokIcon,
+};
+
 export function Footer() {
+  const socials = SOCIAL_LINKS.filter(
+    (link): link is { label: string; href: string } => link.href !== null,
+  );
+
   return (
     <footer className="border-t-4 border-[var(--color-brand-red)] bg-[var(--surface-footer)] text-[var(--text-on-dark)]">
       <Container className="grid grid-cols-1 gap-10 py-14 sm:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_1fr] lg:gap-12">
@@ -21,6 +43,33 @@ export function Footer() {
           <p className="mt-3 text-sm text-white/70">
             Prices in {ACTIVE_COUNTRY.currency} ({ACTIVE_COUNTRY.name}).
           </p>
+          <p className="mt-4 text-sm">
+            <a
+              href={SUPPORT_PHONE.href}
+              className="inline-flex items-center gap-2 text-white/80 transition-colors hover:text-white"
+            >
+              <PhoneIcon size={15} className="text-white/60" />
+              {SUPPORT_PHONE.label}
+            </a>
+          </p>
+          {socials.length > 0 ? (
+            <ul className="mt-4 -ml-2 flex items-center gap-1" aria-label="Social media">
+              {socials.map((link) => {
+                const Icon = SOCIAL_ICONS[link.label];
+                return (
+                  <li key={link.label}>
+                    <a
+                      href={link.href}
+                      aria-label={link.label}
+                      className="flex h-9 w-9 items-center justify-center rounded-full text-white/70 transition-colors hover:bg-white/10 hover:text-white"
+                    >
+                      {Icon ? <Icon size={17} /> : <span className="text-xs">{link.label}</span>}
+                    </a>
+                  </li>
+                );
+              })}
+            </ul>
+          ) : null}
         </div>
         <nav aria-label="Shop">
           <h2 className="text-xs font-semibold uppercase tracking-[0.2em] text-white/55">Shop</h2>

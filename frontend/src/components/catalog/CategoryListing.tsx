@@ -171,11 +171,14 @@ export async function CategoryListing({
 
       <Container className="py-6 lg:py-8">
         <div className="lg:grid lg:grid-cols-[17rem_1fr] lg:gap-8 xl:gap-10">
-          {/* Sidebar: category tree, then filters. It sticks (and scrolls inside
-              itself) only on viewports tall enough to show most of it. */}
+          {/* Sidebar: category tree, then filters. Its sticky top is the sticky
+              header (--header-height at lg; the category navbar has scrolled
+              away by then) plus 12px.
+              It sticks (and scrolls inside itself) only on viewports tall
+              enough to show most of it. */}
           <aside
             aria-label="Categories and filters"
-            className="no-scrollbar hidden lg:block lg:self-start lg:pr-2 [@media(min-height:860px)]:lg:sticky [@media(min-height:860px)]:lg:top-[10rem] [@media(min-height:860px)]:lg:max-h-[calc(100vh-11rem)] [@media(min-height:860px)]:lg:overflow-y-auto"
+            className="no-scrollbar hidden lg:block lg:self-start lg:pr-2 [@media(min-height:860px)]:lg:sticky [@media(min-height:860px)]:lg:top-[calc(var(--header-height)_+_0.75rem)] [@media(min-height:860px)]:lg:max-h-[calc(100vh_-_var(--header-height)_-_1.75rem)] [@media(min-height:860px)]:lg:overflow-y-auto"
           >
             {filtersPanel(false)}
           </aside>
