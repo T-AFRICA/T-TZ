@@ -3,6 +3,20 @@
 Meaningful implementation changes, newest first. Dates are work dates;
 nothing below is released.
 
+## 2026-11-09 — slimmer desktop header
+
+- The red top bar (announcement ticker, social links, support phone, desktop
+  country selector) is hidden by owner request. The component and config
+  stay in the codebase; the country selector remains in the mobile drawer.
+  Support phone and social links moved to the footer brand column (both
+  still placeholders in config until the owner supplies them).
+- The red category navbar is rendered after the sticky header instead of
+  inside it: on desktop it scrolls away with the page and is back at the
+  top, with no scroll listener and no layout shift. Only the logo and search
+  row stays pinned (72px instead of 148px).
+- The listing sidebar sticky offset derives from `--header-height` instead
+  of a fixed number, so it sits 12px under the header.
+
 ## 2026-11-09 — subcategories from the Website Content Structure
 
 - The taxonomy gains its third level: every group of the six product

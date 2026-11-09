@@ -1,5 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
+import { SUPPORT_PHONE } from "@/config/site";
 import { Header } from "./Header";
 
 describe("Header", () => {
@@ -21,5 +22,20 @@ describe("Header", () => {
     expect(loginLinks[0]).toHaveAttribute("href", "/account");
     const wishlistLinks = screen.getAllByRole("link", { name: /Wishlist/ });
     expect(wishlistLinks[0]).toHaveAttribute("href", "/wishlist");
+  });
+
+  it("does not render the top bar: no social links or support phone in the header (owner request 2026-11-09)", () => {
+    render(<Header />);
+    expect(screen.queryByRole("list", { name: "Social media" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: SUPPORT_PHONE.label })).not.toBeInTheDocument();
+  });
+
+  it("keeps the desktop category navbar out of the sticky header so it scrolls away with the page (owner request 2026-11-09)", () => {
+    const { container } = render(<Header />);
+    expect(container.querySelector("header")).not.toBeNull();
+    const desktopNavs = Array.from(container.querySelectorAll('nav[aria-label="Product categories"]')).filter(
+      (nav) => !nav.closest("dialog"),
+    );
+    expect(desktopNavs).toHaveLength(0);
   });
 });
