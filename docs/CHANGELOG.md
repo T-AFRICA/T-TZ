@@ -3,6 +3,16 @@
 Meaningful implementation changes, newest first. Dates are work dates;
 nothing below is released.
 
+## 2026-11-10 — phone homepage product tabs
+
+- Below 768px the homepage shows one tabbed product block: New Arrivals
+  (newest first by catalogue order), Best Sellers, Featured Products (the
+  "Special for you" picks) and All Products. It replaces the single
+  "Special for you" rail on phones; desktop is unchanged.
+- Best Sellers is a hand-picked placeholder list of SAMPLE products, not a
+  sales ranking; it needs real order data before launch.
+- Tabs follow the WAI-ARIA pattern (arrow keys, Home/End, one tab stop).
+
 ## 2026-11-10 — floating WhatsApp chat button
 
 - A green WhatsApp button floats bottom-right on every page and opens a
