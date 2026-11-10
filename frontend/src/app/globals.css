@@ -494,6 +494,57 @@ details.drawer-acc[open] > ul > li {
   }
 }
 
+/* Desktop product preview (2026-11-10): only with a mouse-like pointer and
+   room for two columns. Results take ~48%, the quick view ~52%, split by a
+   hairline. The panel keeps one height while the active product changes,
+   so moving between rows never resizes it. Touch and narrow screens keep
+   the single-column list. */
+.search-preview {
+  display: none;
+}
+
+@media (hover: hover) and (pointer: fine) and (min-width: 64rem) {
+  .search-panel[data-split="true"] {
+    width: min(58rem, calc(100vw - 13rem));
+    height: min(38rem, var(--search-panel-max, calc(100dvh - var(--header-height) - 2rem)));
+    max-height: var(--search-panel-max, calc(100dvh - var(--header-height) - 2rem));
+  }
+
+  .search-panel[data-split="true"] .search-results {
+    flex: 0 0 48%;
+  }
+
+  .search-panel[data-split="true"] .search-preview {
+    display: flex;
+    flex: 1 1 52%;
+    min-width: 0;
+    min-height: 0;
+    border-left: 1px solid var(--color-light-grey);
+    background: #fff;
+  }
+
+  /* The previewed row keeps a quiet highlight and a red edge so list and
+     preview read as one selection. */
+  .search-panel[data-split="true"] .search-row[data-previewed="true"] {
+    background: var(--surface-card);
+  }
+
+  .search-panel[data-split="true"] .search-row[data-previewed="true"]::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0.75rem;
+    bottom: 0.75rem;
+    width: 2px;
+    border-radius: 2px;
+    background: var(--color-action-red);
+  }
+
+  .search-panel[data-split="true"] .search-row[data-previewed="true"] .search-row-chevron {
+    color: var(--color-action-red);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .search-panel,
   .search-panel[data-open="true"] {
@@ -504,7 +555,7 @@ details.drawer-acc[open] > ul > li {
 
 /* Modal dialog entrance (quick-select and future modals). The mobile
    drawer keeps its own slide-in. */
-dialog:not(.mobile-drawer):not(.filter-sheet)[open] {
+dialog:not(.mobile-drawer):not(.filter-sheet):not(.search-sheet)[open] {
   animation: dialog-in 200ms cubic-bezier(0.2, 0.8, 0.3, 1);
 }
 
@@ -552,25 +603,30 @@ dialog:not(.mobile-drawer):not(.filter-sheet)[open] {
   }
 }
 
-.filter-sheet[open] {
+.filter-sheet[open],
+.search-sheet[open] {
   animation: sheet-in 360ms var(--drawer-ease) both;
   will-change: transform;
 }
 
-.filter-sheet[open][data-closing] {
+.filter-sheet[open][data-closing],
+.search-sheet[open][data-closing] {
   animation: sheet-out 260ms var(--drawer-ease) both;
   pointer-events: none;
 }
 
-.filter-sheet[open]::backdrop {
+.filter-sheet[open]::backdrop,
+.search-sheet[open]::backdrop {
   animation: backdrop-in 250ms ease-out both;
 }
 
-.filter-sheet[open][data-closing]::backdrop {
+.filter-sheet[open][data-closing]::backdrop,
+.search-sheet[open][data-closing]::backdrop {
   animation: backdrop-out 250ms ease-out both;
 }
 
-body:has(.filter-sheet[open]) {
+body:has(.filter-sheet[open]),
+body:has(.search-sheet[open]) {
   overflow: hidden;
 }
 
@@ -578,6 +634,10 @@ body:has(.filter-sheet[open]) {
   .filter-sheet[open],
   .filter-sheet[open][data-closing],
   .filter-sheet[open]::backdrop,
+  .search-sheet[open],
+  .search-sheet[open][data-closing],
+  .search-sheet[open]::backdrop,
+  .search-sheet[open][data-closing]::backdrop,
   .filter-sheet[open][data-closing]::backdrop {
     animation: none;
   }

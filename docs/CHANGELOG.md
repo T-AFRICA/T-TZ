@@ -3,6 +3,44 @@
 Meaningful implementation changes, newest first. Dates are work dates;
 nothing below is released.
 
+## 2026-11-10 — search quick view with purchase (desktop)
+
+- On desktop with a mouse (fine pointer, 1024px and wider) the search panel
+  is two columns: results (~48%) and a quick view (~52%) of the product
+  under the pointer or keyboard highlight. It opens on the first result.
+- The quick view is a compact product page: gallery (arrows when a product
+  has several images), category, name, SKU with the chosen options, model
+  number, TZS price with any sale price and saving, stock, a description
+  (with Read more; until a product has its own copy it shows the same
+  generic line as the product page, now shared in
+  `features/catalog/description.ts`), up to five specifications (wattage, voltage, current, size,
+  material… first), colour and variant choices, a quantity stepper (1–10),
+  Add to Cart, Buy Now and "View full product details". The purchase bar
+  stays at the bottom while details scroll.
+- Options are not preselected: a product with colours or variants cannot
+  be bought until each is chosen, and out-of-stock products cannot be
+  bought. Per-option price, stock, SKU and image are not in the catalogue
+  yet, so the choice is shown in the SKU line, as on the product page.
+- Purchasing goes through `features/cart/purchase.ts`, now shared with the
+  product page (`PurchasePanel`): Add to Cart shows the same sample-mode
+  toast (the button says "Added" for a moment and ignores repeat clicks,
+  the panel stays open) and Buy Now goes to the same `/cart` placeholder.
+  There is still no cart, cart badge or checkout; nothing is stored or paid.
+- No request per hover: hits carry the extra images, options, a trimmed
+  description and up to eight specifications. A row takes over after a
+  90 ms rest (hover intent), so sweeping across rows to the quick view does
+  not switch products. Escape anywhere in the panel closes it and returns
+  focus to the field.
+- Phones, touch tablets and narrow windows: tapping a result opens the same
+  quick view as a bottom sheet (native dialog: Close button, backdrop tap,
+  Escape or back gesture to close; page scroll locked; safe-area aware).
+  Quantity and Add to Cart share a row, Buy Now is full width below, all
+  44px tall. The toast would sit under the sheet, so "Added to cart" is
+  also confirmed inside it. Closing returns to the results; a modified
+  click (new tab) still opens the product page.
+- `SearchResultItem`, `SearchQuickView` and `SearchQuickSheet` split out of
+  `SearchBox`.
+
 ## 2026-11-10 — live product search and autocomplete
 
 - The header search now finds products by name, exact or partial SKU, model
