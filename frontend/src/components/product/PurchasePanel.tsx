@@ -12,10 +12,9 @@ import {
 /**
  * PDP purchase block: variant pills (brand red when selected), quantity
  * stepper, Add to Cart + Buy Now, and the sticky mobile purchase bar that
- * sits above the bottom tab bar. The cart itself arrives with Module 02:
- * Add to Cart confirms via toast (clearly labelled sample mode) and Buy
- * Now continues to the existing /cart placeholder route, so no fake order
- * is ever created. Per-variant price/stock/imagery wiring lands with the
+ * sits above the bottom tab bar. Add to Cart puts the product in this
+ * browser's cart (features/cart) and confirms via toast; Buy Now adds it
+ * and opens the cart. There is no checkout yet, so no order is created. Per-variant price/stock/imagery wiring lands with the
  * live catalog — the selected variant is carried in the displayed SKU.
  * Purchasing is disabled while out of stock.
  */
@@ -29,12 +28,14 @@ export function PurchasePanel({ product }: { product: SampleProduct }) {
   const selection = selectionLabel(color, variant);
   const sku = `${product.id.toUpperCase()}${selection ? ` · ${selection}` : ""}`;
 
+  const line = { productId: product.id, name: product.name, quantity, color, variant };
+
   function addToCart() {
-    purchase.addToCart({ name: product.name, quantity, selection });
+    purchase.addToCart(line);
   }
 
   function buyNow() {
-    purchase.buyNow();
+    purchase.buyNow(line);
   }
 
   const primaryClasses =

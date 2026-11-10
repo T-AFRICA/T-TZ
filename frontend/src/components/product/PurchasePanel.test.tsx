@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { ToastProvider } from "@tronic/ui";
 import type { SampleProduct } from "@/components/home/sampleProducts";
+import { cartStore } from "@/features/cart/store";
 import { PurchasePanel } from "./PurchasePanel";
 
 vi.mock("next/navigation", () => ({
@@ -103,10 +104,15 @@ describe("PurchasePanel", () => {
     expect(screen.getByRole("button", { name: "Decrease quantity" })).toBeDisabled();
   });
 
-  it("confirms Add to Cart with a clearly-sample toast", async () => {
+  it("adds the chosen line to this browser's cart and confirms with a toast", async () => {
+    cartStore.set([]);
     const user = userEvent.setup();
     renderPanel(baseProduct);
+    await user.click(screen.getByRole("button", { name: "Increase quantity" }));
     await user.click(screen.getAllByRole("button", { name: /Add to Cart/ })[0]!);
-    expect(screen.getByRole("status")).toHaveTextContent(/sample mode/i);
+    expect(screen.getByRole("status")).toHaveTextContent("Added 2 × Test Bulb (Warm White) to your cart");
+    expect(cartStore.get()).toEqual([
+      { productId: "sample-test-bulb", color: null, variant: "Warm White", quantity: 2 },
+    ]);
   });
 });
