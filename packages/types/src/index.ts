@@ -1,6 +1,13 @@
 export type { CategoryGroup, CategorySection, CategorySubcategory, NavLink } from "./category";
 export type { CountryCode, CountryConfig, CountryStatus } from "./country";
-export type { SearchResultItem, SearchResponse, SearchState } from "./search";
+export type {
+  ProductSearchHit,
+  ProductSearchPage,
+  ProductSearchQuery,
+  ProductSearchSort,
+  SearchResponse,
+  SearchState,
+} from "./search";
 export type {
   Product,
   ProductColor,

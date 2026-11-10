@@ -1,13 +1,19 @@
 "use client";
 
 import { useEffect, useId, useMemo, useRef, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
-import type { SearchResultItem, SearchState } from "@tronic/types";
-import { SearchIcon, SlidersIcon, TrendingUpIcon, XIcon } from "@tronic/ui";
-import { CATEGORY_SECTIONS } from "@tronic/country-config";
-import { createSearchClient, type SearchClient } from "@tronic/api-client";
+import { useRouter } from "next/navigation";
+import type { ProductSearchHit, SearchResponse, SearchState } from "@tronic/types";
+import { ArrowRightIcon, ChevronRightIcon, SearchIcon, SlidersIcon, TrendingUpIcon, XIcon } from "@tronic/ui";
+import { ACTIVE_COUNTRY, CATEGORY_SECTIONS, formatMoney } from "@tronic/country-config";
+import { createSearchClient, SEARCH_MAX_QUERY_LENGTH, type SearchClient } from "@tronic/api-client";
 
-const DEBOUNCE_MS = 300;
+const DEBOUNCE_MS = 250;
+const RESULT_LIMIT = 6;
+/** Recent responses kept in memory so retyping a query costs no request. */
+const CACHE_SIZE = 20;
+const SEARCH_PATH = "/search";
 
 /** Quick links shown while the field is focused but empty. */
 const POPULAR_CATEGORIES = CATEGORY_SECTIONS.slice(0, 6).map((section) => ({
@@ -16,88 +22,190 @@ const POPULAR_CATEGORIES = CATEGORY_SECTIONS.slice(0, 6).map((section) => ({
 }));
 
 export interface SearchBoxProps {
-  /** Injectable for tests; defaults to the mock adapter (live lands W09+). */
+  /** Injectable for tests; defaults to the storefront's GET /api/search. */
   client?: SearchClient;
 }
 
-/** Bolds the parts of a suggestion title that match the typed query. */
-function HighlightedTitle({ title, query }: { title: string; query: string }) {
-  const needle = query.trim();
-  if (needle.length === 0) {
-    return <>{title}</>;
+function normalise(value: string): string {
+  return value.replace(/\s+/g, " ").trim().slice(0, SEARCH_MAX_QUERY_LENGTH);
+}
+
+function searchUrl(query: string): string {
+  return `${SEARCH_PATH}?${new URLSearchParams({ q: query }).toString()}`;
+}
+
+/** Wraps the parts of the name that match a query word in <mark>; plain text, never HTML. */
+function HighlightedName({ name, query }: { name: string; query: string }) {
+  const tokens = [...new Set(query.toLowerCase().split(" ").filter((token) => token.length > 0))];
+  if (tokens.length === 0) {
+    return <>{name}</>;
   }
-  const lowerTitle = title.toLowerCase();
-  const lowerNeedle = needle.toLowerCase();
-  const parts: React.ReactNode[] = [];
-  let cursor = 0;
-  let matchAt = lowerTitle.indexOf(lowerNeedle);
-  while (matchAt !== -1) {
-    if (matchAt > cursor) {
-      parts.push(title.slice(cursor, matchAt));
+  const lower = name.toLowerCase();
+  const marked = new Array<boolean>(name.length).fill(false);
+  for (const token of tokens) {
+    let at = lower.indexOf(token);
+    while (at !== -1) {
+      marked.fill(true, at, at + token.length);
+      at = lower.indexOf(token, at + token.length);
     }
-    parts.push(
-      <mark key={matchAt} className="bg-transparent font-semibold text-inherit">
-        {title.slice(matchAt, matchAt + needle.length)}
-      </mark>,
-    );
-    cursor = matchAt + needle.length;
-    matchAt = lowerTitle.indexOf(lowerNeedle, cursor);
   }
-  if (cursor < title.length) {
-    parts.push(title.slice(cursor));
+  const parts: React.ReactNode[] = [];
+  let start = 0;
+  for (let i = 1; i <= name.length; i += 1) {
+    if (i === name.length || marked[i] !== marked[start]) {
+      const text = name.slice(start, i);
+      parts.push(
+        marked[start] ? (
+          <mark key={start} className="bg-transparent font-bold text-inherit">
+            {text}
+          </mark>
+        ) : (
+          text
+        ),
+      );
+      start = i;
+    }
   }
   return <>{parts}</>;
 }
 
+function ResultRow({ hit, query }: { hit: ProductSearchHit; query: string }) {
+  const onSale = hit.wasPrice !== undefined && hit.wasPrice > hit.price;
+  return (
+    <>
+      <span className="relative h-14 w-14 shrink-0 overflow-hidden rounded-lg border border-[var(--color-light-grey)] bg-white md:h-16 md:w-16">
+        <Image src={hit.image} alt="" fill sizes="64px" className="object-contain p-1.5" />
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="line-clamp-2 text-[13px] font-semibold leading-snug text-[var(--text-primary)]">
+          <HighlightedName name={hit.name} query={query} />
+        </span>
+        <span className="mt-0.5 block truncate text-[11px] text-[var(--text-muted)]">
+          SKU {hit.sku} · {hit.categoryName}
+        </span>
+      </span>
+      <span className="flex shrink-0 flex-col items-end text-right">
+        <span
+          className={`text-[13px] font-bold ${onSale ? "text-[var(--color-action-red)]" : "text-[var(--color-premium-black)]"}`}
+        >
+          {formatMoney(hit.price, ACTIVE_COUNTRY, hit.currency)}
+        </span>
+        {onSale && hit.wasPrice !== undefined ? (
+          <span className="text-[11px] text-[var(--text-muted)] line-through">
+            {formatMoney(hit.wasPrice, ACTIVE_COUNTRY, hit.currency)}
+          </span>
+        ) : null}
+        <span
+          className={`mt-0.5 text-[11px] font-medium ${hit.inStock ? "text-[var(--color-success)]" : "text-[var(--text-muted)]"}`}
+        >
+          {hit.inStock ? "In stock" : "Out of stock"}
+        </span>
+      </span>
+      <ChevronRightIcon size={16} className="shrink-0 text-[var(--text-muted)] max-sm:hidden" />
+    </>
+  );
+}
+
+function SkeletonRows() {
+  return (
+    <ul aria-hidden="true" className="space-y-1 p-2">
+      {[0, 1, 2].map((row) => (
+        <li key={row} className="flex items-center gap-3 rounded-xl px-2 py-2">
+          <span className="h-14 w-14 shrink-0 animate-pulse rounded-lg bg-[var(--color-light-grey)]/70 md:h-16 md:w-16" />
+          <span className="flex-1 space-y-2">
+            <span className="block h-3 w-3/4 animate-pulse rounded bg-[var(--color-light-grey)]/70" />
+            <span className="block h-2.5 w-1/2 animate-pulse rounded bg-[var(--color-light-grey)]/50" />
+          </span>
+          <span className="h-3 w-16 animate-pulse rounded bg-[var(--color-light-grey)]/70" />
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 /**
- * Header search shell (SRS FR-006): an accessible combobox with debounced
- * querying and explicit idle / loading / results / empty / error states.
- * While the field is empty it offers popular category shortcuts; results
- * come from the mock adapter and are labelled as sample data.
+ * Header product search (SRS FR-006), upgraded 2026-11-10: a WAI-ARIA
+ * combobox whose listbox shows up to six product hits (photo, name, SKU,
+ * category, TZS price with any sale price, stock) plus "View all results".
+ *
+ * - Debounced (250 ms); each new query aborts the previous request, so a
+ *   slow, stale response can never overwrite a newer one. Recent responses
+ *   are cached in memory.
+ * - Arrow keys move through the hits and the "View all" row, Enter opens
+ *   the highlighted one, or the full /search page when nothing is
+ *   highlighted. It is a real GET form, so Enter works before hydration.
+ * - Escape or a click outside closes the panel; focus stays in the field.
+ * - The browser only receives the slim hits from /api/search, never the
+ *   catalogue. Search text is rendered as text, never as HTML.
  */
 export function SearchBox({ client }: SearchBoxProps) {
-  const searchClient = useMemo(() => client ?? createSearchClient("mock"), [client]);
-  const listboxId = useId();
+  const searchClient = useMemo(() => client ?? createSearchClient("http"), [client]);
+  const router = useRouter();
+  const baseId = useId();
+  const listboxId = `${baseId}-listbox`;
   const inputRef = useRef<HTMLInputElement>(null);
-  const rootRef = useRef<HTMLDivElement>(null);
+  const rootRef = useRef<HTMLFormElement>(null);
+  const cacheRef = useRef(new Map<string, SearchResponse>());
 
   const [query, setQuery] = useState("");
   const [state, setState] = useState<SearchState>("idle");
-  const [results, setResults] = useState<SearchResultItem[]>([]);
+  const [response, setResponse] = useState<SearchResponse | null>(null);
   const [isOpen, setIsOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
+  /** Visible viewport height while the phone keyboard is up (visualViewport). */
+  const [viewportHeight, setViewportHeight] = useState<number | null>(null);
+
+  const trimmed = normalise(query);
+  const results = response?.results ?? [];
+  // Options: each hit, then the "View all results" row.
+  const optionCount = state === "results" ? results.length + 1 : 0;
+  const optionId = (index: number) => `${baseId}-option-${index}`;
 
   useEffect(() => {
-    const trimmed = query.trim();
     if (trimmed.length === 0) {
       setState("idle");
-      setResults([]);
+      setResponse(null);
+      setActiveIndex(-1);
+      return;
+    }
+    const key = trimmed.toLowerCase();
+    const cached = cacheRef.current.get(key);
+    if (cached) {
+      setResponse(cached);
+      setState(cached.results.length > 0 ? "results" : "empty");
       setActiveIndex(-1);
       return;
     }
     setState("loading");
+    setActiveIndex(-1);
     const controller = new AbortController();
     const timer = setTimeout(() => {
       searchClient
-        .search(trimmed, { signal: controller.signal })
-        .then((response) => {
-          setResults(response.results);
-          setState(response.results.length > 0 ? "results" : "empty");
-          setActiveIndex(-1);
+        .search(trimmed, { signal: controller.signal, limit: RESULT_LIMIT })
+        .then((next) => {
+          if (controller.signal.aborted) return;
+          const cache = cacheRef.current;
+          cache.set(key, next);
+          if (cache.size > CACHE_SIZE) {
+            const oldest = cache.keys().next().value;
+            if (oldest !== undefined) cache.delete(oldest);
+          }
+          setResponse(next);
+          setState(next.results.length > 0 ? "results" : "empty");
         })
         .catch((error: unknown) => {
-          if (error instanceof DOMException && error.name === "AbortError") {
+          if (controller.signal.aborted || (error instanceof DOMException && error.name === "AbortError")) {
             return;
           }
           setState("error");
-          setResults([]);
+          setResponse(null);
         });
     }, DEBOUNCE_MS);
     return () => {
       controller.abort();
       clearTimeout(timer);
     };
-  }, [query, searchClient]);
+  }, [trimmed, searchClient]);
 
   useEffect(() => {
     function onPointerDown(event: PointerEvent) {
@@ -108,6 +216,23 @@ export function SearchBox({ client }: SearchBoxProps) {
     document.addEventListener("pointerdown", onPointerDown);
     return () => document.removeEventListener("pointerdown", onPointerDown);
   }, []);
+
+  // Phones: keep the panel above the on-screen keyboard by sizing it to the
+  // visual viewport while it is open.
+  useEffect(() => {
+    const viewport = typeof window !== "undefined" ? window.visualViewport : null;
+    if (!isOpen || !viewport) {
+      setViewportHeight(null);
+      return;
+    }
+    // Only when the keyboard has actually shrunk the visible area; otherwise
+    // the stylesheet's limit (which clears the bottom tab bar) applies.
+    const update = () =>
+      setViewportHeight(viewport.height < window.innerHeight - 80 ? viewport.height : null);
+    update();
+    viewport.addEventListener("resize", update);
+    return () => viewport.removeEventListener("resize", update);
+  }, [isOpen]);
 
   // "/" focuses search from anywhere outside a text field (common storefront
   // affordance; harmless on touch devices, which never emit it).
@@ -127,13 +252,22 @@ export function SearchBox({ client }: SearchBoxProps) {
       ) {
         return;
       }
+      const input = inputRef.current;
+      if (!input || input.offsetParent === null) {
+        return; // this instance is hidden at the current breakpoint
+      }
       event.preventDefault();
-      inputRef.current?.focus();
+      input.focus();
       setIsOpen(true);
     }
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
   }, []);
+
+  function close() {
+    setIsOpen(false);
+    setActiveIndex(-1);
+  }
 
   function clearQuery() {
     setQuery("");
@@ -141,49 +275,94 @@ export function SearchBox({ client }: SearchBoxProps) {
     inputRef.current?.focus();
   }
 
-  function onKeyDown(event: React.KeyboardEvent<HTMLInputElement>) {
-    if (event.key === "Escape") {
-      setIsOpen(false);
-      return;
-    }
-    if (state !== "results") {
-      return;
-    }
-    if (event.key === "ArrowDown") {
-      event.preventDefault();
-      setActiveIndex((index) => (index + 1) % results.length);
-    } else if (event.key === "ArrowUp") {
-      event.preventDefault();
-      setActiveIndex((index) => (index <= 0 ? results.length - 1 : index - 1));
-    } else if (event.key === "Enter") {
-      // Enter follows the highlighted suggestion, or the top one when the
-      // shopper has not arrowed yet (no dedicated results page in the mock phase).
-      const item = results[activeIndex >= 0 ? activeIndex : 0];
-      if (item) {
-        event.preventDefault();
-        window.location.assign(item.href);
-      }
-    }
+  function go(href: string) {
+    close();
+    inputRef.current?.blur();
+    router.push(href);
   }
 
-  const showPanel = isOpen;
+  function onKeyDown(event: React.KeyboardEvent<HTMLInputElement>) {
+    if (event.key === "Escape") {
+      if (isOpen) {
+        event.preventDefault();
+        close();
+      }
+      return;
+    }
+    if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+      if (!isOpen) {
+        setIsOpen(true);
+      }
+      if (optionCount === 0) {
+        return;
+      }
+      event.preventDefault();
+      setActiveIndex((index) =>
+        event.key === "ArrowDown"
+          ? index + 1 >= optionCount
+            ? 0
+            : index + 1
+          : index <= 0
+            ? optionCount - 1
+            : index - 1,
+      );
+      return;
+    }
+    if (event.key === "Enter" && isOpen && activeIndex >= 0 && activeIndex < results.length) {
+      const hit = results[activeIndex];
+      if (hit) {
+        event.preventDefault();
+        go(`/products/${encodeURIComponent(hit.slug)}`);
+      }
+    }
+    // Otherwise Enter submits the form: the full results page.
+  }
+
+  function onSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (trimmed.length === 0) {
+      inputRef.current?.focus();
+      setIsOpen(true);
+      return;
+    }
+    go(searchUrl(trimmed));
+  }
+
   const hasQuery = query.length > 0;
+  const listboxShown = isOpen && state === "results";
+  const announce =
+    state === "results" && response
+      ? `${response.total} ${response.total === 1 ? "product" : "products"} found`
+      : state === "empty"
+        ? "No products found"
+        : "";
 
   return (
-    <div ref={rootRef} className="relative w-full max-w-2xl">
-      <label htmlFor={`${listboxId}-input`} className="sr-only">
+    <form
+      ref={rootRef}
+      role="search"
+      action={SEARCH_PATH}
+      method="get"
+      onSubmit={onSubmit}
+      className="relative w-full max-w-2xl"
+    >
+      <label htmlFor={`${baseId}-input`} className="sr-only">
         Search products
       </label>
       <input
         ref={inputRef}
-        id={`${listboxId}-input`}
+        id={`${baseId}-input`}
+        name="q"
         type="search"
         role="combobox"
-        aria-expanded={showPanel && state === "results"}
-        aria-controls={showPanel && state === "results" ? `${listboxId}-listbox` : undefined}
-        aria-activedescendant={activeIndex >= 0 ? `${listboxId}-option-${activeIndex}` : undefined}
+        aria-autocomplete="list"
+        aria-expanded={listboxShown}
+        aria-controls={listboxShown ? listboxId : undefined}
+        aria-activedescendant={listboxShown && activeIndex >= 0 ? optionId(activeIndex) : undefined}
         autoComplete="off"
-        placeholder="Search products…"
+        enterKeyHint="search"
+        maxLength={SEARCH_MAX_QUERY_LENGTH}
+        placeholder="Search products, SKU or model…"
         value={query}
         onChange={(event) => {
           setQuery(event.target.value);
@@ -211,24 +390,51 @@ export function SearchBox({ client }: SearchBoxProps) {
         </button>
       ) : null}
       <button
-        type="button"
+        type="submit"
         aria-label="Search"
-        onClick={() => {
-          setIsOpen(true);
-          inputRef.current?.focus();
-        }}
         className="absolute right-1 top-1/2 flex h-9 w-11 -translate-y-1/2 items-center justify-center rounded-full transition-colors max-md:text-[var(--text-secondary)] max-md:hover:text-[var(--text-primary)] md:bg-[var(--color-action-red)] md:text-white md:hover:bg-[var(--color-action-red-dark)]"
       >
-        {/* Mobile shows a filter-style affordance (approved UI reference);
-            both focus the same search input. */}
+        {/* Mobile shows a filter-style affordance (approved UI reference). */}
         <SearchIcon size={18} className="max-md:hidden" />
         <SlidersIcon size={19} className="md:hidden" />
       </button>
-      {showPanel ? (
-        <div className="mega-panel-in absolute left-0 right-0 top-full z-50 mt-2 overflow-hidden rounded-2xl border border-[var(--color-light-grey)] bg-white shadow-xl">
+
+      <p role="status" aria-live="polite" className="sr-only">
+        {announce}
+      </p>
+
+      <div
+        data-open={isOpen}
+        className="search-panel absolute left-0 right-0 top-full z-50 md:right-auto md:w-[max(100%,30rem)] mt-2 flex flex-col overflow-hidden rounded-2xl border border-[var(--color-light-grey)] bg-white shadow-[0_18px_48px_-12px_rgba(17,17,17,0.25)]"
+        style={
+          {
+            "--search-panel-max": viewportHeight
+              ? `min(32rem, calc(${viewportHeight}px - 9.5rem))`
+              : undefined,
+          } as React.CSSProperties
+        }
+      >
+        {/* Phones: an explicit close action at the top of the panel. */}
+        <div className="flex items-center justify-between border-b border-[var(--color-light-grey)] px-4 py-2 md:hidden">
+          <span className="text-xs font-semibold uppercase tracking-wide text-[var(--text-muted)]">
+            {trimmed.length > 0 ? "Products" : "Popular categories"}
+          </span>
+          <button
+            type="button"
+            onClick={() => {
+              close();
+              inputRef.current?.blur();
+            }}
+            className="rounded-full px-3 py-1 text-[13px] font-semibold text-[var(--color-action-red)]"
+          >
+            Close
+          </button>
+        </div>
+
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
           {state === "idle" ? (
             <nav aria-label="Popular categories" className="py-2">
-              <p className="px-4 pb-1 pt-2 text-xs font-semibold uppercase tracking-wide text-[var(--text-muted)]">
+              <p className="px-4 pb-1 pt-2 text-xs font-semibold uppercase tracking-wide text-[var(--text-muted)] max-md:hidden">
                 Popular categories
               </p>
               <ul>
@@ -236,8 +442,8 @@ export function SearchBox({ client }: SearchBoxProps) {
                   <li key={category.href + category.name}>
                     <Link
                       href={category.href}
-                      className="flex items-center gap-3 px-4 py-2 text-sm transition-colors hover:bg-[var(--surface-card)]"
-                      onClick={() => setIsOpen(false)}
+                      className="flex items-center gap-3 px-4 py-2.5 text-sm transition-colors hover:bg-[var(--surface-card)]"
+                      onClick={close}
                     >
                       <TrendingUpIcon size={16} className="shrink-0 text-[var(--text-muted)]" />
                       {category.name}
@@ -248,59 +454,72 @@ export function SearchBox({ client }: SearchBoxProps) {
             </nav>
           ) : null}
           {state === "loading" ? (
-            <p role="status" className="flex items-center gap-2 px-4 py-3 text-sm text-[var(--text-muted)]">
-              <SearchIcon size={16} className="animate-pulse" />
-              Searching…
-            </p>
+            <div>
+              <p className="sr-only">Searching…</p>
+              <SkeletonRows />
+            </div>
           ) : null}
           {state === "error" ? (
-            <p role="alert" className="px-4 py-3 text-sm text-[var(--color-action-red)]">
+            <p role="alert" className="px-4 py-4 text-sm text-[var(--color-action-red)]">
               Search is unavailable right now. Please try again.
             </p>
           ) : null}
           {state === "empty" ? (
-            <p role="status" className="px-4 py-3 text-sm text-[var(--text-muted)]">
-              No matches for “{query.trim()}”. Try a category name like “Lighting”.
-            </p>
+            <div className="px-4 py-5 text-sm">
+              <p className="font-semibold text-[var(--text-primary)]">No products match “{trimmed}”.</p>
+              <p className="mt-1 text-[var(--text-muted)]">
+                Check the spelling, try fewer words, or search by SKU.
+              </p>
+            </div>
           ) : null}
           {state === "results" ? (
-            <>
-              <ul id={`${listboxId}-listbox`} role="listbox" aria-label="Search suggestions" className="py-1">
-                {results.map((item, index) => (
-                  <li
-                    key={item.id}
-                    id={`${listboxId}-option-${index}`}
-                    role="option"
-                    aria-selected={index === activeIndex}
+            <ul id={listboxId} role="listbox" aria-label="Product suggestions" className="p-2">
+              {results.map((hit, index) => (
+                <li key={hit.id} id={optionId(index)} role="option" aria-selected={index === activeIndex}>
+                  <Link
+                    href={`/products/${encodeURIComponent(hit.slug)}`}
+                    tabIndex={-1}
+                    onClick={close}
+                    onMouseEnter={() => setActiveIndex(index)}
+                    className={`flex items-center gap-3 rounded-xl px-2 py-2 transition-colors ${
+                      index === activeIndex ? "bg-[var(--surface-card)]" : "hover:bg-[var(--surface-card)]"
+                    }`}
                   >
-                    {/* The <mark> highlight splits the title into separate text
-                        nodes, so spell the accessible name out explicitly. */}
-                    <Link
-                      href={item.href}
-                      aria-label={`${item.title} (${item.section})`}
-                      className={`flex items-center gap-3 px-4 py-2 text-sm transition-colors hover:bg-[var(--surface-card)] ${
-                        index === activeIndex ? "bg-[var(--surface-card)]" : ""
-                      }`}
-                      onClick={() => setIsOpen(false)}
-                    >
-                      <SearchIcon size={16} className="shrink-0 text-[var(--text-muted)]" />
-                      <span className="min-w-0 flex-1 truncate">
-                        <HighlightedTitle title={item.title} query={query} />
-                      </span>
-                      <span className="shrink-0 rounded-full bg-[var(--surface-card)] px-2 py-0.5 text-xs text-[var(--text-muted)]">
-                        {item.section}
-                      </span>
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-              <p className="border-t border-[var(--color-light-grey)] px-4 py-1.5 text-xs text-[var(--text-muted)]">
-                Sample data — live catalog search is connected in a later phase.
-              </p>
-            </>
+                    <ResultRow hit={hit} query={trimmed} />
+                  </Link>
+                </li>
+              ))}
+              <li
+                id={optionId(results.length)}
+                role="option"
+                aria-selected={activeIndex === results.length}
+                className="mt-1 border-t border-[var(--color-light-grey)] pt-1"
+              >
+                <Link
+                  href={searchUrl(trimmed)}
+                  tabIndex={-1}
+                  onClick={close}
+                  onMouseEnter={() => setActiveIndex(results.length)}
+                  className={`flex items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-[13px] font-semibold text-[var(--color-action-red)] transition-colors ${
+                    activeIndex === results.length ? "bg-[var(--surface-card)]" : "hover:bg-[var(--surface-card)]"
+                  }`}
+                >
+                  <span className="min-w-0 truncate">
+                    View all {response && response.total > results.length ? `${response.total} ` : ""}results
+                    for “{trimmed}”
+                  </span>
+                  <ArrowRightIcon size={15} className="shrink-0" />
+                </Link>
+              </li>
+            </ul>
           ) : null}
         </div>
-      ) : null}
-    </div>
+        {response?.simulated && (state === "results" || state === "empty") ? (
+          <p className="border-t border-[var(--color-light-grey)] px-4 py-1.5 text-[11px] text-[var(--text-muted)]">
+            Sample catalogue — prices and stock are demo values.
+          </p>
+        ) : null}
+      </div>
+    </form>
   );
 }

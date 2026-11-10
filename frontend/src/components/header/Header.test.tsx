@@ -1,7 +1,13 @@
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { SUPPORT_PHONE } from "@/config/site";
 import { Header } from "./Header";
+
+// SearchBox navigates with the app router, which is not mounted in unit tests.
+vi.mock("next/navigation", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("next/navigation")>()),
+  useRouter: () => ({ push: vi.fn() }),
+}));
 
 describe("Header", () => {
   it("keeps the dedicated Meter link in the main header row (FR-003)", () => {

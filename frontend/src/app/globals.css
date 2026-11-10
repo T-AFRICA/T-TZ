@@ -460,6 +460,48 @@ details.drawer-acc[open] > ul > li {
   animation: mega-panel-in 180ms ease-out;
 }
 
+/* Header search panel (2026-11-10): stays mounted so it can fade and drop
+   in and out. Closed, it is invisible and out of the accessibility tree.
+   Its height is capped so results scroll inside it: on phones it stops
+   above the bottom tab bar, and while the keyboard is up SearchBox sets
+   --search-panel-max from the visual viewport. */
+.search-panel {
+  max-height: var(--search-panel-max, min(32rem, calc(100dvh - var(--header-height) - 2rem)));
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translateY(-6px);
+  transition:
+    opacity 160ms ease,
+    transform 160ms ease-out,
+    visibility 0s linear 160ms;
+}
+
+.search-panel[data-open="true"] {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transform: none;
+  transition:
+    opacity 160ms ease,
+    transform 160ms ease-out,
+    visibility 0s;
+}
+
+@media (max-width: 47.999rem) {
+  .search-panel {
+    max-height: var(--search-panel-max, calc(100dvh - 12.5rem - env(safe-area-inset-bottom)));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .search-panel,
+  .search-panel[data-open="true"] {
+    transform: none;
+    transition: none;
+  }
+}
+
 /* Modal dialog entrance (quick-select and future modals). The mobile
    drawer keeps its own slide-in. */
 dialog:not(.mobile-drawer):not(.filter-sheet)[open] {

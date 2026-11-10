@@ -2,22 +2,20 @@ import Link from "next/link";
 import { ArrowLeftIcon, ArrowRightIcon } from "@tronic/ui";
 import { listingHref, type ListingFilters } from "@/features/catalog/catalog";
 
+type PaginationProps = { page: number; pageCount: number } & (
+  | { basePath: string; filters: ListingFilters }
+  /** Any other URL scheme, e.g. the /search page. */
+  | { hrefFor: (page: number) => string }
+);
+
 /** Previous / page numbers / next, as plain links so the URL carries the page. */
-export function Pagination({
-  basePath,
-  filters,
-  page,
-  pageCount,
-}: {
-  basePath: string;
-  filters: ListingFilters;
-  page: number;
-  pageCount: number;
-}) {
+export function Pagination(props: PaginationProps) {
+  const { page, pageCount } = props;
   if (pageCount <= 1) {
     return null;
   }
-  const href = (p: number) => listingHref(basePath, { ...filters, page: p });
+  const href = (p: number) =>
+    "hrefFor" in props ? props.hrefFor(p) : listingHref(props.basePath, { ...props.filters, page: p });
   const pages = Array.from({ length: pageCount }, (_, i) => i + 1).filter(
     (p) => p === 1 || p === pageCount || Math.abs(p - page) <= 1,
   );

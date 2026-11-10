@@ -63,6 +63,23 @@ is the same shape against `storefront_products`:
 `getProduct(slug, country)` joins the same view and returns `null` when the
 product has no active row for that country, even if it exists elsewhere.
 
+## Product search (`0002_product_search.sql`, draft)
+
+`searchProducts({ country, text, sort, inStockOnly, page })` is today run by
+the mock catalogue with the ranking in
+`packages/api-client/src/product-search.ts`. The draft migration proposes the
+SQL equivalent: `pg_trgm`, a trigram index on `lower(name)` and on the
+letters-and-digits form of `sku`, and a `search_products(text, country, limit)`
+function over `storefront_products` with the same tiers (exact SKU, exact
+model, exact name, name prefix, all words, keywords, trigram similarity).
+The storefront calls it only from the server route `GET /api/search` with
+bound parameters; the browser never receives the catalogue.
+
+Not yet verified against a real PostgreSQL instance (none exists for the
+project): run it on a scratch database and compare its ordering with the
+TypeScript tests before it is approved. Model numbers come from a
+specification whose label starts with "Model"; no product has one yet.
+
 ## Security model (to be written with the project)
 
 - Storefront reads through the anon role with RLS allowing `select` on active
