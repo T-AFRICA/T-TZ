@@ -3,7 +3,16 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { CATEGORY_SECTIONS } from "@tronic/country-config";
-import { ArrowRightIcon, ChevronDownIcon, Container } from "@tronic/ui";
+import {
+  ArrowRightIcon,
+  ChevronDownIcon,
+  Container,
+  InfoIcon,
+  MapPinIcon,
+  NewspaperIcon,
+  StoreIcon,
+  type IconProps,
+} from "@tronic/ui";
 import { COMPANY_LINKS } from "@/config/site";
 
 /**
@@ -22,14 +31,23 @@ import { COMPANY_LINKS } from "@/config/site";
  * the keyboard brings the bar back into view.
  */
 const HOVER_CLOSE_DELAY_MS = 160;
+/** openSlug value of the company "More" menu (not a category slug). */
+const COMPANY_MENU = "__company";
+
+/** Icon before each company link (owner brief 2026-11-10), keyed by route. */
+const COMPANY_ICONS: Record<(typeof COMPANY_LINKS)[number]["href"], (props: IconProps) => React.ReactElement> = {
+  "/about": InfoIcon,
+  "/locations": MapPinIcon,
+  "/blog": NewspaperIcon,
+  "/showrooms": StoreIcon,
+};
 
 /**
  * Splits a section name into two balanced lines at a word boundary, keeping
- * "&" at the end of the first line ("Switchgear &" / "Protection"). Below
- * 2xl the labels sit on two lines so all eight sections and the company
- * links fit side by side on 1024–1535px screens (2026-11-10: the single-line
- * labels needed ~1500px and were clipped under the company links on
- * laptops). One-word names stay on one line.
+ * "&" at the end of the first line ("Switchgear &" / "Protection"). Used
+ * only at 1024–1279px, where one-line labels (~1030px) do not fit; from
+ * 1280px every label is on one line (owner request 2026-11-10). One-word
+ * names stay on one line.
  */
 export function splitNavLabel(name: string): [string, string] | [string] {
   // "&" stays with the word before it, so it always ends the first line.
@@ -97,6 +115,7 @@ export function Navbar() {
   }, []);
 
   const openSection = CATEGORY_SECTIONS.find((section) => section.slug === openSlug);
+  const companyOpen = openSlug === COMPANY_MENU;
 
   return (
     <nav
@@ -110,12 +129,12 @@ export function Navbar() {
         }
       }}
     >
-      <Container className="flex items-stretch justify-between gap-4">
+      <Container className="flex items-stretch justify-between gap-3">
         {/* Categories (left) and company links (right) are separate flex
             items: the categories take the free space (min-w-0), the company
-            group never shrinks, so the two can never overlap. Labels sit on
-            two lines below 2xl and one line from 2xl, which fits both groups
-            from 1280px (measured 2026-11-10). If a larger default font still
+            group never shrinks, so the two can never overlap. Labels are on
+            one line from 1280px (tighter padding and tracking up to 1679px)
+            and on two lines at 1024–1279px. If a larger default font still
             does not fit, the list wraps onto a second row — nothing is
             scrolled out of sight or clipped. Centered at lg, where the
             company links are not shown; left-aligned from xl. */}
@@ -149,7 +168,7 @@ export function Navbar() {
                       setOpenSlug(section.slug);
                     }
                   }}
-                  className={`flex min-h-10 items-center gap-1 whitespace-nowrap px-2.5 py-1.5 text-left text-xs font-semibold uppercase leading-tight tracking-[0.04em] transition-colors duration-150 2xl:px-2 2xl:py-3 ${
+                  className={`flex min-h-10 items-center gap-1 whitespace-nowrap px-2.5 py-1.5 text-left text-xs font-semibold uppercase leading-tight tracking-[0.04em] transition-colors duration-150 xl:gap-0.5 xl:px-1.5 xl:py-3 xl:tracking-[0.02em] 3xl:gap-1 3xl:px-2 3xl:tracking-[0.04em] ${
                     isOpen
                       ? "bg-white text-[var(--color-action-red)]"
                       : "text-white hover:bg-white hover:text-[var(--color-action-red)]"
@@ -160,7 +179,7 @@ export function Navbar() {
                     {secondLine ? (
                       <>
                         {" "}
-                        <br className="2xl:hidden" />
+                        <br className="xl:hidden" />
                         {secondLine}
                       </>
                     ) : null}
@@ -175,25 +194,94 @@ export function Navbar() {
           })}
           </ul>
         </div>
-        {/* Company links (owner request Nov 2026): moved here from the old
-            utility row; compact labels, full names stay in the footer. A
-            divider sets them apart from the categories. Below xl there is no
-            room beside the eight sections; the footer lists them there. */}
+        {/* Company links (owner request Nov 2026), set apart from the
+            categories by a divider. 1280–1679px: one "More" button opens
+            them as a small menu, so the eight sections fit on one line
+            (owner choice 2026-11-10). From 1680px: the four links sit in
+            the bar, icon before label. Below xl there is no room at all;
+            the footer lists them there. */}
         <nav
           aria-label="Company"
-          className="hidden shrink-0 items-center border-l border-white/30 pl-4 xl:flex"
+          className="relative hidden shrink-0 items-stretch border-l border-white/30 pl-2 xl:flex 3xl:hidden"
         >
-          <ul className="flex items-center gap-3">
-            {COMPANY_LINKS.map((link) => (
-              <li key={link.href}>
-                <Link
-                  href={link.href}
-                  className="flex min-h-10 items-center whitespace-nowrap text-[11px] font-medium uppercase tracking-[0.04em] text-white/85 transition-colors hover:text-white hover:underline hover:underline-offset-4"
-                >
-                  {link.navLabel}
-                </Link>
-              </li>
-            ))}
+          <button
+            type="button"
+            aria-expanded={companyOpen}
+            aria-controls={companyOpen ? "navbar-company-menu" : undefined}
+            onClick={() => {
+              if (companyOpen && hoverOpenedSlug.current !== COMPANY_MENU) {
+                setOpenSlug(null);
+              } else {
+                hoverOpenedSlug.current = null;
+                setOpenSlug(COMPANY_MENU);
+              }
+            }}
+            onPointerEnter={(event) => {
+              if (event.pointerType === "mouse") {
+                cancelScheduledClose();
+                hoverOpenedSlug.current = COMPANY_MENU;
+                setOpenSlug(COMPANY_MENU);
+              }
+            }}
+            className={`flex items-center gap-0.5 whitespace-nowrap px-2 text-xs font-semibold uppercase tracking-[0.02em] transition-colors duration-150 ${
+              companyOpen
+                ? "bg-white text-[var(--color-action-red)]"
+                : "text-white hover:bg-white hover:text-[var(--color-action-red)]"
+            }`}
+          >
+            More
+            <ChevronDownIcon
+              size={13}
+              className={`shrink-0 opacity-80 transition-transform ${companyOpen ? "rotate-180" : ""}`}
+            />
+          </button>
+          {companyOpen ? (
+            <ul
+              id="navbar-company-menu"
+              className="mega-panel-in absolute right-0 top-full w-60 rounded-b-xl border-t-2 border-[var(--color-action-red)] bg-white py-2 text-[var(--text-primary)] shadow-xl"
+            >
+              {COMPANY_LINKS.map((link) => {
+                const Icon = COMPANY_ICONS[link.href];
+                return (
+                  <li key={link.href}>
+                    <Link
+                      href={link.href}
+                      onClick={() => setOpenSlug(null)}
+                      className="group flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium transition-colors hover:bg-[var(--surface-card)] hover:text-[var(--color-action-red)] focus-visible:bg-[var(--surface-card)] focus-visible:text-[var(--color-action-red)] focus-visible:outline-none"
+                    >
+                      <Icon size={16} className="shrink-0 text-[var(--color-action-red)]" />
+                      {link.label}
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          ) : null}
+        </nav>
+        <nav
+          aria-label="Company"
+          className="hidden shrink-0 items-center border-l border-white/30 pl-3 3xl:flex"
+        >
+          <ul className="flex items-center gap-5">
+            {COMPANY_LINKS.map((link) => {
+              const Icon = COMPANY_ICONS[link.href];
+              return (
+                <li key={link.href} className="flex">
+                  <Link
+                    href={link.href}
+                    className="group flex min-h-10 items-center gap-1.5 whitespace-nowrap rounded-sm text-[11px] font-medium uppercase tracking-[0.04em] text-white/85 transition-colors duration-150 hover:text-white focus-visible:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+                  >
+                    <Icon
+                      size={14}
+                      className="shrink-0 opacity-80 transition-[opacity,transform] duration-150 group-hover:-translate-y-px group-hover:opacity-100 group-focus-visible:opacity-100 motion-reduce:transition-none motion-reduce:group-hover:translate-y-0"
+                    />
+                    <span className="underline-offset-4 decoration-white/70 group-hover:underline">
+                      {link.navLabel}
+                    </span>
+                  </Link>
+                </li>
+              );
+            })}
           </ul>
         </nav>
       </Container>

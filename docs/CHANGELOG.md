@@ -3,6 +3,23 @@
 Meaningful implementation changes, newest first. Dates are work dates;
 nothing below is released.
 
+## 2026-11-10 — navbar: one-line categories, company links in a More menu
+
+- Owner request: every category label on one line. From 1280px all eight
+  sections now sit on one line; up to 1679px with slightly tighter padding
+  and letter spacing (they need ~1050px there, ~1130px from 1680px).
+- 1280–1679px: the four company links no longer fit beside one-line
+  categories, so a "More" button at the right of the bar opens them as a
+  small menu (About Us, Our Locations, Engineering Blog, Our Showroom
+  Locations, each with its icon). It opens on hover or click like the
+  category panels and closes with Escape, an outside click or on leaving.
+- From 1680px (new `3xl` breakpoint): the four links sit in the bar with a
+  14px icon before each label (info, map pin, newspaper, store), 6px apart,
+  20px between links; hover underlines the label, focus shows an outline.
+- 1024–1279px keeps the two-line labels: one line does not fit there.
+- Measured, one row and nothing clipped: 1280 (72px spare before More),
+  1366, 1536, 1679, 1680 (107px before the links) and 1920px.
+
 ## 2026-11-10 — navbar: categories no longer run into the company links
 
 - Cause: the eight category labels on one line need ~1130px and the

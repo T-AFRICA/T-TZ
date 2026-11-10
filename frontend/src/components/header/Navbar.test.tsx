@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 import { CATEGORY_SECTIONS } from "@tronic/country-config";
@@ -41,5 +41,19 @@ describe("Navbar", () => {
     );
     await user.keyboard("{Escape}");
     expect(lighting).toHaveAttribute("aria-expanded", "false");
+  });
+
+  it("opens the company links from the More button and closes with Escape", async () => {
+    const user = userEvent.setup();
+    render(<Navbar />);
+    const more = screen.getByRole("button", { name: "More" });
+    expect(more).toHaveAttribute("aria-expanded", "false");
+    await user.click(more);
+    expect(more).toHaveAttribute("aria-expanded", "true");
+    const menu = document.getElementById("navbar-company-menu")!;
+    expect(within(menu).getByRole("link", { name: "About Us" })).toHaveAttribute("href", "/about");
+    expect(within(menu).getByRole("link", { name: "Our Showroom Locations" })).toHaveAttribute("href", "/showrooms");
+    await user.keyboard("{Escape}");
+    expect(more).toHaveAttribute("aria-expanded", "false");
   });
 });
