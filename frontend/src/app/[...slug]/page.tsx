@@ -9,7 +9,7 @@ export const metadata = {
 /**
  * Catch-all placeholder for routes that are planned but not yet built
  * (About, Locations, Blog, Showrooms and the eight policy pages — Week 6;
- * cart/checkout/account — Weeks 3-4). It keeps header and footer links
+ * checkout/account — Weeks 3-4). It keeps header and footer links
  * honest instead of returning 404s, and is excluded from indexing.
  */
 export default function PlaceholderPage() {

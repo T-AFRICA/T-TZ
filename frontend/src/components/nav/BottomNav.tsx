@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { CartIcon, GridIcon, HeartIcon, HomeIcon, UserIcon } from "@tronic/ui";
 import { ACCOUNT_LINK, CART_LINK, WISHLIST_LINK } from "@/config/site";
 import type { IconProps } from "@tronic/ui";
+import { CartCountBadge, CartCountText, WishlistCountBadge, WishlistCountText } from "@/components/cart/CountBadge";
 
 interface TabItem {
   href: string;
@@ -16,9 +17,9 @@ interface TabItem {
 
 /**
  * Mobile bottom tab bar (approved mobile UI reference, Nov 2026): Home,
- * Categories, Wishlist, Cart, Profile. Wishlist/cart/account routes are W03-04
- * placeholder pages for now; no fake badge counts are rendered — real counts
- * arrive with the cart/wishlist modules. Hidden from md upward.
+ * Categories, Wishlist, Cart, Profile. The account route is a W03-04
+ * placeholder; Wishlist and Cart show this browser's item counts
+ * (features/cart), never invented numbers. Hidden from md upward.
  */
 const TABS: readonly TabItem[] = [
   { href: "/", label: "Home", icon: HomeIcon, activePath: "/" },
@@ -58,8 +59,14 @@ export function BottomNav() {
                     className="absolute -top-px left-1/2 h-0.5 w-7 -translate-x-1/2 rounded-b-full bg-[var(--color-action-red)]"
                   />
                 ) : null}
-                <Icon size={21} />
+                <span className="relative">
+                  <Icon size={21} />
+                  {tab.href === CART_LINK.href ? <CartCountBadge className="-right-2.5 -top-1.5" /> : null}
+                  {tab.href === WISHLIST_LINK.href ? <WishlistCountBadge className="-right-2.5 -top-1.5" /> : null}
+                </span>
                 {tab.label}
+                {tab.href === CART_LINK.href ? <CartCountText /> : null}
+                {tab.href === WISHLIST_LINK.href ? <WishlistCountText /> : null}
               </Link>
             </li>
           );

@@ -23,6 +23,29 @@ nothing below is released.
   Below xl (1280px) the company links stay in the footer as before; phones
   and tablets keep their own navigation.
 
+## 2026-11-10 — working cart and wishlist in the browser
+
+- Add to Cart and Buy Now (product cards, product page, search quick view)
+  put the product with its chosen options and quantity in a cart kept in
+  this browser; Buy Now then opens the cart. On cards, a product with
+  colours or variants opens a small dialog where each must be chosen.
+- The heart on cards and the product page saves or removes the product
+  from a wishlist in this browser; it fills red when saved.
+- Header (tablet and up) and bottom tab bar (phones) show cart and
+  wishlist counts; screen readers hear "Cart, 3 items".
+- New `/cart` page: lines with options, unit price, quantity 1–10, line
+  total and Remove; summary with item count and subtotal. Out-of-stock and
+  no-longer-listed lines are noted and left out of the subtotal. New
+  `/wishlist` page lists saved products as product cards. Both have empty
+  and loading states and are not indexed.
+- Storage (`features/cart/store.ts`): localStorage keys per country; only
+  product ids, options and quantities are stored, never prices. Every price
+  comes from the catalogue on each render (`features/cart/lines.ts`).
+  Malformed or tampered entries are dropped on read; tabs stay in sync.
+- No checkout or payment exists yet: the cart's checkout button is disabled
+  and says so; nothing is ordered or charged. The cart does not follow the
+  shopper to another device until accounts and the cart service exist.
+
 ## 2026-11-10 — search quick view with purchase (desktop)
 
 - On desktop with a mouse (fine pointer, 1024px and wider) the search panel
