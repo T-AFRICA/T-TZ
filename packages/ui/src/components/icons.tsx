@@ -11,6 +11,7 @@ import {
   ArrowRight,
   Bell,
   ChevronDown,
+  ChevronRight,
   Gauge,
   Globe,
   Heart,
@@ -46,6 +47,7 @@ export const UserIcon = wrap(User);
 export const CartIcon = wrap(ShoppingCart);
 export const HeartIcon = wrap(Heart);
 export const ChevronDownIcon = wrap(ChevronDown);
+export const ChevronRightIcon = wrap(ChevronRight);
 export const GlobeIcon = wrap(Globe);
 export const ArrowLeftIcon = wrap(ArrowLeft);
 export const ArrowRightIcon = wrap(ArrowRight);

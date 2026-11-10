@@ -1,5 +1,15 @@
-import type { CountryCode, Product, ProductPage, ProductQuery, ProductSort } from "@tronic/types";
+import type {
+  CountryCode,
+  Product,
+  ProductPage,
+  ProductQuery,
+  ProductSearchPage,
+  ProductSearchQuery,
+  ProductSearchSort,
+  ProductSort,
+} from "@tronic/types";
 import { ALL_SAMPLE_PRODUCTS } from "./mock/catalog-data";
+import { normalizeSearchText, rankProducts } from "./product-search";
 
 /**
  * Typed catalogue boundary (SSD §4): the storefront only ever talks to this
@@ -16,6 +26,11 @@ export interface CatalogClient {
   getProduct(slug: string, country: CountryCode): Promise<Product | null>;
   /** Same-category products (excluding the product itself), catalogue order. */
   getRelatedProducts(product: Product, country: CountryCode, limit?: number): Promise<readonly Product[]>;
+  /**
+   * Text search within one country: name, SKU, model number and category
+   * words, ranked as in product-search.ts. An empty query matches nothing.
+   */
+  searchProducts(query: ProductSearchQuery): Promise<ProductSearchPage>;
 }
 
 export type CatalogClientMode = "mock";
@@ -23,6 +38,15 @@ export type CatalogClientMode = "mock";
 export const DEFAULT_PAGE_SIZE = 12;
 export const MAX_PAGE_SIZE = 48;
 export const PRODUCT_SORTS: readonly ProductSort[] = ["newest", "price-asc", "price-desc", "name-asc"];
+export const PRODUCT_SEARCH_SORTS: readonly ProductSearchSort[] = ["relevance", ...PRODUCT_SORTS];
+
+function paginate<T>(items: readonly T[], requestedPage: number | undefined, requestedSize: number | undefined) {
+  const pageSize = Math.min(Math.max(requestedSize ?? DEFAULT_PAGE_SIZE, 1), MAX_PAGE_SIZE);
+  const pageCount = Math.max(1, Math.ceil(items.length / pageSize));
+  const page = Math.min(Math.max(requestedPage ?? 1, 1), pageCount);
+  const start = (page - 1) * pageSize;
+  return { items: items.slice(start, start + pageSize), total: items.length, page, pageSize, pageCount };
+}
 
 function visibleIn(country: CountryCode) {
   return (product: Product) => product.active && product.countries.includes(country);
@@ -70,19 +94,17 @@ export class MockCatalogClient implements CatalogClient {
       .filter((product) => !query.inStockOnly || product.inStock);
 
     const sorted = sortProducts(filtered, query.sort ?? "newest");
-    const pageSize = Math.min(Math.max(query.pageSize ?? DEFAULT_PAGE_SIZE, 1), MAX_PAGE_SIZE);
-    const pageCount = Math.max(1, Math.ceil(sorted.length / pageSize));
-    const page = Math.min(Math.max(query.page ?? 1, 1), pageCount);
-    const start = (page - 1) * pageSize;
+    return { ...paginate(sorted, query.page, query.pageSize), facets };
+  }
 
-    return {
-      items: sorted.slice(start, start + pageSize),
-      total: sorted.length,
-      page,
-      pageSize,
-      pageCount,
-      facets,
-    };
+  async searchProducts(query: ProductSearchQuery): Promise<ProductSearchPage> {
+    const text = normalizeSearchText(query.text);
+    const ranked = rankProducts(this.products.filter(visibleIn(query.country)), text).filter(
+      (product) => !query.inStockOnly || product.inStock,
+    );
+    const sort = query.sort ?? "relevance";
+    const ordered = sort === "relevance" ? ranked : sortProducts(ranked, sort);
+    return { query: text, ...paginate(ordered, query.page, query.pageSize) };
   }
 
   async getProduct(slug: string, country: CountryCode): Promise<Product | null> {

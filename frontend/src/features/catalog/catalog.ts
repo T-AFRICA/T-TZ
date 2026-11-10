@@ -9,6 +9,9 @@ import { ACTIVE_COUNTRY } from "@tronic/country-config";
  */
 export const catalogClient = createCatalogClient("mock");
 
+/** Products per listing or search results page. */
+export const DEFAULT_LISTING_PAGE_SIZE = DEFAULT_PAGE_SIZE;
+
 /** Query-string keys of a listing URL; the URL is the filter state, so the
  *  browser's back button restores filters and pagination for free. */
 export const LISTING_PARAMS = {

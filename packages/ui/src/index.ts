@@ -22,6 +22,7 @@ export {
   BellIcon,
   CartIcon,
   ChevronDownIcon,
+  ChevronRightIcon,
   FacebookIcon,
   GlobeIcon,
   GridIcon,

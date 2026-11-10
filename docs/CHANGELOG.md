@@ -3,6 +3,29 @@
 Meaningful implementation changes, newest first. Dates are work dates;
 nothing below is released.
 
+## 2026-11-10 — live product search and autocomplete
+
+- The header search now finds products by name, exact or partial SKU, model
+  number (a "Model…" specification), brand and category words. Ranking:
+  exact SKU, exact model, exact name, name prefix, all words, keywords, then
+  one typo per word of 4+ letters. Shared by the mock catalogue
+  (`packages/api-client/src/product-search.ts`) and the draft SQL.
+- The dropdown shows up to six hits (photo, name, SKU, category, TZS price
+  with any sale price, stock) and "View all results"; arrow keys, Enter,
+  Escape and click-outside work as a WAI-ARIA combobox. Debounced 250 ms,
+  stale requests are aborted, recent queries are cached. Phones get a
+  scrollable panel with a Close action that stops above the tab bar and the
+  keyboard.
+- `GET /api/search` searches on the server for the active country only and
+  returns slim hits: input is length-checked, `limit` capped at 8, a
+  best-effort per-instance rate limit (60/min), short cache headers and
+  generic errors. The browser never downloads the catalogue.
+- New `/search?q=` page (relevance and the listing sorts, in-stock filter,
+  pagination; not indexed). Enter without a highlighted hit opens it, and
+  the search field is a real GET form, so it works before hydration.
+- `database/migrations/0002_product_search.sql` (DRAFT, not applied): pg_trgm
+  indexes and a `search_products()` function with the same tiers.
+
 ## 2026-11-10 — phone homepage product tabs
 
 - Below 768px the homepage shows one tabbed product block: New Arrivals
