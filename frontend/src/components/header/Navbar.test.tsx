@@ -2,7 +2,22 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 import { CATEGORY_SECTIONS } from "@tronic/country-config";
-import { Navbar } from "./Navbar";
+import { Navbar, splitNavLabel } from "./Navbar";
+
+describe("splitNavLabel", () => {
+  it("splits names into two balanced lines with & ending the first line", () => {
+    expect(splitNavLabel("Cables & Wiring")).toEqual(["Cables &", "Wiring"]);
+    expect(splitNavLabel("Switches & Sockets")).toEqual(["Switches &", "Sockets"]);
+    expect(splitNavLabel("Switchgear & Protection")).toEqual(["Switchgear &", "Protection"]);
+    expect(splitNavLabel("Cable Management")).toEqual(["Cable", "Management"]);
+    expect(splitNavLabel("Shop by Use")).toEqual(["Shop", "by Use"]);
+  });
+
+  it("keeps one-word names on one line", () => {
+    expect(splitNavLabel("Lighting")).toEqual(["Lighting"]);
+    expect(splitNavLabel("Tools")).toEqual(["Tools"]);
+  });
+});
 
 describe("Navbar", () => {
   it("renders the eight approved category sections (FR-002)", () => {

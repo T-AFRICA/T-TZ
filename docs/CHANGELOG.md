@@ -3,6 +3,26 @@
 Meaningful implementation changes, newest first. Dates are work dates;
 nothing below is released.
 
+## 2026-11-10 — navbar: categories no longer run into the company links
+
+- Cause: the eight category labels on one line need ~1130px and the
+  company links (About, Locations, Blog, Showrooms) ~250px, so both only
+  fit from ~1500px (and wider still at 2xl, where the labels grew to 13px).
+  From 1280px the company links were shown anyway and the categories were
+  scrolled inside a hidden-scrollbar strip, so "Shop by Use" was cut off
+  against "About" on most laptops.
+- Below 2xl (1536px) each category label now sits on two balanced lines
+  ("Switchgear &" / "Protection"); from 2xl on one line at 12px. The bar
+  keeps its height (42px, 40px from 2xl).
+- The categories take the free space and the company group never shrinks,
+  so the two cannot overlap; a thin divider separates them. The hidden
+  scroll strip is gone: if a larger browser font still does not fit, the
+  list wraps to a second row instead of hiding anything.
+- Measured: one row, nothing clipped, at 1024, 1280, 1366, 1440, 1536 and
+  1920px (the gap before the company links is 105px at 1280, 63px at 1536).
+  Below xl (1280px) the company links stay in the footer as before; phones
+  and tablets keep their own navigation.
+
 ## 2026-11-10 — working cart and wishlist in the browser
 
 - Add to Cart and Buy Now (product cards, product page, search quick view)

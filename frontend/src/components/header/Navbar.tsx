@@ -23,6 +23,38 @@ import { COMPANY_LINKS } from "@/config/site";
  */
 const HOVER_CLOSE_DELAY_MS = 160;
 
+/**
+ * Splits a section name into two balanced lines at a word boundary, keeping
+ * "&" at the end of the first line ("Switchgear &" / "Protection"). Below
+ * 2xl the labels sit on two lines so all eight sections and the company
+ * links fit side by side on 1024–1535px screens (2026-11-10: the single-line
+ * labels needed ~1500px and were clipped under the company links on
+ * laptops). One-word names stay on one line.
+ */
+export function splitNavLabel(name: string): [string, string] | [string] {
+  // "&" stays with the word before it, so it always ends the first line.
+  const words: string[] = [];
+  for (const word of name.split(" ")) {
+    if (word === "&" && words.length > 0) {
+      words[words.length - 1] += " &";
+    } else {
+      words.push(word);
+    }
+  }
+  let best: [string, string] | null = null;
+  let bestLength = Number.POSITIVE_INFINITY;
+  for (let i = 1; i < words.length; i += 1) {
+    const first = words.slice(0, i).join(" ");
+    const second = words.slice(i).join(" ");
+    const longest = Math.max(first.length, second.length);
+    if (longest < bestLength) {
+      best = [first, second];
+      bestLength = longest;
+    }
+  }
+  return best ?? [name];
+}
+
 export function Navbar() {
   const [openSlug, setOpenSlug] = useState<string | null>(null);
   const navRef = useRef<HTMLElement>(null);
@@ -78,15 +110,20 @@ export function Navbar() {
         }
       }}
     >
-      <Container className="flex items-stretch justify-between gap-2">
-        {/* Natural-width items on one line — no flex-1 stretching, no label
-            wrapping. w-max + mx-auto centers the group when it fits and
-            scrolls from the left edge (never clipping) when it does not;
-            from xl the group sits left of the company links. */}
-        <div className="no-scrollbar min-w-0 flex-1 overflow-x-auto">
-          <ul className="mx-auto flex w-max items-stretch xl:mx-0">
+      <Container className="flex items-stretch justify-between gap-4">
+        {/* Categories (left) and company links (right) are separate flex
+            items: the categories take the free space (min-w-0), the company
+            group never shrinks, so the two can never overlap. Labels sit on
+            two lines below 2xl and one line from 2xl, which fits both groups
+            from 1280px (measured 2026-11-10). If a larger default font still
+            does not fit, the list wraps onto a second row — nothing is
+            scrolled out of sight or clipped. Centered at lg, where the
+            company links are not shown; left-aligned from xl. */}
+        <div className="min-w-0 flex-1">
+          <ul className="flex flex-wrap items-stretch justify-center xl:justify-start">
           {CATEGORY_SECTIONS.map((section) => {
             const isOpen = section.slug === openSlug;
+            const [firstLine, secondLine] = splitNavLabel(section.name);
             return (
               <li key={section.slug} className="flex shrink-0">
                 <button
@@ -112,13 +149,22 @@ export function Navbar() {
                       setOpenSlug(section.slug);
                     }
                   }}
-                  className={`flex items-center gap-1 whitespace-nowrap px-2.5 py-3 text-xs font-semibold uppercase tracking-[0.04em] transition-colors duration-150 xl:px-2 2xl:gap-1.5 2xl:px-4 2xl:text-[13px] ${
+                  className={`flex min-h-10 items-center gap-1 whitespace-nowrap px-2.5 py-1.5 text-left text-xs font-semibold uppercase leading-tight tracking-[0.04em] transition-colors duration-150 2xl:px-2 2xl:py-3 ${
                     isOpen
                       ? "bg-white text-[var(--color-action-red)]"
                       : "text-white hover:bg-white hover:text-[var(--color-action-red)]"
                   }`}
                 >
-                  {section.name}
+                  <span>
+                    {firstLine}
+                    {secondLine ? (
+                      <>
+                        {" "}
+                        <br className="2xl:hidden" />
+                        {secondLine}
+                      </>
+                    ) : null}
+                  </span>
                   <ChevronDownIcon
                     size={13}
                     className={`shrink-0 opacity-80 transition-transform ${isOpen ? "rotate-180" : ""}`}
@@ -130,14 +176,19 @@ export function Navbar() {
           </ul>
         </div>
         {/* Company links (owner request Nov 2026): moved here from the old
-            utility row; compact labels, full names stay in the footer. */}
-        <nav aria-label="Company" className="hidden shrink-0 items-center xl:flex">
-          <ul className="flex items-center gap-3 2xl:gap-4">
+            utility row; compact labels, full names stay in the footer. A
+            divider sets them apart from the categories. Below xl there is no
+            room beside the eight sections; the footer lists them there. */}
+        <nav
+          aria-label="Company"
+          className="hidden shrink-0 items-center border-l border-white/30 pl-4 xl:flex"
+        >
+          <ul className="flex items-center gap-3">
             {COMPANY_LINKS.map((link) => (
               <li key={link.href}>
                 <Link
                   href={link.href}
-                  className="whitespace-nowrap text-[11px] font-medium uppercase tracking-[0.04em] text-white/80 transition-colors hover:text-white"
+                  className="flex min-h-10 items-center whitespace-nowrap text-[11px] font-medium uppercase tracking-[0.04em] text-white/85 transition-colors hover:text-white hover:underline hover:underline-offset-4"
                 >
                   {link.navLabel}
                 </Link>
