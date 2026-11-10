@@ -3,7 +3,7 @@
 import { useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@tronic/ui";
-import { CART_LINK } from "@/config/site";
+import { buyNowHref } from "@/features/checkout/links";
 import { useCart } from "./hooks";
 import { MAX_LINE_QUANTITY } from "./store";
 
@@ -14,10 +14,11 @@ import { MAX_LINE_QUANTITY } from "./store";
  *
  * - Add to Cart puts the product and its chosen options in this browser's
  *   cart (./store.ts) and confirms with a toast.
- * - Buy Now does the same and opens the cart.
+ * - Buy Now opens checkout with just this product and its options; it
+ *   does not touch the cart (owner brief 2026-11-10).
  *
- * There is no checkout or payment yet (Module 02 / Phase 5): the cart page
- * says so, and no order is ever created or simulated.
+ * Payments and orders are not connected yet (Module 02 / Phase 5):
+ * checkout says so, and no order is ever created or simulated.
  */
 export const MAX_PURCHASE_QUANTITY = MAX_LINE_QUANTITY;
 
@@ -50,10 +51,9 @@ export function usePurchaseActions() {
 
   const buyNow = useCallback(
     ({ productId, quantity, color, variant }: PurchaseLine) => {
-      add({ productId, color, variant, quantity });
-      router.push(CART_LINK.href);
+      router.push(buyNowHref({ productId, color, variant, quantity }));
     },
-    [add, router],
+    [router],
   );
 
   return useMemo(() => ({ addToCart, buyNow }), [addToCart, buyNow]);

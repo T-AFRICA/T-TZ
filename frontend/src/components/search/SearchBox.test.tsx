@@ -274,7 +274,7 @@ describe("SearchBox", () => {
     await user.type(input, "led");
     const quick = await screen.findByRole("complementary", { name: "Quick view" });
     await user.click(within(quick).getByRole("button", { name: "Buy Now" }));
-    expect(push).toHaveBeenCalledWith("/cart");
+    expect(push).toHaveBeenCalledWith("/checkout?buy=sample-led-panel&qty=1");
     expect(input).toHaveAttribute("aria-expanded", "false");
   });
 
@@ -359,7 +359,7 @@ describe("SearchBox on touch and narrow screens", () => {
     await user.click(await screen.findByRole("link", { name: /24W LED Panel Light/ }));
     const sheet = screen.getByRole("dialog", { name: "Quick view: 24W LED Panel Light" });
     await user.click(within(sheet).getByRole("button", { name: "Buy Now" }));
-    expect(push).toHaveBeenCalledWith("/cart");
+    expect(push).toHaveBeenCalledWith("/checkout?buy=sample-led-panel&qty=1");
     expect(sheet).not.toHaveAttribute("open");
     expect(input).toHaveAttribute("aria-expanded", "false");
   });

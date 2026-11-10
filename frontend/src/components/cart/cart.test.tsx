@@ -63,7 +63,7 @@ describe("product card buttons", () => {
     expect(screen.getAllByRole("status").at(-1)).toHaveTextContent(`Added 1 × ${panel.name} to your cart`);
   });
 
-  it("asks for every option first, then Buy Now adds and opens the cart", async () => {
+  it("asks for every option first, then Buy Now opens checkout without touching the cart", async () => {
     const user = userEvent.setup();
     renderWithToast(<AddToCartButton product={extension} />);
     await user.click(screen.getByRole("button", { name: /^Buy now: Extension Socket/ }));
@@ -74,8 +74,10 @@ describe("product card buttons", () => {
     await user.click(within(dialog).getByRole("button", { name: colour }));
     await user.click(within(dialog).getByRole("button", { name: "4-way" }));
     await user.click(confirm);
-    expect(cartStore.get()).toEqual([{ productId: extension.id, color: colour, variant: "4-way", quantity: 1 }]);
-    expect(push).toHaveBeenCalledWith("/cart");
+    expect(cartStore.get()).toEqual([]);
+    expect(push).toHaveBeenCalledWith(
+      `/checkout?buy=${extension.id}&qty=1&color=${encodeURIComponent(colour)}&variant=4-way`,
+    );
   });
 
   it("saves and removes a product with the heart", async () => {
@@ -111,7 +113,7 @@ describe("cart page", () => {
     expect(summary).toHaveTextContent(`Items3`);
     expect(summary).toHaveTextContent(new Intl.NumberFormat("en-US").format(subtotal(2)));
     expect(screen.getByText("This product is no longer available.")).toBeInTheDocument();
-    expect(within(summary).getByRole("button", { name: "Checkout opens soon" })).toBeDisabled();
+    expect(within(summary).getByRole("link", { name: "Proceed to checkout" })).toHaveAttribute("href", "/checkout");
 
     const bulbQuantity = screen.getByRole("group", { name: `Quantity of ${bulb.name}` });
     await user.click(within(bulbQuantity).getByRole("button", { name: "Increase quantity" }));
