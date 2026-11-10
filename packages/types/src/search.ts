@@ -1,5 +1,5 @@
 import type { CountryCode } from "./country";
-import type { Product, ProductSort } from "./product";
+import type { Product, ProductColor, ProductSort, ProductSpecification } from "./product";
 
 /**
  * Product search contracts (SRS FR-006): the header autocomplete, the
@@ -27,6 +27,19 @@ export interface ProductSearchHit {
   wasPrice?: number;
   currency: string;
   inStock: boolean;
+  /**
+   * Preview-panel extras, present only when the catalogue has them (the
+   * same verified values the product page shows). Sent with the hit so
+   * hovering a result never needs another request.
+   */
+  description?: string;
+  specifications?: readonly ProductSpecification[];
+  /** Extra gallery images after `image`, when the product has them. */
+  images?: readonly string[];
+  /** Purchase options, exactly as on the product page. */
+  variants?: readonly string[];
+  variantLabel?: string;
+  colors?: readonly ProductColor[];
 }
 
 export interface SearchResponse {

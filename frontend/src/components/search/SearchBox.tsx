@@ -1,19 +1,41 @@
 "use client";
 
-import { useEffect, useId, useMemo, useRef, useState } from "react";
-import Image from "next/image";
+import { useCallback, useEffect, useId, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { ProductSearchHit, SearchResponse, SearchState } from "@tronic/types";
-import { ArrowRightIcon, ChevronRightIcon, SearchIcon, SlidersIcon, TrendingUpIcon, XIcon } from "@tronic/ui";
-import { ACTIVE_COUNTRY, CATEGORY_SECTIONS, formatMoney } from "@tronic/country-config";
+import { ArrowRightIcon, SearchIcon, SlidersIcon, TrendingUpIcon, XIcon } from "@tronic/ui";
+import { CATEGORY_SECTIONS } from "@tronic/country-config";
 import { createSearchClient, SEARCH_MAX_QUERY_LENGTH, type SearchClient } from "@tronic/api-client";
+import { SearchQuickSheet } from "./SearchQuickSheet";
+import { SearchQuickView } from "./SearchQuickView";
+import { productHref, SearchResultItem } from "./SearchResultItem";
 
 const DEBOUNCE_MS = 250;
+/** Pointer rest time before a hovered row becomes the previewed product. */
+const HOVER_INTENT_MS = 90;
 const RESULT_LIMIT = 6;
 /** Recent responses kept in memory so retyping a query costs no request. */
 const CACHE_SIZE = 20;
 const SEARCH_PATH = "/search";
+
+/**
+ * Where the quick view sits beside the results (desktop, mouse-like pointer,
+ * 1024px+). Must match the .search-preview media query in globals.css.
+ * Everywhere else a tapped result opens the quick view as a bottom sheet.
+ */
+const SPLIT_VIEW_QUERY = "(hover: hover) and (pointer: fine) and (min-width: 64rem)";
+
+function subscribeSplitView(onChange: () => void): () => void {
+  if (typeof window === "undefined" || typeof window.matchMedia !== "function") return () => {};
+  const query = window.matchMedia(SPLIT_VIEW_QUERY);
+  query.addEventListener("change", onChange);
+  return () => query.removeEventListener("change", onChange);
+}
+
+// Without matchMedia (tests, very old browsers) behave like desktop: links navigate.
+const splitViewSnapshot = () => typeof window.matchMedia !== "function" || window.matchMedia(SPLIT_VIEW_QUERY).matches;
+const splitViewServerSnapshot = () => true;
 
 /** Quick links shown while the field is focused but empty. */
 const POPULAR_CATEGORIES = CATEGORY_SECTIONS.slice(0, 6).map((section) => ({
@@ -32,78 +54,6 @@ function normalise(value: string): string {
 
 function searchUrl(query: string): string {
   return `${SEARCH_PATH}?${new URLSearchParams({ q: query }).toString()}`;
-}
-
-/** Wraps the parts of the name that match a query word in <mark>; plain text, never HTML. */
-function HighlightedName({ name, query }: { name: string; query: string }) {
-  const tokens = [...new Set(query.toLowerCase().split(" ").filter((token) => token.length > 0))];
-  if (tokens.length === 0) {
-    return <>{name}</>;
-  }
-  const lower = name.toLowerCase();
-  const marked = new Array<boolean>(name.length).fill(false);
-  for (const token of tokens) {
-    let at = lower.indexOf(token);
-    while (at !== -1) {
-      marked.fill(true, at, at + token.length);
-      at = lower.indexOf(token, at + token.length);
-    }
-  }
-  const parts: React.ReactNode[] = [];
-  let start = 0;
-  for (let i = 1; i <= name.length; i += 1) {
-    if (i === name.length || marked[i] !== marked[start]) {
-      const text = name.slice(start, i);
-      parts.push(
-        marked[start] ? (
-          <mark key={start} className="bg-transparent font-bold text-inherit">
-            {text}
-          </mark>
-        ) : (
-          text
-        ),
-      );
-      start = i;
-    }
-  }
-  return <>{parts}</>;
-}
-
-function ResultRow({ hit, query }: { hit: ProductSearchHit; query: string }) {
-  const onSale = hit.wasPrice !== undefined && hit.wasPrice > hit.price;
-  return (
-    <>
-      <span className="relative h-14 w-14 shrink-0 overflow-hidden rounded-lg border border-[var(--color-light-grey)] bg-white md:h-16 md:w-16">
-        <Image src={hit.image} alt="" fill sizes="64px" className="object-contain p-1.5" />
-      </span>
-      <span className="min-w-0 flex-1">
-        <span className="line-clamp-2 text-[13px] font-semibold leading-snug text-[var(--text-primary)]">
-          <HighlightedName name={hit.name} query={query} />
-        </span>
-        <span className="mt-0.5 block truncate text-[11px] text-[var(--text-muted)]">
-          SKU {hit.sku} · {hit.categoryName}
-        </span>
-      </span>
-      <span className="flex shrink-0 flex-col items-end text-right">
-        <span
-          className={`text-[13px] font-bold ${onSale ? "text-[var(--color-action-red)]" : "text-[var(--color-premium-black)]"}`}
-        >
-          {formatMoney(hit.price, ACTIVE_COUNTRY, hit.currency)}
-        </span>
-        {onSale && hit.wasPrice !== undefined ? (
-          <span className="text-[11px] text-[var(--text-muted)] line-through">
-            {formatMoney(hit.wasPrice, ACTIVE_COUNTRY, hit.currency)}
-          </span>
-        ) : null}
-        <span
-          className={`mt-0.5 text-[11px] font-medium ${hit.inStock ? "text-[var(--color-success)]" : "text-[var(--text-muted)]"}`}
-        >
-          {hit.inStock ? "In stock" : "Out of stock"}
-        </span>
-      </span>
-      <ChevronRightIcon size={16} className="shrink-0 text-[var(--text-muted)] max-sm:hidden" />
-    </>
-  );
 }
 
 function SkeletonRows() {
@@ -135,6 +85,12 @@ function SkeletonRows() {
  *   the highlighted one, or the full /search page when nothing is
  *   highlighted. It is a real GET form, so Enter works before hydration.
  * - Escape or a click outside closes the panel; focus stays in the field.
+ * - Desktop with a mouse (CSS-gated, see .search-preview): a second column
+ *   previews the product under the pointer or keyboard highlight, from the
+ *   data the search already returned (no request per hover). It opens on
+ *   the first result and resets with every new response.
+ * - Touch and narrow screens: tapping a result opens the quick view in a
+ *   bottom sheet (SearchQuickSheet) instead of leaving the page.
  * - The browser only receives the slim hits from /api/search, never the
  *   catalogue. Search text is rendered as text, never as HTML.
  */
@@ -152,6 +108,17 @@ export function SearchBox({ client }: SearchBoxProps) {
   const [response, setResponse] = useState<SearchResponse | null>(null);
   const [isOpen, setIsOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
+  const splitView = useSyncExternalStore(subscribeSplitView, splitViewSnapshot, splitViewServerSnapshot);
+  // Touch and narrow screens: the product shown in the quick view sheet.
+  const [sheetHit, setSheetHit] = useState<ProductSearchHit | null>(null);
+  const onSheetClosed = useCallback(() => setSheetHit(null), []);
+  // Product shown in the desktop preview: the last product row made active
+  // by hover or keyboard, tied to the response it came from so a new
+  // search never shows the previous query's product.
+  const [preview, setPreview] = useState<{ response: SearchResponse | null; index: number }>({
+    response: null,
+    index: 0,
+  });
   /** Visible viewport height while the phone keyboard is up (visualViewport). */
   const [viewportHeight, setViewportHeight] = useState<number | null>(null);
 
@@ -160,6 +127,33 @@ export function SearchBox({ client }: SearchBoxProps) {
   // Options: each hit, then the "View all results" row.
   const optionCount = state === "results" ? results.length + 1 : 0;
   const optionId = (index: number) => `${baseId}-option-${index}`;
+  const previewIndex = preview.response === response ? Math.min(preview.index, results.length - 1) : 0;
+  const previewHit = state === "results" ? results[previewIndex] : undefined;
+
+  /** Highlights an option; a product option also becomes the previewed product. */
+  function activate(index: number) {
+    cancelHover();
+    setActiveIndex(index);
+    if (index >= 0 && index < results.length) {
+      setPreview({ response, index });
+    }
+  }
+
+  // Hover intent: a row takes over only after the pointer rests on it
+  // briefly, so sweeping diagonally from a row to the quick view does not
+  // switch the product on every row crossed on the way.
+  const hoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  function cancelHover() {
+    if (hoverTimer.current) {
+      clearTimeout(hoverTimer.current);
+      hoverTimer.current = null;
+    }
+  }
+  function hoverOption(index: number) {
+    cancelHover();
+    hoverTimer.current = setTimeout(() => activate(index), HOVER_INTENT_MS);
+  }
+  useEffect(() => cancelHover, []);
 
   useEffect(() => {
     if (trimmed.length === 0) {
@@ -297,14 +291,14 @@ export function SearchBox({ client }: SearchBoxProps) {
         return;
       }
       event.preventDefault();
-      setActiveIndex((index) =>
+      activate(
         event.key === "ArrowDown"
-          ? index + 1 >= optionCount
+          ? activeIndex + 1 >= optionCount
             ? 0
-            : index + 1
-          : index <= 0
+            : activeIndex + 1
+          : activeIndex <= 0
             ? optionCount - 1
-            : index - 1,
+            : activeIndex - 1,
       );
       return;
     }
@@ -312,7 +306,7 @@ export function SearchBox({ client }: SearchBoxProps) {
       const hit = results[activeIndex];
       if (hit) {
         event.preventDefault();
-        go(`/products/${encodeURIComponent(hit.slug)}`);
+        go(productHref(hit));
       }
     }
     // Otherwise Enter submits the form: the full results page.
@@ -403,8 +397,20 @@ export function SearchBox({ client }: SearchBoxProps) {
         {announce}
       </p>
 
+      {/* Escape from anywhere in the panel (e.g. the quick view's buttons)
+          closes it and returns focus to the field. Every control inside is
+          a native button or link, so this is a shortcut, not a widget. */}
       <div
+        onKeyDown={(event) => {
+          if (event.key === "Escape" && isOpen) {
+            event.preventDefault();
+            // Focus first: the field's onFocus opens the panel, close() wins.
+            inputRef.current?.focus();
+            close();
+          }
+        }}
         data-open={isOpen}
+        data-split={previewHit ? "true" : undefined}
         className="search-panel absolute left-0 right-0 top-full z-50 md:right-auto md:w-[max(100%,30rem)] mt-2 flex flex-col overflow-hidden rounded-2xl border border-[var(--color-light-grey)] bg-white shadow-[0_18px_48px_-12px_rgba(17,17,17,0.25)]"
         style={
           {
@@ -431,7 +437,8 @@ export function SearchBox({ client }: SearchBoxProps) {
           </button>
         </div>
 
-        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+        <div className="flex min-h-0 flex-1">
+        <div className="search-results min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain">
           {state === "idle" ? (
             <nav aria-label="Popular categories" className="py-2">
               <p className="px-4 pb-1 pt-2 text-xs font-semibold uppercase tracking-wide text-[var(--text-muted)] max-md:hidden">
@@ -477,15 +484,28 @@ export function SearchBox({ client }: SearchBoxProps) {
               {results.map((hit, index) => (
                 <li key={hit.id} id={optionId(index)} role="option" aria-selected={index === activeIndex}>
                   <Link
-                    href={`/products/${encodeURIComponent(hit.slug)}`}
+                    href={productHref(hit)}
                     tabIndex={-1}
-                    onClick={close}
-                    onMouseEnter={() => setActiveIndex(index)}
-                    className={`flex items-center gap-3 rounded-xl px-2 py-2 transition-colors ${
+                    onClick={(event) => {
+                      // Touch / narrow: open the quick view sheet instead of
+                      // leaving the page (a modified click still opens a tab).
+                      if (!splitView && !event.metaKey && !event.ctrlKey && !event.shiftKey) {
+                        event.preventDefault();
+                        cancelHover();
+                        inputRef.current?.blur();
+                        setSheetHit(hit);
+                        return;
+                      }
+                      close();
+                    }}
+                    onMouseEnter={() => hoverOption(index)}
+                    onMouseLeave={cancelHover}
+                    data-previewed={index === previewIndex ? "true" : undefined}
+                    className={`search-row relative flex items-center gap-3 rounded-xl px-2 py-2 transition-colors duration-100 ${
                       index === activeIndex ? "bg-[var(--surface-card)]" : "hover:bg-[var(--surface-card)]"
                     }`}
                   >
-                    <ResultRow hit={hit} query={trimmed} />
+                    <SearchResultItem hit={hit} query={trimmed} />
                   </Link>
                 </li>
               ))}
@@ -499,7 +519,8 @@ export function SearchBox({ client }: SearchBoxProps) {
                   href={searchUrl(trimmed)}
                   tabIndex={-1}
                   onClick={close}
-                  onMouseEnter={() => setActiveIndex(results.length)}
+                  onMouseEnter={() => hoverOption(results.length)}
+                  onMouseLeave={cancelHover}
                   className={`flex items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-[13px] font-semibold text-[var(--color-action-red)] transition-colors ${
                     activeIndex === results.length ? "bg-[var(--surface-card)]" : "hover:bg-[var(--surface-card)]"
                   }`}
@@ -514,12 +535,23 @@ export function SearchBox({ client }: SearchBoxProps) {
             </ul>
           ) : null}
         </div>
+        {/* Desktop with a fine pointer (CSS: .search-preview): the active
+            product's details beside the list. Hidden on touch and narrow
+            screens, where rows already carry the essentials. */}
+        {previewHit ? (
+          <aside aria-label="Quick view" className="search-preview">
+            <SearchQuickView hits={results} active={previewHit} onNavigate={close} />
+          </aside>
+        ) : null}
+        </div>
         {response?.simulated && (state === "results" || state === "empty") ? (
           <p className="border-t border-[var(--color-light-grey)] px-4 py-1.5 text-[11px] text-[var(--text-muted)]">
             Sample catalogue — prices and stock are demo values.
           </p>
         ) : null}
       </div>
+
+      <SearchQuickSheet hit={sheetHit} onClosed={onSheetClosed} onNavigate={close} />
     </form>
   );
 }

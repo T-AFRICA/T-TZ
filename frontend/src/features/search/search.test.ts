@@ -9,7 +9,7 @@ import {
   withinOneEdit,
 } from "@tronic/api-client";
 import { createRateLimiter, clientKey } from "./rate-limit";
-import { parseSearchPageParams, searchHref, toSearchHit } from "./search";
+import { orderSpecifications, parseSearchPageParams, searchHref, toSearchHit } from "./search";
 
 const base = ALL_SAMPLE_PRODUCTS.find((p) => p.id === "sample-led-panel") as Product;
 
@@ -96,6 +96,46 @@ describe("catalogue search", () => {
     expect(Object.keys(toSearchHit(base)).sort()).toEqual(
       ["categoryName", "currency", "id", "image", "inStock", "name", "price", "sku", "slug", "wasPrice"].sort(),
     );
+  });
+
+  it("adds only real preview extras: trimmed description and useful specs first", () => {
+    const hit = toSearchHit(
+      product({
+        description: `${"Bright, efficient panel light. ".repeat(20)}`,
+        specifications: [
+          { label: "Finish", value: "Matte" },
+          { label: "Voltage", value: "220-240V" },
+          { label: "Empty", value: " " },
+          { label: "Wattage", value: "24W" },
+          { label: "Model", value: "TR-P24" },
+        ],
+      }),
+    );
+    expect(hit.description?.length).toBeLessThanOrEqual(601);
+    expect(hit.description?.endsWith("…")).toBe(true);
+    expect(hit.specifications?.map((spec) => spec.label)).toEqual(["Model", "Wattage", "Voltage", "Finish"]);
+    expect(toSearchHit(product({ description: "  " }))).not.toHaveProperty("description");
+  });
+
+  it("carries gallery images and purchase options for the quick view", () => {
+    const hit = toSearchHit(
+      product({
+        images: [base.image, "/a.png", "/a.png", "/b.png"],
+        variants: ["3-way"],
+        variantLabel: "Type",
+        colors: [{ name: "White", swatch: "#fff" }],
+      }),
+    );
+    expect(hit.images).toEqual(["/a.png", "/b.png"]);
+    expect(hit).toMatchObject({ variants: ["3-way"], variantLabel: "Type", colors: [{ name: "White", swatch: "#fff" }] });
+  });
+
+  it("keeps catalogue order for specs of equal priority", () => {
+    expect(orderSpecifications([{ label: "B" }, { label: "A" }, { label: "Colour" }]).map((s) => s.label)).toEqual([
+      "Colour",
+      "B",
+      "A",
+    ]);
   });
 });
 

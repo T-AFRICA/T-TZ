@@ -7,6 +7,7 @@ import { RecentlyViewed } from "@/components/product/RecentlyViewed";
 import { ProductSection } from "@/components/home/ProductSection";
 import { allSampleProducts } from "@/components/home/sampleProducts";
 import { catalogClient } from "@/features/catalog/catalog";
+import { placeholderDescription } from "@/features/catalog/description";
 import { ACTIVE_COUNTRY, getCategorySection } from "@tronic/country-config";
 import { POLICY_LINKS, CHECK_WARRANTY_LINK } from "@/config/site";
 
@@ -132,8 +133,7 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
               phones the price moves directly under the title, so this line
               lives in the Product overview accordion instead. */}
           <p className="mt-3 hidden max-w-md text-sm leading-relaxed text-[var(--text-secondary)] md:block">
-            {product.description ??
-              `Reliable ${product.categoryName.toLowerCase()} for homes, businesses and industry. The full product description arrives with the live catalogue.`}
+            {product.description ?? placeholderDescription(product.categoryName)}
           </p>
 
           <PurchasePanel product={product} />

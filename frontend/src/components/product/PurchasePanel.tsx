@@ -1,16 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { CartIcon, useToast } from "@tronic/ui";
-import { CART_LINK } from "@/config/site";
+import { CartIcon } from "@tronic/ui";
+import { MAX_PURCHASE_QUANTITY as MAX_QUANTITY, selectionLabel, usePurchaseActions } from "@/features/cart/purchase";
 import {
   discountPercent,
   formatSamplePrice,
   type SampleProduct,
 } from "@/components/home/sampleProducts";
-
-const MAX_QUANTITY = 10;
 
 /**
  * PDP purchase block: variant pills (brand red when selected), quantity
@@ -23,25 +20,21 @@ const MAX_QUANTITY = 10;
  * Purchasing is disabled while out of stock.
  */
 export function PurchasePanel({ product }: { product: SampleProduct }) {
-  const router = useRouter();
-  const { showToast } = useToast();
+  const purchase = usePurchaseActions();
   const [variant, setVariant] = useState<string | null>(product.variants?.[0] ?? null);
   const [color, setColor] = useState<string | null>(product.colors?.[0]?.name ?? null);
   const [quantity, setQuantity] = useState(1);
 
   const saving = discountPercent(product);
-  const selection = [color, variant].filter(Boolean).join(" · ");
+  const selection = selectionLabel(color, variant);
   const sku = `${product.id.toUpperCase()}${selection ? ` · ${selection}` : ""}`;
 
   function addToCart() {
-    showToast(
-      `Added ${quantity} × ${product.name}${selection ? ` (${selection})` : ""} — sample mode, cart launches with the live catalog`,
-      "success",
-    );
+    purchase.addToCart({ name: product.name, quantity, selection });
   }
 
   function buyNow() {
-    router.push(CART_LINK.href);
+    purchase.buyNow();
   }
 
   const primaryClasses =
