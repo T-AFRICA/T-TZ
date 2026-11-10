@@ -2,10 +2,9 @@
 
 import { useRef, useState } from "react";
 import Image from "next/image";
-import Link from "next/link";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { ArrowLeftIcon, ArrowRightIcon, Dialog, HeartIcon, SearchIcon, useToast } from "@tronic/ui";
-import { WISHLIST_LINK } from "@/config/site";
+import { ArrowLeftIcon, ArrowRightIcon, Dialog, SearchIcon, useToast } from "@tronic/ui";
+import { WishlistButton } from "@/components/wishlist/WishlistButton";
 import type { SampleProduct } from "@/components/home/sampleProducts";
 
 /**
@@ -184,13 +183,12 @@ export function ProductGallery({ product }: { product: SampleProduct }) {
 
         {/* Wishlist + share float over the frame */}
         <div className="absolute right-4 top-4 flex gap-2">
-          <Link
-            href={WISHLIST_LINK.href}
-            aria-label={`Save ${product.name} to wishlist`}
-            className="flex h-9 w-9 items-center justify-center rounded-full bg-white text-[var(--text-secondary)] shadow-sm transition-all hover:scale-110 hover:text-[var(--color-action-red)] active:scale-90"
-          >
-            <HeartIcon size={16} />
-          </Link>
+          <WishlistButton
+            productId={product.id}
+            productName={product.name}
+            size={16}
+            className="flex h-9 w-9 items-center justify-center rounded-full bg-white shadow-sm transition-all hover:scale-110 active:scale-90"
+          />
           <button
             type="button"
             aria-label={`Share ${product.name}`}

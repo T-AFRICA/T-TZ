@@ -31,8 +31,8 @@ function gallery(hit: ProductSearchHit): string[] {
  *
  * Everything comes from the search hit that is already loaded, so hovering
  * never sends a request. Purchasing goes through usePurchaseActions, the
- * same entry point the product page uses (sample mode until the cart and
- * checkout exist). Options are never preselected: a product with colours or
+ * same entry point the product page uses (adds to this browser's cart;
+ * checkout does not exist yet). Options are never preselected: a product with colours or
  * variants cannot be bought until each is chosen. Per-option price, stock,
  * SKU and image do not exist in the catalogue yet, so the choice is carried
  * in the SKU line exactly as on the product page.
@@ -206,7 +206,7 @@ function QuickViewDetails({
 
   function addToCart() {
     if (!canBuy) return;
-    purchase.addToCart({ name: hit.name, quantity, selection });
+    purchase.addToCart({ productId: hit.id, name: hit.name, quantity, color, variant });
     setStatus("added");
     timer.current = setTimeout(() => setStatus("idle"), ADDED_FEEDBACK_MS);
   }
@@ -215,7 +215,7 @@ function QuickViewDetails({
     if (!canBuy) return;
     setStatus("leaving");
     onNavigate();
-    purchase.buyNow();
+    purchase.buyNow({ productId: hit.id, name: hit.name, quantity, color, variant });
   }
 
   const sheet = layout === "sheet";
@@ -400,8 +400,8 @@ function QuickViewDetails({
             className={`min-w-0 text-[11px] ${sheet ? "" : "truncate"} ${hint ? "text-[var(--text-secondary)]" : "text-[var(--text-muted)]"}`}
           >
             {status === "added"
-              ? "Added to cart (sample mode, nothing is stored)."
-              : (hint ?? (quantity >= MAX_PURCHASE_QUANTITY ? "Maximum quantity reached" : "Sample mode: no order is placed."))}
+              ? "Added to your cart."
+              : (hint ?? (quantity >= MAX_PURCHASE_QUANTITY ? "Maximum quantity reached" : "Demo prices: checkout is not open yet."))}
           </p>
           <Link
             href={productHref(hit)}

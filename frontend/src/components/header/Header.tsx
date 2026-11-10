@@ -13,6 +13,7 @@ import {
 import { METER_NAV_ITEM } from "@tronic/country-config";
 import { MobileNav } from "./MobileNav";
 import { SearchBox } from "@/components/search/SearchBox";
+import { CartCountBadge, CartCountText, WishlistCountBadge, WishlistCountText } from "@/components/cart/CountBadge";
 import {
   ACCOUNT_LINK,
   CART_LINK,
@@ -90,17 +91,21 @@ export function Header() {
           </Link>
           <Link
             href={WISHLIST_LINK.href}
-            aria-label={WISHLIST_LINK.label}
-            className="hidden h-10 w-10 items-center justify-center rounded-md transition-colors hover:text-[var(--color-action-red)] md:flex"
+            className="relative hidden h-10 w-10 items-center justify-center rounded-md transition-colors hover:text-[var(--color-action-red)] md:flex"
           >
             <HeartIcon size={23} />
+            <span className="sr-only">{WISHLIST_LINK.label}</span>
+            <WishlistCountText />
+            <WishlistCountBadge className="-right-0.5 top-0" />
           </Link>
           <Link
             href={CART_LINK.href}
-            aria-label={CART_LINK.label}
-            className="hidden h-10 w-10 items-center justify-center rounded-md transition-colors hover:text-[var(--color-action-red)] md:flex"
+            className="relative hidden h-10 w-10 items-center justify-center rounded-md transition-colors hover:text-[var(--color-action-red)] md:flex"
           >
             <CartIcon size={24} />
+            <span className="sr-only">{CART_LINK.label}</span>
+            <CartCountText />
+            <CartCountBadge className="-right-0.5 top-0" />
           </Link>
           {/* Red account CTA (owner request, Nov 2026), placed after the
               cart (owner request Nov 2026). */}

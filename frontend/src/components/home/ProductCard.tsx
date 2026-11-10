@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
-import { CartIcon, HeartIcon, Tilt3D } from "@tronic/ui";
-import { WISHLIST_LINK } from "@/config/site";
+import { CartIcon, Tilt3D } from "@tronic/ui";
+import { WishlistButton } from "@/components/wishlist/WishlistButton";
 import { AddToCartButton } from "./AddToCartButton";
 import { discountPercent, formatSamplePrice, type SampleProduct } from "./sampleProducts";
 
@@ -10,8 +10,8 @@ import { discountPercent, formatSamplePrice, type SampleProduct } from "./sample
  * so wide viewports fit 5-6 per row: white card with glow-and-lift hover,
  * SAMPLE chip, wishlist heart, discount badge with inline was/now pricing,
  * stock status line and an Add to Cart CTA (quick variant selection when
- * the product has options; disabled while out of stock) pointing at the
- * W03-04 placeholder routes. The photo carries a 3D hover tilt (interim
+ * the product has options; disabled while out of stock) wired to this
+ * browser's cart and wishlist (features/cart). The photo carries a 3D hover tilt (interim
  * for real 360° photography, owner request).
  */
 export function ProductCard({ product }: { product: SampleProduct }) {
@@ -48,13 +48,11 @@ export function ProductCard({ product }: { product: SampleProduct }) {
             Save {saving}%
           </span>
         ) : null}
-        <Link
-          href={WISHLIST_LINK.href}
-          aria-label={`Save ${product.name} to wishlist`}
-          className="absolute right-1.5 top-1.5 flex h-7 w-7 items-center justify-center rounded-full bg-white text-[var(--text-secondary)] shadow-sm transition-all hover:scale-110 hover:text-[var(--color-action-red)] active:scale-90"
-        >
-          <HeartIcon size={14} />
-        </Link>
+        <WishlistButton
+          productId={product.id}
+          productName={product.name}
+          className="absolute right-1.5 top-1.5 flex h-7 w-7 items-center justify-center rounded-full bg-white shadow-sm transition-all hover:scale-110 active:scale-90"
+        />
       </div>
       <div className="flex flex-1 flex-col px-1 pb-0.5 pt-1">
         <p className="text-[9px] font-semibold uppercase tracking-[0.1em] text-[var(--text-muted)]">
@@ -91,7 +89,7 @@ export function ProductCard({ product }: { product: SampleProduct }) {
             {product.inStock ? "In stock" : "Out of stock"}
           </p>
           {product.inStock ? (
-            <AddToCartButton productName={product.name} variants={product.variants} />
+            <AddToCartButton product={product} />
           ) : (
             <span
               aria-disabled="true"

@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ProductSearchHit, SearchResponse } from "@tronic/types";
 import type { SearchClient } from "@tronic/api-client";
 import { ToastProvider } from "@tronic/ui";
+import { cartStore } from "@/features/cart/store";
 import { SearchBox } from "./SearchBox";
 
 const push = vi.fn();
@@ -258,7 +259,8 @@ describe("SearchBox", () => {
     await user.click(increase);
     await user.click(increase);
     await user.click(add);
-    expect(await screen.findByText(/Added 3 × Extension Socket \(Black · 4-way\) — sample mode/)).toBeInTheDocument();
+    expect(await screen.findByText("Added 3 × Extension Socket (Black · 4-way) to your cart")).toBeInTheDocument();
+    expect(cartStore.get()).toEqual([{ productId: "sample-extension", color: "Black", variant: "4-way", quantity: 3 }]);
     expect(within(quick).getByRole("button", { name: /Added/ })).toBeDisabled();
     // Still open, nothing navigated.
     expect(screen.getByRole("combobox", { name: "Search products" })).toHaveAttribute("aria-expanded", "true");
