@@ -8,6 +8,7 @@ import { useCart, useHydrated, useWishlist } from "@/features/cart/hooks";
 import { resolveLines, summarize, type ResolvedLine } from "@/features/cart/lines";
 import { MAX_LINE_QUANTITY } from "@/features/cart/store";
 import { selectionLabel } from "@/features/cart/purchase";
+import { CHECKOUT_PATH } from "@/features/checkout/links";
 
 const CARD = "rounded-2xl bg-white md:border md:border-[var(--color-light-grey)]";
 const STEP =
@@ -20,8 +21,9 @@ const STEP =
  * lines removed. Out-of-stock and no-longer-listed lines stay visible with
  * a note but are left out of the subtotal.
  *
- * There is no checkout yet (Module 02 / Phase 5): the button is disabled
- * and says so, and nothing is ordered or paid.
+ * "Proceed to checkout" opens /checkout with these lines. Payments and
+ * orders are not connected yet (Module 02 / Phase 5), so nothing is
+ * ordered or paid.
  */
 export function CartView() {
   const hydrated = useHydrated();
@@ -98,17 +100,27 @@ export function CartView() {
             </div>
           </dl>
           <p className="mt-1 text-xs text-[var(--text-muted)]">Delivery is worked out at checkout.</p>
-          <button
-            type="button"
-            disabled
-            aria-describedby="checkout-note"
-            className="mt-4 inline-flex h-12 w-full cursor-not-allowed items-center justify-center rounded-full bg-[var(--color-light-grey)] text-sm font-semibold text-[var(--text-muted)]"
-          >
-            Checkout opens soon
-          </button>
+          {itemCount > 0 ? (
+            <Link
+              href={CHECKOUT_PATH}
+              aria-describedby="checkout-note"
+              className="mt-4 inline-flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[var(--color-action-red)] text-sm font-semibold text-white shadow-[0_10px_26px_-12px_rgba(215,25,32,0.7)] transition-colors hover:bg-[var(--color-action-red-dark)]"
+            >
+              Proceed to checkout
+              <ArrowRightIcon size={16} />
+            </Link>
+          ) : (
+            <span
+              aria-disabled="true"
+              aria-describedby="checkout-note"
+              className="mt-4 inline-flex h-12 w-full cursor-not-allowed items-center justify-center rounded-full bg-[var(--color-light-grey)] text-sm font-semibold text-[var(--text-muted)]"
+            >
+              Nothing to check out
+            </span>
+          )}
           <p id="checkout-note" className="mt-2 text-xs leading-relaxed text-[var(--text-secondary)]">
-            Prices are demo values and checkout is not open yet, so no order is placed and nothing is
-            charged. Your cart is saved on this device.
+            Prices are demo values. Online payment is not connected yet, so no order is placed and
+            nothing is charged. Your cart is saved on this device.
           </p>
           <Link
             href="/"

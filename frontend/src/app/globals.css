@@ -692,6 +692,14 @@ body:has(.search-sheet[open]) {
   }
 }
 
+/* Tablets: the checkout's Place order bar sits at the bottom edge (no tab
+   bar from md), so the chat button rises above it instead of covering it. */
+@media (min-width: 48rem) and (max-width: 63.999rem) {
+  body:has([data-sticky-checkout]) .wa-float {
+    bottom: calc(5.5rem + env(safe-area-inset-bottom));
+  }
+}
+
 @media (min-width: 48rem) {
   .wa-float {
     right: 1.5rem;

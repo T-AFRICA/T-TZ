@@ -3,6 +3,36 @@
 Meaningful implementation changes, newest first. Dates are work dates;
 nothing below is released.
 
+## 2026-11-10 — checkout frontend (orders and online payment not connected)
+
+- Owner decision: finish the checkout frontend now, connect Supabase,
+  orders and payment providers later. No order or payment is simulated.
+- Entry points: the cart's "Proceed to checkout" opens `/checkout` with the
+  cart lines; Buy Now (product page, quick view, cards) opens
+  `/checkout?buy=…` with only that product, options and quantity, and no
+  longer touches the cart.
+- `/checkout`: on desktop the form (60%) sits beside a sticky order summary
+  (40%); phones get a collapsible summary and a sticky total + Place order
+  bar above the tab bar. Four sections: contact (name, email, Tanzanian
+  mobile number, guest), delivery (address delivery; showroom pickup shown
+  but off until pickup points exist; Tanzania's 31 regions, district, ward,
+  street, extra details, instructions), payment, review.
+- Payment: Cash on delivery is open and chosen by default (owner decision);
+  mobile money, card and bank transfer show "Not available yet".
+- The server prices every line (`features/checkout/quote.ts` via a server
+  action): the browser sends ids, options and quantities only. Out-of-stock,
+  retired or mismatched-option lines are noted and left out of the total.
+  Delivery and VAT read "Confirmed before payment"; the total is labelled
+  "Total so far".
+- Validation (`features/checkout/validation.ts`, shared with the future
+  order action) runs on blur and submit and focuses the first error.
+  Place order then says plainly that online ordering is not connected, so
+  nothing was sent, ordered or charged (`ORDERS_CONNECTED = false`).
+- `/track-order`: order number + phone/email form and a guide to the seven
+  order statuses; it says that nothing is looked up until orders go live.
+- Options awaiting owner confirmation live in `features/checkout/config.ts`:
+  delivery fees and coverage, pickup points, VAT, online payment providers.
+
 ## 2026-11-10 — navbar: one-line categories, company links in a More menu
 
 - Owner request: every category label on one line. From 1280px all eight
