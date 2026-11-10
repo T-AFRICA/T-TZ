@@ -16,12 +16,16 @@ import {
   Globe,
   Heart,
   House,
+  Info,
   LayoutGrid,
+  MapPin,
+  Newspaper,
   Phone,
   Search,
   ShieldCheck,
   ShoppingCart,
   SlidersHorizontal,
+  Store,
   TrendingUp,
   Truck,
   User,
@@ -59,6 +63,10 @@ export const MeterIcon = wrap(Gauge);
 export const ShieldCheckIcon = wrap(ShieldCheck);
 export const TrendingUpIcon = wrap(TrendingUp);
 export const XIcon = wrap(X);
+export const InfoIcon = wrap(Info);
+export const MapPinIcon = wrap(MapPin);
+export const NewspaperIcon = wrap(Newspaper);
+export const StoreIcon = wrap(Store);
 /**
  * Social brand glyphs. This lucide-react version has dropped its deprecated
  * brand icons (and never had TikTok), so these are drawn locally with the
