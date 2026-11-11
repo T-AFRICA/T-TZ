@@ -3,6 +3,31 @@
 Meaningful implementation changes, newest first. Dates are work dates;
 nothing below is released.
 
+## 2026-11-11 — customer login and registration screens (auth not connected)
+
+- New `/login`, `/register`, `/forgot-password` and `/reset-password`
+  (route group `app/(auth)`), frontend only; Supabase Auth connects later.
+- Desktop: showroom photograph with a short brand line beside the form;
+  phones and tablets show the form alone. The site header, navbar and tab
+  bar stay as on every page.
+- Login: email, password with Show/Hide, Remember me, Forgot password,
+  Create account. Register: full name, email, Tanzanian mobile number,
+  password with a strength meter and requirements checklist, confirm
+  password, Terms and Privacy acknowledgement. Reset: new password and
+  confirmation with the same requirements.
+- Rules in `features/auth/rules.ts` (password policy is configuration:
+  8–72 characters, a letter and a number), shared email and phone checks
+  from checkout. Errors show on blur and submit; the first invalid field
+  takes focus.
+- Forms call `features/auth/service.ts`, which is not connected: a valid
+  submit shows "Authentication will be available when account services are
+  connected." No redirect, success message, stored credentials, logging,
+  mock users or sessions.
+- The header Login button, the mobile menu and the tab bar's Profile now
+  open `/login` (was the `/account` placeholder). Checkout stays guest.
+- `@tronic/ui` now exports `Field`, `controlClasses` and `fieldDescribedBy`
+  for the password field.
+
 ## 2026-11-10 — checkout frontend (orders and online payment not connected)
 
 - Owner decision: finish the checkout frontend now, connect Supabase,

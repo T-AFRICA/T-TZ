@@ -93,6 +93,7 @@ export const POLICY_LINKS = [
 export const TRACK_ORDER_LINK = { href: "/track-order", label: "Track Order" } as const;
 /** Warranty lookup tool (owner request Nov 2026) — placeholder route until the feature is built. */
 export const CHECK_WARRANTY_LINK = { href: "/check-warranty", label: "Check Warranty" } as const;
-export const ACCOUNT_LINK = { href: "/account", label: "Login" } as const;
+/** Customer sign-in (login and register UI built 2026-11-10; auth connects later). */
+export const ACCOUNT_LINK = { href: "/login", label: "Login" } as const;
 export const WISHLIST_LINK = { href: "/wishlist", label: "Wishlist" } as const;
 export const CART_LINK = { href: "/cart", label: "Cart" } as const;

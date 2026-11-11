@@ -56,6 +56,12 @@ export const FIELD_LIMITS = {
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
+/** Basic email shape check, shared by checkout and the account forms. */
+export function isValidEmail(value: string): boolean {
+  const email = value.trim();
+  return email.length > 0 && email.length <= FIELD_LIMITS.email && EMAIL.test(email);
+}
+
 /**
  * Normalises a Tanzanian mobile number to +255XXXXXXXXX, or returns null.
  * Accepts 0712 345 678, 712345678, 255712345678 and +255 712 345 678;
@@ -87,7 +93,7 @@ export function validateCheckout(form: CheckoutForm): CheckoutErrors {
 
   const email = form.email.trim();
   if (email.length === 0) errors.email = "Enter your email address.";
-  else if (email.length > FIELD_LIMITS.email || !EMAIL.test(email)) errors.email = "Enter a valid email address, like name@example.com.";
+  else if (!isValidEmail(email)) errors.email = "Enter a valid email address, like name@example.com.";
 
   if (form.phone.trim().length === 0) errors.phone = "Enter your phone number.";
   else if (!normalizeTzPhone(form.phone)) errors.phone = "Enter a Tanzanian mobile number, like 0712 345 678.";

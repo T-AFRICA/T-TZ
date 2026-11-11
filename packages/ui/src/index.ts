@@ -3,6 +3,7 @@ export { Container } from "./components/Container";
 export { VisuallyHidden } from "./components/VisuallyHidden";
 export { BrandMark } from "./components/BrandMark";
 export { Input } from "./components/Input";
+export { Field, controlClasses, fieldDescribedBy } from "./components/Field";
 export { Textarea } from "./components/Textarea";
 export { Select } from "./components/Select";
 export { Badge } from "./components/Badge";
