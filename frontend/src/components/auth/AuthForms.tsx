@@ -6,11 +6,9 @@ import {
   NAME_MAX,
   PASSWORD_POLICY,
   validateForgot,
-  validateLogin,
   validateRegister,
   validateReset,
   type ForgotValues,
-  type LoginValues,
   type RegisterValues,
   type ResetValues,
 } from "@/features/auth/rules";
@@ -23,68 +21,13 @@ import { PasswordStrength } from "./PasswordStrength";
 const LINK = "font-semibold text-[var(--color-action-red)] underline-offset-4 hover:underline";
 
 /**
- * The four customer account forms (owner brief 2026-11-10, frontend only).
+ * Registration and password-recovery forms (frontend only; the login form
+ * lives in LoginScreen.tsx).
  * Each validates in the browser and then calls features/auth/service.ts,
  * which is not connected yet and answers "not_connected", so the form shows
  * "Authentication will be available when account services are connected."
  * No form redirects, claims success, stores credentials or logs values.
  */
-
-export function LoginForm() {
-  const form = useAuthForm<LoginValues & { remember: boolean }>({
-    initial: { email: "", password: "", remember: false },
-    validate: validateLogin,
-    submit: ({ email, password, remember }) => authService.signIn({ email: email.trim(), password, remember }),
-  });
-  const { values, errors } = form;
-  return (
-    <form ref={form.formRef} noValidate onSubmit={form.onSubmit} className="space-y-4">
-      <Input
-        id="login-email"
-        name="email"
-        label="Email address"
-        type="email"
-        inputMode="email"
-        autoComplete="email"
-        required
-        maxLength={254}
-        value={values.email}
-        error={errors.email}
-        onChange={(event) => form.setValue("email", event.target.value)}
-        onBlur={() => form.touch("email")}
-      />
-      <PasswordInput
-        id="login-password"
-        name="password"
-        label="Password"
-        autoComplete="current-password"
-        required
-        maxLength={PASSWORD_POLICY.maxLength}
-        value={values.password}
-        error={errors.password}
-        onChange={(event) => form.setValue("password", event.target.value)}
-        onBlur={() => form.touch("password")}
-      />
-      <div className="flex items-center justify-between gap-3 text-sm">
-        <label className="flex cursor-pointer items-center gap-2 text-[var(--text-secondary)]">
-          <input
-            type="checkbox"
-            name="remember"
-            checked={values.remember}
-            onChange={(event) => form.setValue("remember", event.target.checked)}
-            className="h-4 w-4 accent-[var(--color-action-red)]"
-          />
-          Remember me
-        </label>
-        <Link href="/forgot-password" className={LINK}>
-          Forgot password?
-        </Link>
-      </div>
-      <AuthSubmit pending={form.pending}>Sign in</AuthSubmit>
-      <AuthMessage message={form.message} />
-    </form>
-  );
-}
 
 export function RegisterForm() {
   const form = useAuthForm<RegisterValues>({

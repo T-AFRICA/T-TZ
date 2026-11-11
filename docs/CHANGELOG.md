@@ -3,6 +3,29 @@
 Meaningful implementation changes, newest first. Dates are work dates;
 nothing below is released.
 
+## 2026-11-11 — login page redesign: red showroom, one screen
+
+- `/login` follows the owner's references and stands alone: the site
+  header, navbar, footer, tab bar and chat button are hidden on this page
+  only (`data-auth-screen`, layout-neutral `data-site-chrome` wrappers in
+  the root layout); "Back to shopping" returns to the store.
+- Laptops and desktops: deep burgundy stage with red light curves; on the
+  left the white TRONIC logo | TANZANIA, "Power Every Space.", and a
+  showroom where the owner's chandelier hangs from the top over a metal
+  platform with a red LED rim holding TRONIC products (voltage stabilizer,
+  water heater, exhaust fan, LED bulb, cable), then a trust strip; on the
+  right the white login card.
+- Phones: red stage, white logo, one white panel with a compact product
+  showcase, the form and a trust strip.
+- Fits one screen without scrolling from 320×568 to 1920×1080: on shorter
+  screens the trust strip, tagline, account icon and showcase step aside in
+  order (height media queries in globals.css).
+- Product images supplied by the owner, cut out of their white studio
+  background into `frontend/public/auth/` (WebP, ~300KB in total); the logo
+  is the red artwork shown white until the official white logo is supplied.
+- Login form: icons in the fields, Show/Hide, Remember me, Forgot password,
+  Sign in; still the not-connected auth service (no login happens).
+
 ## 2026-11-11 — customer login and registration screens (auth not connected)
 
 - New `/login`, `/register`, `/forgot-password` and `/reset-password`

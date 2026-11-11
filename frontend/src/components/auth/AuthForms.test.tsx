@@ -1,7 +1,8 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { ForgotPasswordForm, LoginForm, RegisterForm, ResetPasswordForm } from "./AuthForms";
+import { ForgotPasswordForm, RegisterForm, ResetPasswordForm } from "./AuthForms";
+import { LoginForm, LoginScreen } from "./LoginScreen";
 
 const NOT_CONNECTED = "Authentication will be available when account services are connected.";
 const SUCCESS = /(login|sign[- ]?in|account created|password (updated|changed)|email (has been )?sent).*success|successful|welcome back,|check your (inbox|email)/i;
@@ -46,6 +47,21 @@ describe("login form", () => {
   it("links to forgot password", () => {
     render(<LoginForm />);
     expect(screen.getByRole("link", { name: "Forgot password?" })).toHaveAttribute("href", "/forgot-password");
+  });
+});
+
+describe("login screen", () => {
+  it("stands alone with the brand, showcase, register link and a way back to the shop", () => {
+    const { container } = render(<LoginScreen />);
+    expect(container.querySelector("[data-auth-screen]")).not.toBeNull();
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Welcome Back");
+    expect(screen.getByRole("link", { name: "TRONIC home" })).toHaveAttribute("href", "/");
+    // One showcase for phones and one for laptops; CSS shows only one at a time.
+    expect(screen.getAllByRole("img", { name: "TRONIC LED bulb" }).length).toBeGreaterThan(0);
+    expect(screen.getByRole("link", { name: "Create an account" })).toHaveAttribute("href", "/register");
+    expect(screen.getByRole("link", { name: "Back to shopping" })).toHaveAttribute("href", "/");
+    // No decorative step dots and no unverified delivery promises.
+    expect(container.textContent).not.toMatch(/across tanzania|24\/7|same[- ]day|guaranteed/i);
   });
 });
 

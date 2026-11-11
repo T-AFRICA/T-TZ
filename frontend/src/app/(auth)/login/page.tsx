@@ -1,25 +1,9 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-import { LoginForm } from "@/components/auth/AuthForms";
-import { AuthLayout } from "@/components/auth/AuthLayout";
+import { LoginScreen } from "@/components/auth/LoginScreen";
 
 export const metadata: Metadata = { title: "Sign in", robots: { index: false, follow: false } };
 
+/** /login — the art-directed sign-in screen (owner reference 2026-11-11). */
 export default function LoginPage() {
-  return (
-    <AuthLayout
-      title="Welcome back"
-      subtitle="Sign in to your TRONIC account."
-      footer={
-        <>
-          New to TRONIC?{" "}
-          <Link href="/register" className="font-semibold text-[var(--color-action-red)] underline-offset-4 hover:underline">
-            Create an account
-          </Link>
-        </>
-      }
-    >
-      <LoginForm />
-    </AuthLayout>
-  );
+  return <LoginScreen />;
 }
