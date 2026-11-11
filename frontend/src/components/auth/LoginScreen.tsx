@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import type { CSSProperties, ReactNode } from "react";
+import { useActionState, type CSSProperties, type ReactNode } from "react";
 import { Mail, ShoppingBag, UserRound } from "lucide-react";
 import { PASSWORD_POLICY, validateLogin, type LoginValues } from "@/features/auth/rules";
-import { authService } from "@/features/auth/service";
+import { signInAction } from "@/features/auth/actions";
+import { IDLE } from "@/features/auth/state";
 import { useAuthForm } from "@/features/auth/useAuthForm";
 import { AuthCardMotion } from "./AuthCardMotion";
 import { AuthMessage, IconField, PasswordField, SubmitButton } from "./AuthFields";
@@ -139,8 +140,8 @@ export function AuthLink({ href, children }: { href: string; children: ReactNode
   );
 }
 
-/** /login — fits one screen without scrolling. */
-export function LoginScreen() {
+/** /login — fits one screen without scrolling. `authEnabled` is false until Supabase Auth is configured. */
+export function LoginScreen({ authEnabled }: { authEnabled: boolean }) {
   return (
     <AuthScreen
       icon={<UserRound size={28} strokeWidth={1.9} aria-hidden="true" />}
@@ -156,22 +157,29 @@ export function LoginScreen() {
         </>
       }
     >
-      <LoginForm />
+      <LoginForm enabled={authEnabled} />
     </AuthScreen>
   );
 }
 
-/** Login form: shared rules and the not-connected auth service. */
-export function LoginForm() {
+/**
+ * Login form: posts (method POST, with or without JavaScript) to
+ * signInAction, which signs in with Supabase Auth and goes to /account.
+ * Sessions persist until sign-out (Supabase's refresh token); the Remember
+ * me box does not shorten them yet.
+ */
+export function LoginForm({ enabled }: { enabled: boolean }) {
+  const [state, action, pending] = useActionState(signInAction, IDLE);
   const form = useAuthForm<LoginValues & { remember: boolean }>({
     initial: { email: "", password: "", remember: false },
     validate: validateLogin,
-    submit: ({ email, password, remember }) => authService.signIn({ email: email.trim(), password, remember }),
+    state,
+    enabled,
   });
   const { values, errors } = form;
 
   return (
-    <form ref={form.formRef} noValidate onSubmit={form.onSubmit} className="login-form space-y-3.5">
+    <form ref={form.formRef} action={action} noValidate onSubmit={form.onSubmit} className="login-form space-y-3.5">
       <IconField
         label="Email address"
         name="email"
@@ -210,7 +218,9 @@ export function LoginForm() {
         </label>
         <AuthLink href="/forgot-password">Forgot password?</AuthLink>
       </div>
-      <SubmitButton pending={form.pending}>Sign in</SubmitButton>
+      <SubmitButton pending={pending} disabled={!enabled}>
+        Sign in
+      </SubmitButton>
       <AuthMessage message={form.message} />
     </form>
   );

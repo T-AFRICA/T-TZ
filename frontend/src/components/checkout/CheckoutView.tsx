@@ -3,11 +3,12 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { ArrowRightIcon, CartIcon, ChevronDownIcon, Container, ErrorState, Input, Select, Textarea } from "@tronic/ui";
-import { formatSamplePrice } from "@/components/home/sampleProducts";
+import { formatPrice } from "@/components/home/sampleProducts";
 import { useCart, useHydrated } from "@/features/cart/hooks";
 import type { CartLine } from "@/features/cart/store";
-import { getCheckoutQuote } from "@/features/checkout/actions";
-import { DELIVERY_METHODS, ORDERS_CONNECTED, PAYMENT_METHODS, TZ_REGIONS } from "@/features/checkout/config";
+import { cartStore } from "@/features/cart/store";
+import { getCheckoutQuote, placeOrderAction, type PlaceOrderResponse } from "@/features/checkout/actions";
+import { DELIVERY_METHODS, PAYMENT_METHODS, TZ_REGIONS } from "@/features/checkout/config";
 import type { CheckoutQuote } from "@/features/checkout/quote";
 import {
   EMPTY_CHECKOUT_FORM,
@@ -51,14 +52,20 @@ type QuoteState =
  * - Payment methods come from features/checkout/config.ts. Cash on
  *   delivery is open (owner decision 2026-11-10) and chosen by default;
  *   the online methods are not connected yet.
- * - Orders are not stored yet (ORDERS_CONNECTED), so Place order checks
- *   the details and then says plainly that nothing was sent, ordered or
- *   charged. No order or payment is simulated.
+ * - Place order (Cash on delivery) calls placeOrderAction with an
+ *   idempotency key: the database reprices, checks and reserves stock and
+ *   saves the order in one transaction, and the confirmation shows only
+ *   after it is saved. A retry or double click with the same details reuses
+ *   the key, so it can never create a second order. While orders are not
+ *   connected (`ordersEnabled` false) Place order checks the details and
+ *   says plainly that nothing was sent. No order or payment is simulated.
  *
  * Desktop: form (60%) beside a sticky summary (40%). Phones: a collapsible
  * summary at the top and a sticky total + Place order bar above the tab bar.
  */
-export function CheckoutView({ buyNowLine }: { buyNowLine: CartLine | null }) {
+type Confirmation = Extract<PlaceOrderResponse, { ok: true }>;
+
+export function CheckoutView({ buyNowLine, ordersEnabled = false }: { buyNowLine: CartLine | null; ordersEnabled?: boolean }) {
   const hydrated = useHydrated();
   const { lines: cartLines } = useCart();
   const lines = useMemo(() => (buyNowLine ? [buyNowLine] : cartLines), [buyNowLine, cartLines]);
@@ -72,7 +79,11 @@ export function CheckoutView({ buyNowLine }: { buyNowLine: CartLine | null }) {
   const [submitting, setSubmitting] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [summaryOpen, setSummaryOpen] = useState(false);
+  const [confirmation, setConfirmation] = useState<Confirmation | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
+  // One idempotency key per distinct submission: retries of the same
+  // details reuse it; changed details (or a changed total) get a new one.
+  const attemptRef = useRef<{ key: string; payload: string } | null>(null);
 
   // Price the lines on the server whenever they or the delivery method change.
   useEffect(() => {
@@ -122,9 +133,9 @@ export function CheckoutView({ buyNowLine }: { buyNowLine: CartLine | null }) {
   const quote = quoteState.status === "ready" ? quoteState.quote : null;
   const canSubmit = quote !== null && quote.itemCount > 0 && !submitting;
 
-  function onSubmit(event: FormEvent) {
+  async function onSubmit(event: FormEvent) {
     event.preventDefault();
-    if (!canSubmit) return;
+    if (!canSubmit || !quote) return;
     const found = validateCheckout(form);
     setErrors(found);
     setTouched(Object.fromEntries(FIELD_ORDER.map((field) => [field, true])));
@@ -134,16 +145,63 @@ export function CheckoutView({ buyNowLine }: { buyNowLine: CartLine | null }) {
       formRef.current?.querySelector<HTMLElement>(`[name="${first}"]`)?.focus();
       return;
     }
-    // One submission at a time. When orders are connected, the order action
-    // runs here with an idempotency key, so a repeated click can never
-    // create two orders; until then nothing is sent.
-    setSubmitting(true);
-    if (!ORDERS_CONNECTED) {
+    if (!ordersEnabled) {
       setNotice(
         `Your details are complete${form.paymentMethod === "pay_on_delivery" ? " and Cash on delivery is selected" : ""}. Online ordering is not connected yet, so this order was not sent to TRONIC: nothing has been ordered or charged. Your cart stays saved on this device.`,
       );
+      return;
+    }
+
+    // One submission at a time (the button is disabled while it runs).
+    const payload = { lines, form, expectedTotalMinor: quote.totalMinor };
+    const serialized = JSON.stringify(payload);
+    if (attemptRef.current?.payload !== serialized) {
+      attemptRef.current = { key: crypto.randomUUID(), payload: serialized };
+    }
+    setSubmitting(true);
+    setNotice(null);
+    try {
+      const result = await placeOrderAction({ idempotencyKey: attemptRef.current.key, ...payload });
+      if (result.ok) {
+        if (!buyNowLine) cartStore.set([]);
+        setConfirmation(result);
+        window.scrollTo({ top: 0 });
+        return;
+      }
+      switch (result.reason) {
+        case "price_changed":
+          setReload((count) => count + 1);
+          setNotice(
+            `Prices changed since you opened checkout. The new total is ${formatPrice(result.totalMinor)}. Check the order summary, then place your order again.`,
+          );
+          break;
+        case "lines_unavailable":
+          setReload((count) => count + 1);
+          setNotice(
+            "Some items are no longer available in the quantity you chose. The order summary is updated; adjust your cart and try again. Nothing was ordered.",
+          );
+          break;
+        case "invalid":
+          setErrors((existing) => ({ ...existing, ...result.fieldErrors }));
+          setNotice("Some details need another look. Nothing was ordered.");
+          break;
+        case "conflict":
+          attemptRef.current = null;
+          setNotice("Your order details changed while it was being placed. Check them and place the order again.");
+          break;
+        default:
+          setNotice("Online ordering is not available right now. Nothing was ordered or charged.");
+      }
+    } catch {
+      // The same key is kept, so trying again cannot create a second order.
+      setNotice("We could not confirm your order. Check your connection and press Place order again: it will not be placed twice.");
+    } finally {
       setSubmitting(false);
     }
+  }
+
+  if (confirmation) {
+    return <OrderConfirmation confirmation={confirmation} />;
   }
 
   if (!hydrated || (quoteState.status === "loading" && lines.length > 0)) {
@@ -212,7 +270,7 @@ export function CheckoutView({ buyNowLine }: { buyNowLine: CartLine | null }) {
     onBlur: () => blur(name),
   });
 
-  const placeLabel = submitting ? "Checking…" : "Place order";
+  const placeLabel = submitting ? (ordersEnabled ? "Placing order…" : "Checking…") : "Place order";
 
   return (
     <>
@@ -245,7 +303,7 @@ export function CheckoutView({ buyNowLine }: { buyNowLine: CartLine | null }) {
               {summaryOpen ? "Hide order summary" : "Show order summary"}
               <ChevronDownIcon size={16} className={`transition-transform ${summaryOpen ? "rotate-180" : ""}`} />
             </span>
-            <span className="text-base font-bold tabular-nums">{formatSamplePrice(quote.total)}</span>
+            <span className="text-base font-bold tabular-nums">{formatPrice(quote.totalMinor)}</span>
           </button>
           <div
             id="checkout-summary-mobile"
@@ -325,7 +383,7 @@ export function CheckoutView({ buyNowLine }: { buyNowLine: CartLine | null }) {
                           <span className="block text-sm font-semibold">{method.label}</span>
                           <span className="block text-xs text-[var(--text-secondary)]">{method.description}</span>
                           <span className="mt-1 block text-xs font-medium text-[var(--text-muted)]">
-                            {method.feeMinor !== null && method.enabled ? formatSamplePrice(method.feeMinor) : method.note}
+                            {method.feeMinor !== null && method.enabled ? formatPrice(method.feeMinor) : method.note}
                           </span>
                         </span>
                       </label>
@@ -463,7 +521,7 @@ export function CheckoutView({ buyNowLine }: { buyNowLine: CartLine | null }) {
                 disabled={!canSubmit}
                 className="mt-4 hidden h-12 w-full items-center justify-center gap-2 rounded-full bg-[var(--color-action-red)] text-[15px] font-semibold text-white shadow-[0_10px_26px_-12px_rgba(215,25,32,0.7)] transition-[background-color,transform] hover:bg-[var(--color-action-red-dark)] active:scale-[0.99] disabled:cursor-not-allowed disabled:bg-[var(--color-light-grey)] disabled:text-[var(--text-muted)] disabled:shadow-none lg:inline-flex"
               >
-                {placeLabel} · {formatSamplePrice(quote.total)}
+                {placeLabel} · {formatPrice(quote.totalMinor)}
               </button>
               <div aria-live="polite">
                 {notice ? (
@@ -496,7 +554,7 @@ export function CheckoutView({ buyNowLine }: { buyNowLine: CartLine | null }) {
           <div className="min-w-0">
             <p className="text-[11px] text-[var(--text-muted)]">{quote.totalIsPartial ? "Total so far" : "Total"}</p>
             <p className="text-base font-bold leading-tight tabular-nums text-[var(--color-action-red)]">
-              {formatSamplePrice(quote.total)}
+              {formatPrice(quote.totalMinor)}
             </p>
           </div>
           <button
@@ -510,6 +568,48 @@ export function CheckoutView({ buyNowLine }: { buyNowLine: CartLine | null }) {
         </div>
       </div>
     </>
+  );
+}
+
+/** Shown only after the order is saved in the database. */
+function OrderConfirmation({ confirmation }: { confirmation: Confirmation }) {
+  return (
+    <Container className="flex flex-col items-center py-12 text-center lg:py-20">
+      <span
+        aria-hidden="true"
+        className="grid h-16 w-16 place-items-center rounded-full bg-[#e8f5ec] text-2xl font-bold text-[var(--color-success)]"
+      >
+        ✓
+      </span>
+      <h2 className="mt-5 text-xl font-bold" style={HEADING_FONT}>
+        Order placed
+      </h2>
+      <p role="status" className="mt-2 max-w-md text-sm text-[var(--text-secondary)]">
+        Thank you. Your order number is <strong className="tabular-nums text-[var(--text-primary)]">{confirmation.orderNumber}</strong>.
+        Keep it to track your order. Pay the delivery team in cash when it arrives.
+      </p>
+      <dl className="mt-5 grid grid-cols-2 gap-x-6 gap-y-1 text-sm">
+        <dt className="text-left text-[var(--text-secondary)]">Items</dt>
+        <dd className="text-right font-medium tabular-nums">{confirmation.itemCount}</dd>
+        <dt className="text-left text-[var(--text-secondary)]">Total to pay</dt>
+        <dd className="text-right font-bold tabular-nums">{formatPrice(confirmation.totalMinor)}</dd>
+      </dl>
+      <p className="mt-3 max-w-md text-xs text-[var(--text-muted)]">Delivery fees, if any, are confirmed with you before delivery.</p>
+      <div className="mt-6 flex flex-wrap justify-center gap-3">
+        <Link
+          href="/track-order"
+          className="inline-flex h-11 items-center rounded-full border border-[var(--color-light-grey)] bg-white px-6 text-sm font-semibold"
+        >
+          Track your order
+        </Link>
+        <Link
+          href="/"
+          className="inline-flex h-11 items-center rounded-full bg-[var(--color-action-red)] px-6 text-sm font-semibold text-white"
+        >
+          Continue shopping
+        </Link>
+      </div>
+    </Container>
   );
 }
 

@@ -1,6 +1,8 @@
 "use client";
 
+import { useActionState } from "react";
 import { Mail, Phone, UserRound } from "lucide-react";
+import { requestPasswordResetAction, signUpAction, updatePasswordAction } from "@/features/auth/actions";
 import {
   NAME_MAX,
   PASSWORD_POLICY,
@@ -11,7 +13,7 @@ import {
   type RegisterValues,
   type ResetValues,
 } from "@/features/auth/rules";
-import { authService } from "@/features/auth/service";
+import { IDLE } from "@/features/auth/state";
 import { useAuthForm } from "@/features/auth/useAuthForm";
 import { AuthMessage, IconField, PasswordField, SubmitButton } from "./AuthFields";
 import { AuthLink } from "./LoginScreen";
@@ -19,25 +21,27 @@ import { PasswordStrength } from "./PasswordStrength";
 
 /**
  * Registration and password-recovery forms on the shared account-screen
- * fields (the login form lives in LoginScreen.tsx). Each validates in the
- * browser and then calls features/auth/service.ts, which is not connected
- * yet and answers "not_connected", so the form shows "Authentication will be
- * available when account services are connected." No form redirects, claims
- * success, stores credentials or logs values.
+ * fields (the login form lives in LoginScreen.tsx). Each form posts to its
+ * server action (features/auth/actions.ts) with method POST, with or
+ * without JavaScript, so nothing typed here ever lands in a URL. While
+ * Supabase Auth is not configured (`enabled` false) submission is disabled
+ * and the form says so. No form claims success it did not get, stores
+ * credentials or logs values.
  */
 
 const icon = (Icon: typeof Mail) => <Icon size={18} strokeWidth={1.8} />;
 
-export function RegisterForm() {
+export function RegisterForm({ enabled }: { enabled: boolean }) {
+  const [state, action, pending] = useActionState(signUpAction, IDLE);
   const form = useAuthForm<RegisterValues>({
     initial: { fullName: "", email: "", phone: "", password: "", confirmPassword: "", acceptTerms: false },
     validate: validateRegister,
-    submit: ({ fullName, email, phone, password }) =>
-      authService.signUp({ fullName: fullName.trim(), email: email.trim(), phone: phone.trim(), password }),
+    state,
+    enabled,
   });
   const { values, errors } = form;
   return (
-    <form ref={form.formRef} noValidate onSubmit={form.onSubmit} className="login-form space-y-3.5">
+    <form ref={form.formRef} action={action} noValidate onSubmit={form.onSubmit} className="login-form space-y-3.5">
       <IconField
         label="Full name"
         name="fullName"
@@ -131,20 +135,19 @@ export function RegisterForm() {
           </p>
         ) : null}
       </div>
-      <SubmitButton pending={form.pending}>Create account</SubmitButton>
+      <SubmitButton pending={pending} disabled={!enabled}>
+        Create account
+      </SubmitButton>
       <AuthMessage message={form.message} />
     </form>
   );
 }
 
-export function ForgotPasswordForm() {
-  const form = useAuthForm<ForgotValues>({
-    initial: { email: "" },
-    validate: validateForgot,
-    submit: ({ email }) => authService.requestPasswordReset({ email: email.trim() }),
-  });
+export function ForgotPasswordForm({ enabled }: { enabled: boolean }) {
+  const [state, action, pending] = useActionState(requestPasswordResetAction, IDLE);
+  const form = useAuthForm<ForgotValues>({ initial: { email: "" }, validate: validateForgot, state, enabled });
   return (
-    <form ref={form.formRef} noValidate onSubmit={form.onSubmit} className="login-form space-y-3.5">
+    <form ref={form.formRef} action={action} noValidate onSubmit={form.onSubmit} className="login-form space-y-3.5">
       <IconField
         label="Email address"
         name="email"
@@ -160,21 +163,25 @@ export function ForgotPasswordForm() {
         onBlur={() => form.touch("email")}
       />
       <p className="text-xs text-[var(--text-secondary)]">Use the email address of your TRONIC account.</p>
-      <SubmitButton pending={form.pending}>Reset password</SubmitButton>
+      <SubmitButton pending={pending} disabled={!enabled}>
+        Reset password
+      </SubmitButton>
       <AuthMessage message={form.message} />
     </form>
   );
 }
 
-export function ResetPasswordForm() {
+export function ResetPasswordForm({ enabled }: { enabled: boolean }) {
+  const [state, action, pending] = useActionState(updatePasswordAction, IDLE);
   const form = useAuthForm<ResetValues>({
     initial: { password: "", confirmPassword: "" },
     validate: validateReset,
-    submit: ({ password }) => authService.updatePassword({ password }),
+    state,
+    enabled,
   });
   const { values, errors } = form;
   return (
-    <form ref={form.formRef} noValidate onSubmit={form.onSubmit} className="login-form space-y-3.5">
+    <form ref={form.formRef} action={action} noValidate onSubmit={form.onSubmit} className="login-form space-y-3.5">
       <PasswordField
         label="New password"
         name="password"
@@ -199,7 +206,9 @@ export function ResetPasswordForm() {
         onChange={(event) => form.setValue("confirmPassword", event.target.value)}
         onBlur={() => form.touch("confirmPassword")}
       />
-      <SubmitButton pending={form.pending}>Update password</SubmitButton>
+      <SubmitButton pending={pending} disabled={!enabled}>
+        Update password
+      </SubmitButton>
       <AuthMessage message={form.message} />
     </form>
   );

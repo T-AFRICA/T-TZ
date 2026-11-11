@@ -17,17 +17,17 @@ export type SampleProduct = Product;
 export type { ProductColor as SampleColor } from "@tronic/types";
 export { SPECIAL_FOR_YOU, LIGHTING_PICKS, FANS_COOLING_PICKS } from "@tronic/api-client";
 
-/** Formats a price for the active country, e.g. 28000 → "TZS 28,000". */
-export function formatSamplePrice(amount: number): string {
+/** Formats a stored price (minor units) for the active country: 2_800_000 → "TZS 28,000". */
+export function formatPrice(amount: number): string {
   return formatMoney(amount, ACTIVE_COUNTRY);
 }
 
 /** Whole-percent saving for the badge; returns null when there is no discount. */
 export function discountPercent(product: Product): number | null {
-  if (product.wasPrice === undefined || product.wasPrice <= product.price) {
+  if (product.wasPriceMinor === undefined || product.wasPriceMinor <= product.priceMinor) {
     return null;
   }
-  return Math.round((1 - product.price / product.wasPrice) * 100);
+  return Math.round((1 - product.priceMinor / product.wasPriceMinor) * 100);
 }
 
 const visible = (product: Product) =>

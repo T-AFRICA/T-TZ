@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowRightIcon, CartIcon, Container } from "@tronic/ui";
-import { formatSamplePrice } from "@/components/home/sampleProducts";
+import { formatPrice } from "@/components/home/sampleProducts";
 import { useCart, useHydrated, useWishlist } from "@/features/cart/hooks";
 import { resolveLines, summarize, type ResolvedLine } from "@/features/cart/lines";
 import { MAX_LINE_QUANTITY } from "@/features/cart/store";
@@ -96,7 +96,7 @@ export function CartView() {
             </div>
             <div className="flex justify-between gap-3 border-t border-[var(--color-light-grey)] pt-2">
               <dt className="font-semibold">Subtotal</dt>
-              <dd className="text-lg font-bold tabular-nums text-[var(--color-action-red)]">{formatSamplePrice(subtotal)}</dd>
+              <dd className="text-lg font-bold tabular-nums text-[var(--color-action-red)]">{formatPrice(subtotal)}</dd>
             </div>
           </dl>
           <p className="mt-1 text-xs text-[var(--text-muted)]">Delivery is worked out at checkout.</p>
@@ -190,7 +190,7 @@ function CartLineRow({
           </Link>
           {selection ? <p className="mt-0.5 text-xs text-[var(--text-secondary)]">{selection}</p> : null}
           <p className="mt-1 text-xs text-[var(--text-secondary)]">
-            {formatSamplePrice(product.price)} each
+            {formatPrice(product.priceMinor)} each
           </p>
           {!product.inStock ? (
             <p className="mt-1 text-xs font-medium text-[var(--color-action-red)]">
@@ -228,7 +228,7 @@ function CartLineRow({
           </div>
           <div className="flex items-center gap-4 sm:flex-col sm:items-end sm:gap-1">
             <p className="whitespace-nowrap text-sm font-bold tabular-nums">
-              {formatSamplePrice(product.price * line.quantity)}
+              {formatPrice(product.priceMinor * line.quantity)}
             </p>
             {removeButton}
           </div>

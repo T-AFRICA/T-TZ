@@ -35,7 +35,7 @@ export function summarize(lines: readonly ResolvedLine[]): CartSummary {
   for (const { line, product } of lines) {
     if (!product || !product.inStock) continue;
     itemCount += line.quantity;
-    subtotal += product.price * line.quantity;
+    subtotal += product.priceMinor * line.quantity;
   }
   return { itemCount, subtotal };
 }

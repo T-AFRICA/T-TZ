@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { formatSamplePrice } from "@/components/home/sampleProducts";
+import { formatPrice } from "@/components/home/sampleProducts";
 import { selectionLabel } from "@/features/cart/purchase";
 import type { CheckoutQuote, LineIssue } from "@/features/checkout/quote";
 
@@ -54,9 +54,9 @@ export function CheckoutSummary({ quote }: { quote: CheckoutQuote }) {
                 {selection ? <p className="text-xs text-[var(--text-secondary)]">{selection}</p> : null}
                 <p className="mt-0.5 text-xs text-[var(--text-secondary)]">
                   <span className="sr-only">Quantity {line.quantity}, </span>
-                  {line.quantity} × {formatSamplePrice(line.unitPrice)}
-                  {line.wasPrice !== null ? (
-                    <span className="ml-1.5 text-[var(--text-muted)] line-through">{formatSamplePrice(line.wasPrice)}</span>
+                  {line.quantity} × {formatPrice(line.unitPriceMinor)}
+                  {line.wasPriceMinor !== null ? (
+                    <span className="ml-1.5 text-[var(--text-muted)] line-through">{formatPrice(line.wasPriceMinor)}</span>
                   ) : null}
                 </p>
                 {line.issue ? (
@@ -64,7 +64,7 @@ export function CheckoutSummary({ quote }: { quote: CheckoutQuote }) {
                 ) : null}
               </div>
               <p className="shrink-0 whitespace-nowrap text-sm font-semibold tabular-nums">
-                {formatSamplePrice(line.lineTotal)}
+                {formatPrice(line.lineTotalMinor)}
               </p>
             </li>
           );
@@ -81,18 +81,18 @@ export function CheckoutSummary({ quote }: { quote: CheckoutQuote }) {
           <dt className="text-[var(--text-secondary)]">
             Subtotal ({quote.itemCount} {quote.itemCount === 1 ? "item" : "items"})
           </dt>
-          <dd className="font-medium tabular-nums">{formatSamplePrice(quote.subtotal)}</dd>
+          <dd className="font-medium tabular-nums">{formatPrice(quote.subtotalMinor)}</dd>
         </div>
-        {quote.savings > 0 ? (
+        {quote.savingsMinor > 0 ? (
           <div className="flex justify-between gap-3">
             <dt className="text-[var(--text-secondary)]">Discount (included)</dt>
-            <dd className="font-medium tabular-nums text-[var(--color-success)]">−{formatSamplePrice(quote.savings)}</dd>
+            <dd className="font-medium tabular-nums text-[var(--color-success)]">−{formatPrice(quote.savingsMinor)}</dd>
           </div>
         ) : null}
         <div className="flex justify-between gap-3">
           <dt className="text-[var(--text-secondary)]">Delivery</dt>
           <dd className="text-right text-[var(--text-secondary)]">
-            {quote.deliveryFee === null ? "Confirmed before payment" : formatSamplePrice(quote.deliveryFee)}
+            {quote.deliveryFeeMinor === null ? "Confirmed before payment" : formatPrice(quote.deliveryFeeMinor)}
           </dd>
         </div>
         <div className="flex justify-between gap-3">
@@ -102,7 +102,7 @@ export function CheckoutSummary({ quote }: { quote: CheckoutQuote }) {
         <div className="flex items-baseline justify-between gap-3 border-t border-[var(--color-light-grey)] pt-3">
           <dt className="font-semibold">{quote.totalIsPartial ? "Total so far" : "Total"}</dt>
           <dd className="text-xl font-bold tabular-nums text-[var(--color-action-red)]">
-            {formatSamplePrice(quote.total)}
+            {formatPrice(quote.totalMinor)}
           </dd>
         </div>
       </dl>

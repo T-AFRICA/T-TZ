@@ -31,7 +31,8 @@ The project is a pnpm + Turborepo monorepo (Node >= 20, pnpm version pinned in t
 - `pnpm install` — install workspace dependencies (use `--frozen-lockfile` in CI).
 - `pnpm run lint` — ESLint across workspace packages.
 - `pnpm run typecheck` — strict TypeScript checks in every package.
-- `pnpm run test` — Vitest component/config tests (storefront).
+- `pnpm run test` — Vitest unit tests (storefront) and database tests (`@tronic/database`: every migration applied to a disposable in-process PGlite database; permissions, country isolation, money units, Cash on Delivery orders).
+- `pnpm --filter @tronic/storefront run e2e` — Playwright browser tests: builds into `frontend/.next-e2e`, starts a disposable PGlite database and a test-only Supabase Auth stand-in, and runs the no-JavaScript form tests and the catalogue → cart → checkout → order flow. Uses the installed Google Chrome; not run in CI yet.
 - `pnpm run build` — production build (Next.js storefront).
 - `pnpm run dev` — start the storefront dev server on port 3000.
 

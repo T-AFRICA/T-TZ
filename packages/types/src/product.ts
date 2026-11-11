@@ -37,13 +37,14 @@ export interface Product {
   /** Additional gallery images, if any. */
   images?: readonly string[];
   /**
-   * Price in the listing country's currency, in that currency's minor units
-   * (TZS, KES and UGX have none in practice, so these are whole units).
+   * Price in the listing country's currency, as an integer in the ISO 4217
+   * minor unit (TZS and KES ×100, UGX ×1): TZS 28,000 is 2_800_000. See
+   * packages/country-config/src/money.ts; format with formatMoney.
    */
-  price: number;
+  priceMinor: number;
   currency: string;
-  /** Pre-discount price; when present the UI shows a saving. */
-  wasPrice?: number;
+  /** Pre-discount price in minor units; when present the UI shows a saving. */
+  wasPriceMinor?: number;
   inStock: boolean;
   /** Countries whose storefront may show this product. */
   countries: readonly CountryCode[];
@@ -70,8 +71,9 @@ export interface ProductQuery {
   /** Any of these use cases; set instead of category/group for Shop by Use. */
   useCases?: readonly string[];
   brands?: readonly string[];
-  minPrice?: number;
-  maxPrice?: number;
+  /** Price bounds in minor units (inclusive). */
+  minPriceMinor?: number;
+  maxPriceMinor?: number;
   inStockOnly?: boolean;
   sort?: ProductSort;
   /** 1-based. */
@@ -82,9 +84,9 @@ export interface ProductQuery {
 export interface ProductFacets {
   /** Brands present in the unfiltered category/group scope, sorted. */
   brands: readonly string[];
-  /** Price bounds of the unfiltered scope; both 0 when the scope is empty. */
-  priceMin: number;
-  priceMax: number;
+  /** Price bounds of the unfiltered scope in minor units; both 0 when the scope is empty. */
+  minPriceMinor: number;
+  maxPriceMinor: number;
 }
 
 export interface ProductPage {

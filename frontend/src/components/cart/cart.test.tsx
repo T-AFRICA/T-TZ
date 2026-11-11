@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ToastProvider } from "@tronic/ui";
 import { AddToCartButton } from "@/components/home/AddToCartButton";
-import { getSampleProduct } from "@/components/home/sampleProducts";
+import { formatPrice, getSampleProduct } from "@/components/home/sampleProducts";
 import { WishlistButton } from "@/components/wishlist/WishlistButton";
 import { cartStore, wishlistStore } from "@/features/cart/store";
 import { CartCountBadge, CartCountText } from "./CountBadge";
@@ -109,16 +109,16 @@ describe("cart page", () => {
     ]);
     renderWithToast(<CartView />);
     const summary = screen.getByRole("complementary", { name: "Order summary" });
-    const subtotal = (count: number) => bulb.price * count + panel.price;
+    const subtotal = (count: number) => formatPrice(bulb.priceMinor * count + panel.priceMinor);
     expect(summary).toHaveTextContent(`Items3`);
-    expect(summary).toHaveTextContent(new Intl.NumberFormat("en-US").format(subtotal(2)));
+    expect(summary).toHaveTextContent(subtotal(2));
     expect(screen.getByText("This product is no longer available.")).toBeInTheDocument();
     expect(within(summary).getByRole("link", { name: "Proceed to checkout" })).toHaveAttribute("href", "/checkout");
 
     const bulbQuantity = screen.getByRole("group", { name: `Quantity of ${bulb.name}` });
     await user.click(within(bulbQuantity).getByRole("button", { name: "Increase quantity" }));
     expect(cartStore.get()[0]!.quantity).toBe(3);
-    expect(summary).toHaveTextContent(new Intl.NumberFormat("en-US").format(subtotal(3)));
+    expect(summary).toHaveTextContent(subtotal(3));
 
     await user.click(screen.getByRole("button", { name: `Remove ${bulb.name} (Daylight) from cart` }));
     expect(cartStore.get().map((line) => line.productId)).toEqual([panel.id, "sample-retired"]);

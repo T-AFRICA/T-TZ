@@ -3,6 +3,38 @@
 Meaningful implementation changes, newest first. Dates are work dates;
 nothing below is released.
 
+## 2026-11-11 — production-readiness fixes: form privacy, catalogue security, money units, orders
+
+Not applied to Supabase and not deployed; verified on a disposable local
+database only.
+
+- Forms never put data in a URL: sign-in, registration, password recovery,
+  reset and Track Order post to server actions (POST) with or without
+  JavaScript. While a service is not connected its form cannot be submitted
+  (disabled button, notice). Browser test with JavaScript disabled:
+  `frontend/e2e/forms-no-js.spec.ts`.
+- Catalogue security (`database/migrations/0003`): RLS on every catalogue
+  table, Supabase's default grants revoked, read-only grants for the public
+  catalogue, security-invoker storefront view limited to active countries,
+  price currency must match the country.
+- Money: every stored or passed amount is an integer in ISO 4217 minor
+  units (TZS and KES ×100, UGX ×1); display stays whole shillings. Sample
+  prices converted with `tzs()` so displayed prices are unchanged. Fields
+  renamed (`priceMinor`, `totalMinor`, …) so a missed conversion fails
+  type checking. TZS/KES regression tests at import, display and totals.
+- Orders (`0004`): `place_cod_order` reprices, checks options and stock,
+  reserves stock and saves the order in one transaction with an
+  idempotency key; `track_order` needs number plus email or phone; RLS
+  keeps each customer's orders private. Checkout shows the confirmation
+  only after the order is saved; guest checkout stays.
+- Live data behind an explicit switch: `DATA_SOURCE=mock` (default) or
+  `database` (`DATABASE_URL`, new `@tronic/database` package).
+  Supabase Auth (server-side `SUPABASE_URL`/`SUPABASE_ANON_KEY`): server
+  actions, session cookies via `@supabase/ssr`, `proxy.ts` and a protected
+  `/account` page with the customer's own orders.
+- Tests: 33 database tests, 163 storefront tests, 15 Playwright browser
+  tests (`pnpm --filter @tronic/storefront run e2e`).
+
 ## 2026-11-11 — account screens: cinematic entrance and smoother details
 
 - One timed entrance on the login, register and password pages (CSS,

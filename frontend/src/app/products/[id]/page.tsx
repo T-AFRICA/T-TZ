@@ -6,7 +6,7 @@ import { PurchasePanel } from "@/components/product/PurchasePanel";
 import { RecentlyViewed } from "@/components/product/RecentlyViewed";
 import { ProductSection } from "@/components/home/ProductSection";
 import { allSampleProducts } from "@/components/home/sampleProducts";
-import { catalogClient } from "@/features/catalog/catalog";
+import { getCatalog } from "@/features/data/source";
 import { placeholderDescription } from "@/features/catalog/description";
 import { ACTIVE_COUNTRY, getCategorySection } from "@tronic/country-config";
 import { POLICY_LINKS, CHECK_WARRANTY_LINK } from "@/config/site";
@@ -17,7 +17,7 @@ export function generateStaticParams() {
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const product = await catalogClient.getProduct(id, ACTIVE_COUNTRY.code);
+  const product = await (await getCatalog()).getProduct(id, ACTIVE_COUNTRY.code);
   return {
     title: product ? product.name : "Product",
     description: product
@@ -59,12 +59,12 @@ function SpecRow({ label, children }: { label: string; children: React.ReactNode
  */
 export default async function ProductPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const product = await catalogClient.getProduct(id, ACTIVE_COUNTRY.code);
+  const product = await (await getCatalog()).getProduct(id, ACTIVE_COUNTRY.code);
   if (!product) {
     notFound();
   }
 
-  const related = await catalogClient.getRelatedProducts(product, ACTIVE_COUNTRY.code);
+  const related = await (await getCatalog()).getRelatedProducts(product, ACTIVE_COUNTRY.code);
   const group = product.groupSlug
     ? getCategorySection(product.categorySlug)?.groups.find((g) => g.slug === product.groupSlug)
     : undefined;

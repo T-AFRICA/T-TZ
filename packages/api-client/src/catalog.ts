@@ -56,9 +56,9 @@ function sortProducts(items: Product[], sort: ProductSort): Product[] {
   const sorted = [...items];
   switch (sort) {
     case "price-asc":
-      return sorted.sort((a, b) => a.price - b.price || a.sequence - b.sequence);
+      return sorted.sort((a, b) => a.priceMinor - b.priceMinor || a.sequence - b.sequence);
     case "price-desc":
-      return sorted.sort((a, b) => b.price - a.price || a.sequence - b.sequence);
+      return sorted.sort((a, b) => b.priceMinor - a.priceMinor || a.sequence - b.sequence);
     case "name-asc":
       return sorted.sort((a, b) => a.name.localeCompare(b.name, "en") || a.sequence - b.sequence);
     case "newest":
@@ -79,18 +79,18 @@ export class MockCatalogClient implements CatalogClient {
       .filter((product) => !query.useCases || (product.useCases ?? []).some((u) => query.useCases?.includes(u)));
 
     const brands = [...new Set(scope.map((product) => product.brand).filter((b): b is string => !!b))].sort();
-    const prices = scope.map((product) => product.price);
+    const prices = scope.map((product) => product.priceMinor);
     const facets = {
       brands,
-      priceMin: prices.length ? Math.min(...prices) : 0,
-      priceMax: prices.length ? Math.max(...prices) : 0,
+      minPriceMinor: prices.length ? Math.min(...prices) : 0,
+      maxPriceMinor: prices.length ? Math.max(...prices) : 0,
     };
 
     const wanted = new Set(query.brands ?? []);
     const filtered = scope
       .filter((product) => wanted.size === 0 || (product.brand !== undefined && wanted.has(product.brand)))
-      .filter((product) => query.minPrice === undefined || product.price >= query.minPrice)
-      .filter((product) => query.maxPrice === undefined || product.price <= query.maxPrice)
+      .filter((product) => query.minPriceMinor === undefined || product.priceMinor >= query.minPriceMinor)
+      .filter((product) => query.maxPriceMinor === undefined || product.priceMinor <= query.maxPriceMinor)
       .filter((product) => !query.inStockOnly || product.inStock);
 
     const sorted = sortProducts(filtered, query.sort ?? "newest");

@@ -19,7 +19,7 @@ function fixture(): Product[] {
     groupSlug: i % 2 === 0 ? "indoor-lighting" : "outdoor-lighting",
     subcategorySlug: i % 2 === 0 ? (i % 4 === 0 ? "panel-lights" : "spotlights") : "floodlights",
     image: "/products/x.png",
-    price: (i + 1) * 1_000,
+    priceMinor: (i + 1) * 1_000,
     currency: "TZS",
     inStock: i % 5 !== 0,
     countries: ["TZ"],
@@ -27,8 +27,8 @@ function fixture(): Product[] {
     sequence: i + 1,
   }));
   items.push(
-    { ...items[0]!, id: "ke-only", slug: "ke-only", sku: "KE", countries: ["KE"], sequence: 100, price: 50 },
-    { ...items[0]!, id: "retired", slug: "retired", sku: "RET", active: false, sequence: 101, price: 60 },
+    { ...items[0]!, id: "ke-only", slug: "ke-only", sku: "KE", countries: ["KE"], sequence: 100, priceMinor: 50 },
+    { ...items[0]!, id: "retired", slug: "retired", sku: "RET", active: false, sequence: 101, priceMinor: 60 },
   );
   return items;
 }
@@ -45,7 +45,7 @@ describe("MockCatalogClient", () => {
     expect(await client.getProduct("ke-only", "TZ")).toBeNull();
     expect(await client.getProduct("retired", "TZ")).toBeNull();
     expect((await client.getProduct("ke-only", "KE"))?.id).toBe("ke-only");
-    expect(page.facets.priceMin).toBe(1_000);
+    expect(page.facets.minPriceMinor).toBe(1_000);
   });
 
   it("scopes to category and group", async () => {
@@ -55,7 +55,7 @@ describe("MockCatalogClient", () => {
     const none = await client.listProducts({ country: "TZ", category: "tools" });
     expect(none.total).toBe(0);
     expect(none.pageCount).toBe(1);
-    expect(none.facets).toEqual({ brands: [], priceMin: 0, priceMax: 0 });
+    expect(none.facets).toEqual({ brands: [], minPriceMinor: 0, maxPriceMinor: 0 });
   });
 
   it("scopes to a subcategory inside the group", async () => {
@@ -71,23 +71,23 @@ describe("MockCatalogClient", () => {
       country: "TZ",
       category: "lighting",
       brands: ["Alpha"],
-      minPrice: 5_000,
-      maxPrice: 20_000,
+      minPriceMinor: 5_000,
+      maxPriceMinor: 20_000,
       inStockOnly: true,
     });
-    expect(page.items.every((p) => p.brand === "Alpha" && p.price >= 5_000 && p.price <= 20_000 && p.inStock)).toBe(
+    expect(page.items.every((p) => p.brand === "Alpha" && p.priceMinor >= 5_000 && p.priceMinor <= 20_000 && p.inStock)).toBe(
       true,
     );
     expect(page.total).toBe(page.items.length);
     expect(page.facets.brands).toEqual(["Alpha", "Beta"]);
-    expect(page.facets.priceMax).toBe(30_000);
+    expect(page.facets.maxPriceMinor).toBe(30_000);
   });
 
   it("sorts by price, name and newest", async () => {
     const asc = await client.listProducts({ country: "TZ", sort: "price-asc", pageSize: 48 });
-    expect(asc.items.map((p) => p.price)).toEqual([...asc.items.map((p) => p.price)].sort((a, b) => a - b));
+    expect(asc.items.map((p) => p.priceMinor)).toEqual([...asc.items.map((p) => p.priceMinor)].sort((a, b) => a - b));
     const desc = await client.listProducts({ country: "TZ", sort: "price-desc" });
-    expect(desc.items[0]?.price).toBe(30_000);
+    expect(desc.items[0]?.priceMinor).toBe(30_000);
     const byName = await client.listProducts({ country: "TZ", sort: "name-asc" });
     expect(byName.items[0]?.name).toBe("Product 01");
     const newest = await client.listProducts({ country: "TZ" });
@@ -176,8 +176,8 @@ describe("parseListingFilters", () => {
     });
     expect(hostile.sort).toBe("newest");
     expect(hostile.page).toBe(1);
-    expect(hostile.minPrice).toBeUndefined();
-    expect(hostile.maxPrice).toBeUndefined();
+    expect(hostile.minPriceMajor).toBeUndefined();
+    expect(hostile.maxPriceMajor).toBeUndefined();
     expect(hostile.inStockOnly).toBe(false);
   });
 
@@ -191,8 +191,8 @@ describe("parseListingFilters", () => {
       stock: "1",
     });
     expect(filters.brands).toEqual(["Alpha", "Beta", "Gamma"]);
-    expect(filters.minPrice).toBe(20_000);
-    expect(filters.maxPrice).toBeUndefined();
+    expect(filters.minPriceMajor).toBe(20_000);
+    expect(filters.maxPriceMajor).toBeUndefined();
     expect(filters.sort).toBe("price-desc");
     expect(filters.page).toBe(2);
     expect(filters.inStockOnly).toBe(true);
@@ -212,6 +212,27 @@ describe("parseListingFilters", () => {
     expect(query.pageSize).toBe(DEFAULT_PAGE_SIZE);
     expect(listingHref("/categories/lighting", filters)).toBe("/categories/lighting?brand=Alpha&sort=name-asc&page=3");
     expect(listingHref("/categories/lighting", parseListingFilters({}))).toBe("/categories/lighting");
+  });
+
+  it("reads the price filter in shillings and queries in minor units (TZS ×100)", async () => {
+    const filters = parseListingFilters({ min: "20000", max: "30000" });
+    expect(filters).toMatchObject({ minPriceMajor: 20_000, maxPriceMajor: 30_000 });
+    const lighting = getCategorySection("lighting")!;
+    const query = toProductQuery(filters, lighting);
+    expect(query).toMatchObject({ minPriceMinor: 2_000_000, maxPriceMinor: 3_000_000 });
+    // The TZS 28,000 panel is inside a TZS 20,000–30,000 filter, the
+    // TZS 18,500 plug is not. A 100× slip would exclude or include both.
+    const page = await new MockCatalogClient().listProducts({ ...query, category: undefined, pageSize: 48 });
+    const slugs = page.items.map((p) => p.slug);
+    expect(slugs).toContain("sample-led-panel");
+    expect(slugs).not.toContain("sample-top-plug");
+    expect(listingHref("/categories/lighting", filters)).toBe("/categories/lighting?min=20000&max=30000");
+  });
+
+  it("caps absurd price filters instead of overflowing", () => {
+    const filters = parseListingFilters({ max: "999999999999999" });
+    const query = toProductQuery(filters, getCategorySection("lighting")!);
+    expect(Number.isSafeInteger(query.maxPriceMinor)).toBe(true);
   });
 });
 

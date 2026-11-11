@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { LockKeyhole } from "lucide-react";
 import { ResetPasswordForm } from "@/components/auth/AuthForms";
 import { Accent, AuthLink, AuthScreen } from "@/components/auth/LoginScreen";
+import { authEnabledForRequest } from "@/features/auth/server";
 
 export const metadata: Metadata = { title: "Choose a new password", robots: { index: false, follow: false } };
 
@@ -9,7 +10,7 @@ export const metadata: Metadata = { title: "Choose a new password", robots: { in
  * /reset-password — opened from the reset email once auth is connected; the
  * link's token is checked then. Same showroom shell as /login.
  */
-export default function ResetPasswordPage() {
+export default async function ResetPasswordPage() {
   return (
     <AuthScreen
       icon={<LockKeyhole size={28} strokeWidth={1.9} aria-hidden="true" />}
@@ -26,7 +27,7 @@ export default function ResetPasswordPage() {
         </>
       }
     >
-      <ResetPasswordForm />
+      <ResetPasswordForm enabled={await authEnabledForRequest()} />
     </AuthScreen>
   );
 }

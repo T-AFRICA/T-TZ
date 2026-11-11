@@ -60,7 +60,7 @@ export function SearchQuickView({
   const showImage = (index: number) =>
     setGalleryState({ id: active.id, index: (index + images.length) % images.length });
   const onSale = isOnSale(active);
-  const saving = onSale ? Math.round((1 - active.price / active.wasPrice) * 100) : 0;
+  const saving = onSale ? Math.round((1 - active.priceMinor / active.wasPriceMinor) * 100) : 0;
 
   return (
     <div className="flex h-full min-h-0 w-full flex-col">
@@ -134,11 +134,11 @@ export function SearchQuickView({
               <span
                 className={`text-xl font-bold leading-none ${onSale ? "text-[var(--color-action-red)]" : "text-[var(--color-premium-black)]"}`}
               >
-                {formatHitPrice(active.price, active.currency)}
+                {formatHitPrice(active.priceMinor, active.currency)}
               </span>
               {onSale ? (
                 <span className="text-[12px] text-[var(--text-muted)] line-through">
-                  {formatHitPrice(active.wasPrice, active.currency)}
+                  {formatHitPrice(active.wasPriceMinor, active.currency)}
                 </span>
               ) : null}
             </div>

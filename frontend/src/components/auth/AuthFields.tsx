@@ -91,14 +91,18 @@ export function PasswordField(props: Omit<IconFieldProps, "icon" | "type" | "tra
   );
 }
 
-/** The red pill submit button with a loading state for the future auth calls. */
-export function SubmitButton({ pending, children }: { pending: boolean; children: ReactNode }) {
+/**
+ * The red pill submit button with a loading state. `disabled` blocks
+ * submission entirely (auth not configured): a disabled default button also
+ * stops Enter from submitting the form.
+ */
+export function SubmitButton({ pending, disabled = false, children }: { pending: boolean; disabled?: boolean; children: ReactNode }) {
   return (
     <button
       type="submit"
-      disabled={pending}
+      disabled={pending || disabled}
       aria-busy={pending || undefined}
-      className="login-cta group inline-flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[linear-gradient(180deg,#e8232c_0%,#c4121b_100%)] text-base font-semibold text-white shadow-[0_14px_30px_-14px_rgba(215,25,32,0.85)] transition-[transform,box-shadow,filter] duration-200 ease-out hover:-translate-y-px hover:brightness-105 hover:shadow-[0_18px_34px_-14px_rgba(215,25,32,0.9)] active:translate-y-0 active:scale-[0.99] disabled:cursor-wait disabled:opacity-80 motion-reduce:transition-none motion-reduce:hover:translate-y-0"
+      className="login-cta group inline-flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[linear-gradient(180deg,#e8232c_0%,#c4121b_100%)] text-base font-semibold text-white shadow-[0_14px_30px_-14px_rgba(215,25,32,0.85)] transition-[transform,box-shadow,filter] duration-200 ease-out hover:-translate-y-px hover:brightness-105 hover:shadow-[0_18px_34px_-14px_rgba(215,25,32,0.9)] active:translate-y-0 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60 aria-busy:cursor-wait motion-reduce:transition-none motion-reduce:hover:translate-y-0"
     >
       {pending ? (
         <>

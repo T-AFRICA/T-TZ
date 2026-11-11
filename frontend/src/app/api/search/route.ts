@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import type { SearchResponse } from "@tronic/types";
 import { normalizeSearchText } from "@tronic/api-client";
 import { ACTIVE_COUNTRY } from "@tronic/country-config";
-import { catalogClient } from "@/features/catalog/catalog";
+import { getCatalog } from "@/features/data/source";
 import { clientKey, createRateLimiter } from "@/features/search/rate-limit";
 import {
   AUTOCOMPLETE_LIMIT,
@@ -53,7 +53,7 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const page = await catalogClient.searchProducts({
+    const page = await (await getCatalog()).searchProducts({
       country: ACTIVE_COUNTRY.code,
       text: query,
       pageSize: limit,

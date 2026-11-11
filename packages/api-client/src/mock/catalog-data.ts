@@ -1,4 +1,5 @@
 import type { Product } from "@tronic/types";
+import { toMinorUnits } from "@tronic/country-config";
 
 /**
  * SAMPLE catalogue (owner request Nov 2026): official TRONIC product
@@ -16,6 +17,13 @@ type Seed = Omit<Product, "slug" | "sku" | "currency" | "countries" | "active" |
 };
 
 const CURRENCY = "TZS";
+
+/**
+ * Sample prices are written in whole shillings, as quoted, and converted
+ * once here to the stored unit (ISO 4217 minor units, ×100 for TZS):
+ * tzs(28_000) is 2_800_000 and displays as "TZS 28,000".
+ */
+const tzs = (shillings: number) => toMinorUnits(shillings, CURRENCY);
 
 function seed(list: readonly Seed[], start: number): Product[] {
   return list.map((item, index) => ({
@@ -41,8 +49,8 @@ export const SPECIAL_FOR_YOU: readonly Product[] = seed(
       subcategorySlug: "panel-lights",
       useCases: ["for-homeowners", "for-commercial"],
       image: "/products/panel-light.png",
-      price: 28_000,
-      wasPrice: 35_000,
+      priceMinor: tzs(28_000),
+      wasPriceMinor: tzs(35_000),
       inStock: true,
     },
     {
@@ -54,7 +62,7 @@ export const SPECIAL_FOR_YOU: readonly Product[] = seed(
       subcategorySlug: "top-plugs",
       useCases: ["for-homeowners", "for-contractors"],
       image: "/products/top-plug.jpg",
-      price: 18_500,
+      priceMinor: tzs(18_500),
       inStock: true,
     },
     {
@@ -66,8 +74,8 @@ export const SPECIAL_FOR_YOU: readonly Product[] = seed(
       subcategorySlug: "extension-sockets",
       useCases: ["for-homeowners"],
       image: "/products/extension-socket.jpg",
-      price: 22_000,
-      wasPrice: 27_500,
+      priceMinor: tzs(22_000),
+      wasPriceMinor: tzs(27_500),
       inStock: true,
       variants: ["3-way", "4-way", "6-way"],
       variantLabel: "Type",
@@ -85,7 +93,7 @@ export const SPECIAL_FOR_YOU: readonly Product[] = seed(
       subcategorySlug: "armoured-xlpe-cables",
       useCases: ["for-contractors", "for-commercial"],
       image: "/products/hero-cable.png",
-      price: 35_000,
+      priceMinor: tzs(35_000),
       inStock: false,
     },
     {
@@ -97,8 +105,8 @@ export const SPECIAL_FOR_YOU: readonly Product[] = seed(
       subcategorySlug: "led-bulbs-tubes",
       useCases: ["for-homeowners"],
       image: "/products/led-bulb.png",
-      price: 6_500,
-      wasPrice: 8_000,
+      priceMinor: tzs(6_500),
+      wasPriceMinor: tzs(8_000),
       inStock: true,
       variants: ["Warm White", "Cool White", "Daylight"],
       variantLabel: "Color Temperature",
@@ -112,7 +120,7 @@ export const SPECIAL_FOR_YOU: readonly Product[] = seed(
       subcategorySlug: "mcb",
       useCases: ["for-contractors", "for-commercial"],
       image: "/products/circuit-breaker.jpg",
-      price: 24_000,
+      priceMinor: tzs(24_000),
       inStock: true,
     },
     {
@@ -124,8 +132,8 @@ export const SPECIAL_FOR_YOU: readonly Product[] = seed(
       subcategorySlug: "storage-water-heaters",
       useCases: ["for-homeowners"],
       image: "/products/water-heater.jpg",
-      price: 185_000,
-      wasPrice: 215_000,
+      priceMinor: tzs(185_000),
+      wasPriceMinor: tzs(215_000),
       inStock: true,
     },
     {
@@ -137,7 +145,7 @@ export const SPECIAL_FOR_YOU: readonly Product[] = seed(
       subcategorySlug: "ceiling-fans",
       useCases: ["for-homeowners"],
       image: "/products/ceiling-fan.jpg",
-      price: 98_000,
+      priceMinor: tzs(98_000),
       inStock: true,
     },
   ],
@@ -155,8 +163,8 @@ export const LIGHTING_PICKS: readonly Product[] = seed(
       subcategorySlug: "recessed-downlights",
       useCases: ["for-homeowners", "for-contractors"],
       image: "/products/downlight-spot.jpg",
-      price: 12_500,
-      wasPrice: 15_000,
+      priceMinor: tzs(12_500),
+      wasPriceMinor: tzs(15_000),
       inStock: true,
     },
     {
@@ -168,7 +176,7 @@ export const LIGHTING_PICKS: readonly Product[] = seed(
       subcategorySlug: "pendants",
       useCases: ["for-homeowners"],
       image: "/products/pendant-lamp.jpg",
-      price: 65_000,
+      priceMinor: tzs(65_000),
       inStock: true,
       colors: [
         { name: "White", swatch: "#f5f3ee" },
@@ -185,7 +193,7 @@ export const LIGHTING_PICKS: readonly Product[] = seed(
       subcategorySlug: "garden-gate-lights",
       useCases: ["for-homeowners", "for-commercial"],
       image: "/products/garden-post-light.jpg",
-      price: 72_000,
+      priceMinor: tzs(72_000),
       inStock: false,
     },
     {
@@ -197,8 +205,8 @@ export const LIGHTING_PICKS: readonly Product[] = seed(
       subcategorySlug: "ceiling-lights",
       useCases: ["for-homeowners", "for-commercial"],
       image: "/products/surface-ceiling-light.jpg",
-      price: 38_000,
-      wasPrice: 45_000,
+      priceMinor: tzs(38_000),
+      wasPriceMinor: tzs(45_000),
       inStock: true,
     },
   ],
@@ -216,8 +224,8 @@ export const FANS_COOLING_PICKS: readonly Product[] = seed(
       subcategorySlug: "stand-fan",
       useCases: ["for-homeowners"],
       image: "/products/stand-fan.jpg",
-      price: 145_000,
-      wasPrice: 170_000,
+      priceMinor: tzs(145_000),
+      wasPriceMinor: tzs(170_000),
       inStock: true,
       colors: [
         { name: "White", swatch: "#f4f4f2" },
@@ -233,7 +241,7 @@ export const FANS_COOLING_PICKS: readonly Product[] = seed(
       subcategorySlug: "wall-fans",
       useCases: ["for-commercial"],
       image: "/products/wall-fan.jpg",
-      price: 210_000,
+      priceMinor: tzs(210_000),
       inStock: true,
     },
     {
@@ -245,7 +253,7 @@ export const FANS_COOLING_PICKS: readonly Product[] = seed(
       subcategorySlug: "exhaust-fan",
       useCases: ["for-homeowners", "for-commercial"],
       image: "/products/exhaust-fan.jpg",
-      price: 32_000,
+      priceMinor: tzs(32_000),
       inStock: true,
     },
     {
@@ -257,8 +265,8 @@ export const FANS_COOLING_PICKS: readonly Product[] = seed(
       subcategorySlug: "exhaust-fan",
       useCases: ["for-commercial", "for-contractors"],
       image: "/products/industrial-exhaust-fan.jpg",
-      price: 165_000,
-      wasPrice: 195_000,
+      priceMinor: tzs(165_000),
+      wasPriceMinor: tzs(195_000),
       inStock: true,
     },
   ],

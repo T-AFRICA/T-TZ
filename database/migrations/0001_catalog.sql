@@ -3,8 +3,11 @@
 -- Forward-only. Mirrors the TypeScript contracts in packages/types/src/product.ts
 -- and the filtering semantics of MockCatalogClient (packages/api-client/src/catalog.ts)
 -- so the Phase 4 live adapter can be a straight translation of the same query.
--- Money is integer minor units with an explicit ISO 4217 currency; TZS, KES and
--- UGX have zero decimals, so the integer is the shilling amount itself.
+-- Money is an integer in the currency's ISO 4217 minor unit with an explicit
+-- currency: TZS and KES have exponent 2 (TZS 28,000 is stored as 2800000),
+-- UGX has exponent 0. 0003 adds the currencies table that records the
+-- exponent; display rounding (whole shillings) is separate from storage
+-- (packages/country-config/src/money.ts).
 --
 -- Written for PostgreSQL 15+ (Supabase). The Supabase project does not exist
 -- yet; see docs/database/schema-v1.md for the open decisions.
