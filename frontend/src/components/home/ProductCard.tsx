@@ -3,7 +3,7 @@ import Link from "next/link";
 import { CartIcon, Tilt3D } from "@tronic/ui";
 import { WishlistButton } from "@/components/wishlist/WishlistButton";
 import { AddToCartButton } from "./AddToCartButton";
-import { discountPercent, formatSamplePrice, type SampleProduct } from "./sampleProducts";
+import { discountPercent, formatPrice, type SampleProduct } from "./sampleProducts";
 
 /**
  * Shared product card for the homepage merchandising sections, kept compact
@@ -68,16 +68,16 @@ export function ProductCard({ product }: { product: SampleProduct }) {
           <p className="flex flex-wrap items-baseline gap-x-1.5">
             <span
               className={`text-[13px] font-bold md:text-sm ${
-                product.wasPrice !== undefined
+                product.wasPriceMinor !== undefined
                   ? "text-[var(--color-action-red)]"
                   : "text-[var(--color-premium-black)]"
               }`}
             >
-              {formatSamplePrice(product.price)}
+              {formatPrice(product.priceMinor)}
             </span>
-            {product.wasPrice !== undefined ? (
+            {product.wasPriceMinor !== undefined ? (
               <span className="text-[11px] text-[var(--text-muted)] line-through">
-                {formatSamplePrice(product.wasPrice)}
+                {formatPrice(product.wasPriceMinor)}
               </span>
             ) : null}
           </p>

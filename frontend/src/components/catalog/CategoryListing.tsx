@@ -1,11 +1,11 @@
 import Link from "next/link";
 import type { CategoryGroup, CategorySection, CategorySubcategory } from "@tronic/types";
 import { ArrowRightIcon, Container, EmptyState } from "@tronic/ui";
-import { ACTIVE_COUNTRY, CATEGORY_SECTIONS, formatMoney } from "@tronic/country-config";
+import { ACTIVE_COUNTRY, CATEGORY_SECTIONS, formatMoney, toMinorUnits } from "@tronic/country-config";
+import { getCatalog } from "@/features/data/source";
 import { ProductCard } from "@/components/home/ProductCard";
 import {
   activeFilterCount,
-  catalogClient,
   listingBasePath,
   listingHref,
   parseListingFilters,
@@ -35,12 +35,14 @@ function activeFilterChips(basePath: string, filters: ListingFilters): { label: 
       href: listingHref(basePath, { ...filters, brands: filters.brands.filter((b) => b !== brand), page: 1 }),
     });
   }
-  if (filters.minPrice !== undefined || filters.maxPrice !== undefined) {
-    const min = filters.minPrice !== undefined ? formatMoney(filters.minPrice, ACTIVE_COUNTRY) : null;
-    const max = filters.maxPrice !== undefined ? formatMoney(filters.maxPrice, ACTIVE_COUNTRY) : null;
+  if (filters.minPriceMajor !== undefined || filters.maxPriceMajor !== undefined) {
+    // Filters hold whole units (as typed); format through the stored unit.
+    const show = (major: number) => formatMoney(toMinorUnits(major, ACTIVE_COUNTRY.currency), ACTIVE_COUNTRY);
+    const min = filters.minPriceMajor !== undefined ? show(filters.minPriceMajor) : null;
+    const max = filters.maxPriceMajor !== undefined ? show(filters.maxPriceMajor) : null;
     chips.push({
       label: min && max ? `${min} – ${max}` : min ? `From ${min}` : `Up to ${max}`,
-      href: listingHref(basePath, { ...filters, minPrice: undefined, maxPrice: undefined, page: 1 }),
+      href: listingHref(basePath, { ...filters, minPriceMajor: undefined, maxPriceMajor: undefined, page: 1 }),
     });
   }
   if (filters.inStockOnly) {
@@ -77,7 +79,7 @@ export async function CategoryListing({
 }) {
   const basePath = listingBasePath(section, group, subcategory);
   const filters = parseListingFilters(searchParams);
-  const result = await catalogClient.listProducts(toProductQuery(filters, section, group, subcategory));
+  const result = await (await getCatalog()).listProducts(toProductQuery(filters, section, group, subcategory));
   const filterCount = activeFilterCount(filters);
   const chips = activeFilterChips(basePath, filters);
   const title = subcategory ? subcategory.name : group ? group.name : section.name;

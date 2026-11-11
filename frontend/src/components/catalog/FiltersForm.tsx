@@ -27,7 +27,7 @@ export function FiltersForm({
   id: string;
   compact?: boolean;
 }) {
-  const priceHint = `${formatMoney(facets.priceMin, ACTIVE_COUNTRY)} – ${formatMoney(facets.priceMax, ACTIVE_COUNTRY)}`;
+  const priceHint = `${formatMoney(facets.minPriceMinor, ACTIVE_COUNTRY)} – ${formatMoney(facets.maxPriceMinor, ACTIVE_COUNTRY)}`;
   const field =
     "h-9 w-full rounded-md border border-[var(--color-light-grey)] bg-white px-3 text-[13px] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] transition-colors duration-150 hover:border-[var(--color-dark-grey)] focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[var(--color-action-red)]";
   const legend = "text-[12px] font-semibold uppercase tracking-[0.1em] text-[var(--text-secondary)]";
@@ -72,7 +72,7 @@ export function FiltersForm({
               min={0}
               step={500}
               placeholder="Min"
-              defaultValue={filters.minPrice ?? ""}
+              defaultValue={filters.minPriceMajor ?? ""}
               className={field}
             />
           </label>
@@ -88,12 +88,12 @@ export function FiltersForm({
               min={0}
               step={500}
               placeholder="Max"
-              defaultValue={filters.maxPrice ?? ""}
+              defaultValue={filters.maxPriceMajor ?? ""}
               className={field}
             />
           </label>
         </div>
-        {facets.priceMax > 0 ? (
+        {facets.maxPriceMinor > 0 ? (
           <p className="mt-2 text-[12px] text-[var(--text-muted)]">Range here: {priceHint}</p>
         ) : null}
       </fieldset>

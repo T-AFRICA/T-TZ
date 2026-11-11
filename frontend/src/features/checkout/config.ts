@@ -132,9 +132,5 @@ export function defaultPaymentMethod(): PaymentMethodId | "" {
   return available.length === 1 ? available[0]!.id : "";
 }
 
-/**
- * False until orders are stored (Supabase, Stage 2). While false, Place
- * order checks the details and says that nothing was sent; no order is
- * created or simulated, whatever payment method is chosen.
- */
-export const ORDERS_CONNECTED = false;
+// Whether orders can be placed is decided on the server by the data source
+// (features/data/source.ts: ordersEnabled), not by a constant here.

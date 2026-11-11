@@ -1,5 +1,6 @@
+import type { CatalogClient } from "@tronic/api-client";
+import { ACTIVE_COUNTRY } from "@tronic/country-config";
 import type { Product } from "@tronic/types";
-import { getSampleProduct } from "@/components/home/sampleProducts";
 import { lineKey, parseCart, type CartLine } from "@/features/cart/store";
 import { DELIVERY_METHODS, type DeliveryMethodId } from "./config";
 
@@ -10,9 +11,12 @@ import { DELIVERY_METHODS, type DeliveryMethodId } from "./config";
  * catalogue here. Lines that cannot be bought are returned with a reason
  * and left out of the totals.
  *
- * Reads the sample catalogue for now; with the live catalogue this reads
- * prices and stock from the database, and the order action re-runs it
- * inside the order transaction.
+ * Reads whichever catalogue the deployment uses (the CatalogClient: mock
+ * sample data or the database). The quote is what the customer sees; the
+ * order itself is repriced again inside the database transaction
+ * (place_cod_order), so a stale quote can never set the price.
+ *
+ * Every amount is an integer in ISO 4217 minor units (TZS ×100).
  */
 export type LineIssue = "unavailable" | "out_of_stock" | "invalid_options";
 
@@ -28,10 +32,10 @@ export interface QuoteLine {
   variant: string | null;
   quantity: number;
   /** Catalogue price per unit, minor units. */
-  unitPrice: number;
+  unitPriceMinor: number;
   /** Pre-discount price per unit, when the product is on sale. */
-  wasPrice: number | null;
-  lineTotal: number;
+  wasPriceMinor: number | null;
+  lineTotalMinor: number;
   issue: LineIssue | null;
 }
 
@@ -42,13 +46,13 @@ export interface CheckoutQuote {
   missing: number;
   /** Units that can be bought. */
   itemCount: number;
-  subtotal: number;
+  subtotalMinor: number;
   /** Sum of (was price − price) × quantity for sale items. */
-  savings: number;
+  savingsMinor: number;
   /** Null while the delivery fee is not configured. */
-  deliveryFee: number | null;
+  deliveryFeeMinor: number | null;
   /** Subtotal plus delivery when known; the subtotal alone otherwise. */
-  total: number;
+  totalMinor: number;
   /** True when the total still lacks the delivery fee. */
   totalIsPartial: boolean;
 }
@@ -63,14 +67,19 @@ function optionIssue(product: Product, line: CartLine): boolean {
   return !(colorOk && variantOk);
 }
 
-/** Validates raw input from the browser and prices it. */
-export function quoteCheckout(raw: unknown, deliveryMethod: DeliveryMethodId = "home"): CheckoutQuote {
+/** Validates raw input from the browser and prices it from the catalogue. */
+export async function quoteCheckout(
+  raw: unknown,
+  deliveryMethod: DeliveryMethodId,
+  catalog: CatalogClient,
+): Promise<CheckoutQuote> {
   const parsed = parseCart(raw).slice(0, MAX_CHECKOUT_LINES);
   const lines: QuoteLine[] = [];
   let missing = 0;
+  const products = await Promise.all(parsed.map((line) => catalog.getProduct(line.productId, ACTIVE_COUNTRY.code)));
 
-  for (const line of parsed) {
-    const product = getSampleProduct(line.productId);
+  for (const [index, line] of parsed.entries()) {
+    const product = products[index];
     if (!product) {
       missing += 1;
       continue;
@@ -91,30 +100,31 @@ export function quoteCheckout(raw: unknown, deliveryMethod: DeliveryMethodId = "
       color: line.color,
       variant: line.variant,
       quantity: line.quantity,
-      unitPrice: product.price,
-      wasPrice: product.wasPrice !== undefined && product.wasPrice > product.price ? product.wasPrice : null,
-      lineTotal: product.price * line.quantity,
+      unitPriceMinor: product.priceMinor,
+      wasPriceMinor:
+        product.wasPriceMinor !== undefined && product.wasPriceMinor > product.priceMinor ? product.wasPriceMinor : null,
+      lineTotalMinor: product.priceMinor * line.quantity,
       issue,
     });
   }
 
   const buyable = lines.filter((line) => line.issue === null);
-  const subtotal = buyable.reduce((sum, line) => sum + line.lineTotal, 0);
-  const savings = buyable.reduce(
-    (sum, line) => sum + (line.wasPrice === null ? 0 : (line.wasPrice - line.unitPrice) * line.quantity),
+  const subtotalMinor = buyable.reduce((sum, line) => sum + line.lineTotalMinor, 0);
+  const savingsMinor = buyable.reduce(
+    (sum, line) => sum + (line.wasPriceMinor === null ? 0 : (line.wasPriceMinor - line.unitPriceMinor) * line.quantity),
     0,
   );
-  const deliveryFee = DELIVERY_METHODS.find((method) => method.id === deliveryMethod)?.feeMinor ?? null;
+  const deliveryFeeMinor = DELIVERY_METHODS.find((method) => method.id === deliveryMethod)?.feeMinor ?? null;
 
   return {
-    currency: "TZS",
+    currency: ACTIVE_COUNTRY.currency,
     lines,
     missing,
     itemCount: buyable.reduce((sum, line) => sum + line.quantity, 0),
-    subtotal,
-    savings,
-    deliveryFee,
-    total: subtotal + (deliveryFee ?? 0),
-    totalIsPartial: deliveryFee === null,
+    subtotalMinor,
+    savingsMinor,
+    deliveryFeeMinor,
+    totalMinor: subtotalMinor + (deliveryFeeMinor ?? 0),
+    totalIsPartial: deliveryFeeMinor === null,
   };
 }

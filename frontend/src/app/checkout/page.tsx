@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Container } from "@tronic/ui";
 import { CheckoutView } from "@/components/checkout/CheckoutView";
 import { parseBuyNowParams } from "@/features/checkout/links";
+import { ordersEnabled } from "@/features/data/source";
 
 export const metadata: Metadata = {
   title: "Checkout",
@@ -58,7 +59,7 @@ export default async function CheckoutPage({
           </p>
         </Container>
       </div>
-      <CheckoutView buyNowLine={buyNowLine} />
+      <CheckoutView buyNowLine={buyNowLine} ordersEnabled={ordersEnabled()} />
     </>
   );
 }

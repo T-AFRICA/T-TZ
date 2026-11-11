@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { passwordChecks, passwordStrength, validateForgot, validateLogin, validateRegister, validateReset } from "./rules";
-import { AUTH_CONNECTED, AUTH_NOT_CONNECTED_MESSAGE, authService } from "./service";
+import { AUTH_ERROR_TEXT, AUTH_NOT_CONNECTED_MESSAGE, authErrorFromSupabase } from "./service";
 
 const register = {
   fullName: "Amina Juma",
@@ -51,17 +51,15 @@ describe("account form rules", () => {
   });
 });
 
-describe("auth service (not connected)", () => {
-  it("never succeeds and never pretends to", async () => {
-    expect(AUTH_CONNECTED).toBe(false);
+describe("auth errors", () => {
+  it("maps Supabase Auth errors to customer text without provider details", () => {
     expect(AUTH_NOT_CONNECTED_MESSAGE).toBe("Authentication will be available when account services are connected.");
-    for (const result of await Promise.all([
-      authService.signIn({ email: "a@b.co", password: "x", remember: false }),
-      authService.signUp({ fullName: "A B", email: "a@b.co", phone: "0712345678", password: "abcdefg1" }),
-      authService.requestPasswordReset({ email: "a@b.co" }),
-      authService.updatePassword({ password: "abcdefg1" }),
-    ])) {
-      expect(result).toEqual({ ok: false, code: "not_connected" });
-    }
+    expect(authErrorFromSupabase("invalid_credentials")).toBe("invalid_credentials");
+    expect(authErrorFromSupabase("email_exists")).toBe("email_taken");
+    expect(authErrorFromSupabase("otp_expired")).toBe("link_expired");
+    expect(authErrorFromSupabase("over_request_rate_limit")).toBe("rate_limited");
+    expect(authErrorFromSupabase(undefined, 429)).toBe("rate_limited");
+    expect(authErrorFromSupabase("something_new", 500)).toBe("network");
+    for (const text of Object.values(AUTH_ERROR_TEXT)) expect(text).not.toMatch(/supabase|gotrue|jwt|token/i);
   });
 });

@@ -5,7 +5,8 @@ import { ACTIVE_COUNTRY, CATEGORY_SECTIONS } from "@tronic/country-config";
 import { PRODUCT_SEARCH_SORTS } from "@tronic/api-client";
 import { ProductCard } from "@/components/home/ProductCard";
 import { Pagination } from "@/components/catalog/Pagination";
-import { catalogClient, DEFAULT_LISTING_PAGE_SIZE, type SearchParams } from "@/features/catalog/catalog";
+import { DEFAULT_LISTING_PAGE_SIZE, type SearchParams } from "@/features/catalog/catalog";
+import { getCatalog } from "@/features/data/source";
 import { parseSearchPageParams, searchHref, SEARCH_SORT_LABELS } from "@/features/search/search";
 
 const MICRO = "text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]";
@@ -31,7 +32,7 @@ export default async function SearchPage({ searchParams }: { searchParams: Promi
   const params = parseSearchPageParams(await searchParams);
   const { q } = params;
   const result = q
-    ? await catalogClient.searchProducts({
+    ? await (await getCatalog()).searchProducts({
         country: ACTIVE_COUNTRY.code,
         text: q,
         sort: params.sort,

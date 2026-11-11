@@ -8,11 +8,15 @@
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "e2e": "node e2e/run.mjs"
   },
   "dependencies": {
+    "@supabase/ssr": "^0.12.7",
+    "@supabase/supabase-js": "^2.119.0",
     "@tronic/api-client": "workspace:*",
     "@tronic/country-config": "workspace:*",
+    "@tronic/database": "workspace:*",
     "@tronic/types": "workspace:*",
     "@tronic/ui": "workspace:*",
     "lucide-react": "^1.68.0",
@@ -22,7 +26,10 @@
     "react-dom": "^19.0.0"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.5.16",
+    "@electric-sql/pglite-socket": "^0.2.19",
     "@eslint/eslintrc": "^3.2.0",
+    "@playwright/test": "^1.65.0",
     "@tailwindcss/postcss": "^4.3.4",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.2.0",

@@ -1,70 +1,86 @@
 "use client";
 
 import { useCallback, useRef, useState, type FormEvent } from "react";
-import { AUTH_ERROR_TEXT, type AuthResult } from "./service";
+import { AUTH_ERROR_TEXT, AUTH_NOT_CONNECTED_MESSAGE } from "./service";
 import type { Errors } from "./rules";
+import type { AuthFormState } from "./state";
 
 /**
- * Shared form state for the four account screens: values, per-field
- * errors shown after a field is left or the form is submitted, one
- * submission at a time, focus on the first invalid field, and the result
- * message from the auth service. Values live only in React state; they
- * are never written to storage or logged.
+ * Shared state for the four account forms. The form itself posts to a
+ * server action (method POST, never a URL query): with JavaScript this hook
+ * validates first and lets the post go only when the input is valid; without
+ * JavaScript the browser posts directly and the server action validates.
+ *
+ * - Errors show after a field is left or a submit was attempted; errors
+ *   from the server (a post without JavaScript) show until the field is
+ *   edited.
+ * - `enabled` is false while auth is not configured: submission is blocked
+ *   and the form says so.
+ * - Values live only in React state; they are never written to storage,
+ *   a URL or a log.
  */
 export function useAuthForm<T extends object>({
   initial,
   validate,
-  submit,
+  state,
+  enabled,
 }: {
   initial: T;
   validate: (values: T) => Errors<T>;
-  submit: (values: T) => Promise<AuthResult>;
+  /** The latest server-action result (useActionState). */
+  state: AuthFormState;
+  enabled: boolean;
 }) {
   const [values, setValues] = useState<T>(initial);
   const [touched, setTouched] = useState<Partial<Record<keyof T, boolean>>>({});
-  const [pending, setPending] = useState(false);
-  const [message, setMessage] = useState<{ tone: "info" | "error"; text: string } | null>(null);
+  const [editedSince, setEditedSince] = useState<{ state: AuthFormState; keys: Set<keyof T> } | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
-  const allErrors = validate(values);
+
+  const clientErrors = validate(values);
+  const serverErrors = (state.status === "invalid" || state.status === "error" ? state.fieldErrors : undefined) ?? {};
+  const edited = editedSince?.state === state ? editedSince.keys : new Set<keyof T>();
   const errors: Errors<T> = {};
-  for (const key of Object.keys(allErrors) as (keyof T)[]) {
-    if (touched[key]) errors[key] = allErrors[key];
+  for (const key of Object.keys(values) as (keyof T)[]) {
+    if (touched[key] && clientErrors[key]) errors[key] = clientErrors[key];
+    else if (!edited.has(key) && serverErrors[key as string]) errors[key] = serverErrors[key as string];
   }
 
-  const setValue = useCallback(<K extends keyof T>(key: K, value: T[K]) => {
-    setValues((current) => ({ ...current, [key]: value }));
-    setMessage(null);
-  }, []);
+  const setValue = useCallback(
+    <K extends keyof T>(key: K, value: T[K]) => {
+      setValues((current) => ({ ...current, [key]: value }));
+      setEditedSince((current) => ({
+        state,
+        keys: new Set([...(current?.state === state ? current.keys : []), key]),
+      }));
+    },
+    [state],
+  );
 
   const touch = useCallback((key: keyof T) => {
     setTouched((current) => ({ ...current, [key]: true }));
   }, []);
 
-  async function onSubmit(event: FormEvent) {
-    event.preventDefault();
-    if (pending) return;
+  /** Lets the post go only when enabled and valid; otherwise shows why. */
+  function onSubmit(event: FormEvent<HTMLFormElement>) {
+    if (!enabled) {
+      event.preventDefault();
+      return;
+    }
     const found = validate(values);
     setTouched(Object.fromEntries(Object.keys(values).map((key) => [key, true])) as Partial<Record<keyof T, boolean>>);
     const first = (Object.keys(values) as (keyof T)[]).find((key) => found[key]);
     if (first) {
-      setMessage(null);
+      event.preventDefault();
       formRef.current?.querySelector<HTMLElement>(`[name="${String(first)}"]`)?.focus();
-      return;
-    }
-    setPending(true);
-    try {
-      const result = await submit(values);
-      // A successful result is handled by the caller when auth is connected
-      // (redirect, session); until then every result is a failure code.
-      if (!result.ok) {
-        setMessage({ tone: result.code === "not_connected" ? "info" : "error", text: AUTH_ERROR_TEXT[result.code] });
-      }
-    } catch {
-      setMessage({ tone: "error", text: AUTH_ERROR_TEXT.network });
-    } finally {
-      setPending(false);
     }
   }
 
-  return { values, errors, pending, message, formRef, setValue, touch, onSubmit };
+  const hideMessage = editedSince?.state === state;
+  let message: { tone: "info" | "error"; text: string } | null = null;
+  if (!enabled) message = { tone: "info", text: AUTH_NOT_CONNECTED_MESSAGE };
+  else if (!hideMessage && state.status === "error") {
+    message = { tone: state.code === "not_connected" ? "info" : "error", text: AUTH_ERROR_TEXT[state.code] };
+  } else if (!hideMessage && state.status === "sent") message = { tone: "info", text: state.text };
+
+  return { values, errors, message, formRef, setValue, touch, onSubmit };
 }

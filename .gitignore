@@ -1,6 +1,9 @@
 # Dependencies, caches, and build output
 node_modules/
 .next/
+.next-e2e/
+test-results/
+playwright-report/
 dist/
 build/
 coverage/

@@ -41,13 +41,19 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  // The browser tests build into their own folder so they never touch the
+  // .next folder of a running dev server.
+  distDir: process.env.NEXT_DIST_DIR || ".next",
   poweredByHeader: false,
   transpilePackages: [
     "@tronic/ui",
     "@tronic/types",
     "@tronic/api-client",
     "@tronic/country-config",
+    "@tronic/database",
   ],
+  // The Postgres driver stays a plain Node dependency of the server bundle.
+  serverExternalPackages: ["postgres"],
   images: {
     qualities: [75, 85, 90],
   },

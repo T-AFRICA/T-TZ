@@ -13,8 +13,8 @@ export function formatHitPrice(amount: number, currency: string): string {
   return formatMoney(amount, ACTIVE_COUNTRY, currency);
 }
 
-export function isOnSale(hit: Pick<ProductSearchHit, "price" | "wasPrice">): hit is { price: number; wasPrice: number } {
-  return hit.wasPrice !== undefined && hit.wasPrice > hit.price;
+export function isOnSale(hit: Pick<ProductSearchHit, "priceMinor" | "wasPriceMinor">): hit is { priceMinor: number; wasPriceMinor: number } {
+  return hit.wasPriceMinor !== undefined && hit.wasPriceMinor > hit.priceMinor;
 }
 
 /** Wraps the parts of the name that match a query word in <mark>; plain text, never HTML. */
@@ -76,11 +76,11 @@ export function SearchResultItem({ hit, query }: { hit: ProductSearchHit; query:
         <span
           className={`text-[13px] font-bold ${onSale ? "text-[var(--color-action-red)]" : "text-[var(--color-premium-black)]"}`}
         >
-          {formatHitPrice(hit.price, hit.currency)}
+          {formatHitPrice(hit.priceMinor, hit.currency)}
         </span>
         {onSale ? (
           <span className="text-[11px] text-[var(--text-muted)] line-through">
-            {formatHitPrice(hit.wasPrice, hit.currency)}
+            {formatHitPrice(hit.wasPriceMinor, hit.currency)}
           </span>
         ) : null}
         <span

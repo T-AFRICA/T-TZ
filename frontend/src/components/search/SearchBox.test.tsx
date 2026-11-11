@@ -22,8 +22,8 @@ const panel: ProductSearchHit = {
   name: "24W LED Panel Light",
   categoryName: "Lighting",
   image: "/products/panel-light.png",
-  price: 28_000,
-  wasPrice: 35_000,
+  priceMinor: 2_800_000,
+  wasPriceMinor: 3_500_000,
   currency: "TZS",
   inStock: true,
 };
@@ -33,8 +33,8 @@ const bulb: ProductSearchHit = {
   slug: "sample-led-bulb",
   sku: "SAMPLE-LED-BULB",
   name: "9W LED Bulb",
-  wasPrice: undefined,
-  price: 4_500,
+  wasPriceMinor: undefined,
+  priceMinor: 450_000,
   inStock: false,
 };
 

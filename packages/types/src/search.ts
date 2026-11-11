@@ -22,9 +22,9 @@ export interface ProductSearchHit {
   name: string;
   categoryName: string;
   image: string;
-  /** Country price in the currency's minor units (see Product.price). */
-  price: number;
-  wasPrice?: number;
+  /** Country price in ISO 4217 minor units (see Product.priceMinor). */
+  priceMinor: number;
+  wasPriceMinor?: number;
   currency: string;
   inStock: boolean;
   /**

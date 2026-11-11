@@ -5,7 +5,7 @@ import { CartIcon } from "@tronic/ui";
 import { MAX_PURCHASE_QUANTITY as MAX_QUANTITY, selectionLabel, usePurchaseActions } from "@/features/cart/purchase";
 import {
   discountPercent,
-  formatSamplePrice,
+  formatPrice,
   type SampleProduct,
 } from "@/components/home/sampleProducts";
 
@@ -55,11 +55,11 @@ export function PurchasePanel({ product }: { product: SampleProduct }) {
       {/* Price block — directly under the title on phones */}
       <div className="mt-3 flex flex-wrap items-baseline gap-x-2.5 gap-y-1 md:mt-4">
         <span className="text-[1.75rem] font-bold leading-none tracking-[-0.01em] text-[var(--color-action-red)] md:text-3xl">
-          {formatSamplePrice(product.price)}
+          {formatPrice(product.priceMinor)}
         </span>
-        {product.wasPrice !== undefined ? (
+        {product.wasPriceMinor !== undefined ? (
           <span className="text-sm text-[var(--text-muted)] line-through decoration-[1.5px]">
-            {formatSamplePrice(product.wasPrice)}
+            {formatPrice(product.wasPriceMinor)}
           </span>
         ) : null}
         {saving !== null ? (
@@ -230,7 +230,7 @@ export function PurchasePanel({ product }: { product: SampleProduct }) {
               360px the two buttons need the whole width, so the price (shown just
               above in the panel) steps out. */}
           <p className="shrink-0 text-base font-bold leading-tight text-[var(--color-action-red)] max-[359px]:hidden">
-            {formatSamplePrice(product.price)}
+            {formatPrice(product.priceMinor)}
           </p>
           {/* Secondary outline beside the filled primary: 44px pills, 8px apart,
               comfortable to tap one-handed above the tab bar. */}

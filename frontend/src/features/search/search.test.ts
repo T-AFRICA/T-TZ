@@ -94,7 +94,7 @@ describe("catalogue search", () => {
 
   it("maps a product to the slim autocomplete hit", () => {
     expect(Object.keys(toSearchHit(base)).sort()).toEqual(
-      ["categoryName", "currency", "id", "image", "inStock", "name", "price", "sku", "slug", "wasPrice"].sort(),
+      ["categoryName", "currency", "id", "image", "inStock", "name", "priceMinor", "sku", "slug", "wasPriceMinor"].sort(),
     );
   });
 
