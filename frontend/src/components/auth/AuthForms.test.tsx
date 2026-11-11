@@ -5,6 +5,7 @@ import { ForgotPasswordForm, RegisterForm, ResetPasswordForm } from "./AuthForms
 import { LoginForm, LoginScreen } from "./LoginScreen";
 import RegisterPage from "@/app/(auth)/register/page";
 import ForgotPasswordPage from "@/app/(auth)/forgot-password/page";
+import AuthLayout from "@/app/(auth)/layout";
 
 const NOT_CONNECTED = "Authentication will be available when account services are connected.";
 const SUCCESS = /(login|sign[- ]?in|account created|password (updated|changed)|email (has been )?sent).*success|successful|welcome back,|check your (inbox|email)/i;
@@ -54,8 +55,13 @@ describe("login form", () => {
 
 describe("account screens share one design", () => {
   it("register and forgot password use the same showroom shell", () => {
-    const { container, unmount } = render(<RegisterPage />);
+    const { container, unmount } = render(
+      <AuthLayout>
+        <RegisterPage />
+      </AuthLayout>,
+    );
     expect(container.querySelector("[data-auth-screen]")).not.toBeNull();
+    expect(container.querySelector("[data-long]")).not.toBeNull();
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Create your Account");
     expect(screen.getByRole("link", { name: "Sign in" })).toHaveAttribute("href", "/login");
     expect(screen.getByRole("link", { name: "Back to shopping" })).toHaveAttribute("href", "/");
@@ -68,7 +74,11 @@ describe("account screens share one design", () => {
 
 describe("login screen", () => {
   it("stands alone with the brand, showcase, register link and a way back to the shop", () => {
-    const { container } = render(<LoginScreen />);
+    const { container } = render(
+      <AuthLayout>
+        <LoginScreen />
+      </AuthLayout>,
+    );
     expect(container.querySelector("[data-auth-screen]")).not.toBeNull();
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Welcome Back");
     expect(screen.getByRole("link", { name: "TRONIC home" })).toHaveAttribute("href", "/");

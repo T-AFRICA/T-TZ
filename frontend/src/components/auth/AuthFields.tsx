@@ -10,7 +10,7 @@ import { ArrowRight, Eye, EyeOff, LockKeyhole } from "lucide-react";
  * with aria-describedby, and the password toggle is a real button.
  */
 const FIELD_SHELL =
-  "group relative flex items-center rounded-xl border bg-white transition-[border-color,box-shadow] duration-200 focus-within:shadow-[0_0_0_4px_rgba(215,25,32,0.10)]";
+  "group relative flex items-center rounded-xl border bg-white transition-[border-color,box-shadow] duration-200 ease-out focus-within:shadow-[0_0_0_4px_rgba(215,25,32,0.10)]";
 
 export type IconFieldProps = {
   label: string;
@@ -50,7 +50,7 @@ export function IconField({ label, icon, error, trailing, describedBy, required 
           required={required}
           aria-invalid={error ? true : undefined}
           aria-describedby={described}
-          className="h-12 min-w-0 flex-1 rounded-xl bg-transparent px-3 text-[15px] text-[var(--color-premium-black)] outline-none placeholder:text-[var(--text-muted)]"
+          className="auth-input h-12 min-w-0 flex-1 rounded-xl bg-transparent px-3 text-[15px] text-[var(--color-premium-black)] outline-none placeholder:text-[var(--text-muted)]"
           {...input}
         />
         {trailing}
@@ -82,7 +82,9 @@ export function PasswordField(props: Omit<IconFieldProps, "icon" | "type" | "tra
           aria-label={visible ? "Hide password" : "Show password"}
           className="mr-1.5 grid h-10 w-10 place-items-center rounded-xl text-[var(--text-secondary)] transition-colors hover:bg-[#fff1f1] hover:text-[var(--color-action-red)]"
         >
-          {visible ? <EyeOff size={18} aria-hidden="true" /> : <Eye size={18} aria-hidden="true" />}
+          <span key={visible ? "hide" : "show"} className="auth-eye grid place-items-center">
+            {visible ? <EyeOff size={18} aria-hidden="true" /> : <Eye size={18} aria-hidden="true" />}
+          </span>
         </button>
       }
     />
@@ -96,7 +98,7 @@ export function SubmitButton({ pending, children }: { pending: boolean; children
       type="submit"
       disabled={pending}
       aria-busy={pending || undefined}
-      className="login-cta group inline-flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[linear-gradient(180deg,#e8232c_0%,#c4121b_100%)] text-base font-semibold text-white shadow-[0_14px_30px_-14px_rgba(215,25,32,0.85)] transition-[transform,box-shadow,filter] duration-200 hover:-translate-y-px hover:brightness-105 hover:shadow-[0_18px_34px_-14px_rgba(215,25,32,0.9)] active:translate-y-0 active:scale-[0.99] disabled:cursor-wait disabled:opacity-80 motion-reduce:transition-none motion-reduce:hover:translate-y-0"
+      className="login-cta group inline-flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[linear-gradient(180deg,#e8232c_0%,#c4121b_100%)] text-base font-semibold text-white shadow-[0_14px_30px_-14px_rgba(215,25,32,0.85)] transition-[transform,box-shadow,filter] duration-200 ease-out hover:-translate-y-px hover:brightness-105 hover:shadow-[0_18px_34px_-14px_rgba(215,25,32,0.9)] active:translate-y-0 active:scale-[0.99] disabled:cursor-wait disabled:opacity-80 motion-reduce:transition-none motion-reduce:hover:translate-y-0"
     >
       {pending ? (
         <>
@@ -106,7 +108,7 @@ export function SubmitButton({ pending, children }: { pending: boolean; children
       ) : (
         <>
           {children}
-          <ArrowRight size={18} aria-hidden="true" className="transition-transform duration-200 group-hover:translate-x-0.5 motion-reduce:transition-none" />
+          <ArrowRight size={18} aria-hidden="true" className="transition-transform duration-200 ease-out group-hover:translate-x-[3px] motion-reduce:transition-none" />
         </>
       )}
     </button>
