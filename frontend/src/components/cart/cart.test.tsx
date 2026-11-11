@@ -114,6 +114,11 @@ describe("cart page", () => {
     expect(summary).toHaveTextContent(subtotal(2));
     expect(screen.getByText("This product is no longer available.")).toBeInTheDocument();
     expect(within(summary).getByRole("link", { name: "Proceed to checkout" })).toHaveAttribute("href", "/checkout");
+    // Phones: the sticky bar repeats the same subtotal and checkout link.
+    const bar = document.querySelector<HTMLElement>("[data-sticky-purchase]")!;
+    expect(bar).toHaveTextContent(subtotal(2));
+    expect(bar).toHaveTextContent("3 items");
+    expect(within(bar).getByRole("link", { name: "Checkout" })).toHaveAttribute("href", "/checkout");
 
     const bulbQuantity = screen.getByRole("group", { name: `Quantity of ${bulb.name}` });
     await user.click(within(bulbQuantity).getByRole("button", { name: "Increase quantity" }));
