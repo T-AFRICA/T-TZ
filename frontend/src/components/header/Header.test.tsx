@@ -25,7 +25,7 @@ describe("Header", () => {
     const trackLinks = screen.getAllByRole("link", { name: /Track Order/ });
     expect(trackLinks[0]).toHaveAttribute("href", "/track-order");
     const loginLinks = screen.getAllByRole("link", { name: /Login/ });
-    expect(loginLinks[0]).toHaveAttribute("href", "/account");
+    expect(loginLinks[0]).toHaveAttribute("href", "/login");
     const wishlistLinks = screen.getAllByRole("link", { name: /Wishlist/ });
     expect(wishlistLinks[0]).toHaveAttribute("href", "/wishlist");
   });
