@@ -881,3 +881,224 @@ body:has(.search-sheet[open]) {
     animation: auth-enter 220ms ease-out both;
   }
 }
+
+/* Login screen (owner reference 2026-11-11). The page stands alone: the
+   site header, navbar, footer, tab bar and chat button are hidden while it
+   is mounted, and the tab-bar padding on <body> is released. */
+body:has([data-auth-screen]) [data-site-chrome] {
+  display: none;
+}
+
+body:has([data-auth-screen]) {
+  padding-bottom: 0;
+  background: #7d0910;
+}
+
+.login-stage {
+  background:
+    radial-gradient(120% 70% at 50% 0%, #e3262f 0%, transparent 60%),
+    linear-gradient(180deg, #c8121b 0%, #a40d15 48%, #7d0910 100%);
+}
+
+/* Entrance: logo, panel, showcase, icon, heading and form arrive in order on
+   the site's drawer curve; the glow breathes slowly. Transform and opacity
+   only; all of it is off under reduced motion. */
+@keyframes login-rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes login-panel {
+  from {
+    opacity: 0;
+    transform: translateY(28px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes login-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.85);
+  }
+  70% {
+    opacity: 1;
+    transform: scale(1.04);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes login-glow {
+  0%,
+  100% {
+    opacity: 0.75;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .login-in {
+    animation: login-rise 620ms var(--drawer-ease) both;
+  }
+  .login-in-1 { animation-delay: 40ms; }
+  .login-in-2 { animation-delay: 120ms; }
+  .login-in-3 { animation-delay: 300ms; }
+  .login-in-4 { animation: login-pop 560ms var(--drawer-ease) 420ms both; }
+  .login-in-5 { animation-delay: 480ms; }
+  .login-in-6 { animation-delay: 540ms; }
+  .login-in-7 { animation-delay: 600ms; }
+  .login-in-8 { animation-delay: 660ms; }
+
+  .login-panel {
+    animation: login-panel 760ms var(--drawer-ease) 180ms both;
+  }
+
+  .login-glow {
+    animation: login-glow 7s ease-in-out infinite;
+  }
+}
+
+/* Login fits one screen (owner request 2026-11-11: no scrolling). On
+   shorter phones the extras step aside in this order: the trust strip, then
+   the tagline and footer line with a smaller showcase, then the showcase.
+   On laptops the left column trims its description and trust strip first. */
+@media (max-width: 63.999rem) and (max-height: 900px) {
+  .login-trust-m,
+  .login-tz {
+    display: none;
+  }
+  .login-showcase-m {
+    height: 7rem;
+  }
+}
+
+@media (max-width: 63.999rem) and (max-height: 760px) {
+  .login-tagline,
+  .login-icon,
+  .login-sub {
+    display: none;
+  }
+  .login-showcase-m {
+    height: 6rem;
+  }
+  .login-panel-body {
+    padding-top: 1rem;
+  }
+}
+
+@media (max-width: 63.999rem) and (max-height: 700px) {
+  .login-showcase-m {
+    display: none;
+  }
+  .login-panel-body {
+    padding-top: 1.5rem;
+  }
+}
+
+@media (max-width: 63.999rem) and (max-height: 600px) {
+  .login-kicker {
+    display: none;
+  }
+  .login-panel-wrap {
+    margin-top: 0.75rem;
+  }
+  .login-panel-body {
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+  }
+  .login-title {
+    font-size: 1.6rem;
+  }
+  /* Tailwind 4 space-y sets margin-bottom on all but the last child. */
+  .login-form > :not(:last-child) {
+    margin-bottom: 0.625rem;
+  }
+  .login-register {
+    margin-top: 0.75rem;
+  }
+  .login-back {
+    margin-top: 0.25rem;
+    padding-top: 0.25rem;
+    padding-bottom: 0.25rem;
+  }
+}
+
+/* Laptops: the showroom height follows the viewport (ShowroomScene); as the
+   height shrinks the trust strip, the account icon and then the description
+   step aside. */
+
+@media (min-width: 64rem) and (max-height: 740px) {
+  .login-trust-d,
+  .login-icon {
+    display: none;
+  }
+}
+
+@media (min-width: 64rem) and (max-height: 640px) {
+  .login-desc {
+    display: none;
+  }
+}
+
+/* Showroom motion: products arrive one by one, the lamp breathes and the
+   platform LED glows. Opacity and transform only; off under reduced motion. */
+@keyframes login-prod-in {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes login-lamp {
+  0%,
+  100% {
+    opacity: 0.85;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .login-prod {
+    animation: login-prod-in 700ms var(--drawer-ease) both;
+  }
+  .login-prod-1 { animation-delay: 420ms; }
+  .login-prod-2 { animation-delay: 500ms; }
+  .login-prod-3 { animation-delay: 580ms; }
+  .login-prod-4 { animation-delay: 660ms; }
+  .login-lamp {
+    animation: login-lamp 5s ease-in-out infinite;
+  }
+  .login-led {
+    animation: login-glow 4s ease-in-out infinite;
+  }
+}
+
+/* Desktop stage: deeper burgundy with localized red light (owner reference). */
+@media (min-width: 64rem) {
+  .login-stage {
+    background:
+      radial-gradient(55% 65% at 30% 45%, rgba(215, 25, 32, 0.55), transparent 70%),
+      radial-gradient(45% 55% at 88% 18%, rgba(243, 19, 38, 0.35), transparent 70%),
+      linear-gradient(135deg, #98000b 0%, #7a0009 48%, #650006 100%);
+  }
+}

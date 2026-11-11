@@ -81,16 +81,22 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           Skip to main content
         </a>
         <ToastProvider>
-          <Header />
-          {/* Outside the sticky header on purpose: on desktop the category
-              navbar scrolls away with the page and is back at the top. */}
-          <Navbar />
+          {/* data-site-chrome wrappers are layout-neutral (display: contents);
+              the login screen hides them (globals.css, data-auth-screen). */}
+          <div data-site-chrome className="contents">
+            <Header />
+            {/* Outside the sticky header on purpose: on desktop the category
+                navbar scrolls away with the page and is back at the top. */}
+            <Navbar />
+          </div>
           <main id="main-content" className="flex-1">
             {children}
           </main>
-          <Footer />
-          <BottomNav />
-          <WhatsAppButton />
+          <div data-site-chrome className="contents">
+            <Footer />
+            <BottomNav />
+            <WhatsAppButton />
+          </div>
         </ToastProvider>
       </body>
     </html>
