@@ -3,6 +3,24 @@
 Meaningful implementation changes, newest first. Dates are work dates;
 nothing below is released.
 
+## 2026-11-11 — mobile cart fits the screen
+
+- Cause found on a 360px screen: the cart's outer grid had an auto column,
+  so a cart line's control row (quantity, line total, Remove) kept its
+  min-content width and pushed the page to 395px, clipping Remove and the
+  subtotal. All cart grids now use minmax(0, 1fr) columns; no
+  overflow-x: hidden was added.
+- Phones: each line is two rows (72px thumbnail with category, name in at
+  most two lines and the unit price; then quantity, line total and a fully
+  visible Remove). Tablets and desktops keep the right-hand controls column.
+- Order summary: Items, Delivery (calculated at checkout) and Subtotal never
+  clip; 48px full-width checkout button.
+- Phones get the site's sticky purchase bar on the cart (subtotal + Checkout
+  above the tab bar), so the end of the page is reserved and the WhatsApp
+  button does not cover prices or actions, as on the product page.
+- Checked at 320, 360, 375, 390, 393, 414, 430, 768, 1024, 1366 and 1440px:
+  no horizontal overflow. Same cart store and calculations.
+
 ## 2026-11-11 — production-readiness fixes: form privacy, catalogue security, money units, orders
 
 Not applied to Supabase and not deployed; verified on a disposable local
