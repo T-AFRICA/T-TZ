@@ -3,6 +3,27 @@
 Meaningful implementation changes, newest first. Dates are work dates;
 nothing below is released.
 
+## 2026-11-11 — account screens: cinematic entrance and smoother details
+
+- One timed entrance on the login, register and password pages (CSS,
+  transform and opacity only): background 0–400ms, logo 150–600ms,
+  showroom 350–1000ms with the LED bulb switching on (warm halo, light on
+  the globe, pool on the platform; the photo is not recoloured), card
+  500–1100ms, then the card contents in a short stagger. Fields can be used
+  at once; nothing waits for the animation.
+- Afterwards only the lights breathe slowly (8–10s, opacity). The
+  chandelier glow is a soft gradient instead of a blur filter.
+- New `(auth)` layout (`AuthStage`): the background, brand column and
+  showroom stay mounted, so moving between login, register and the
+  password pages only swaps the card (`AuthCardMotion`, 340ms) instead of
+  replaying the whole entrance.
+- Details: one red outline on focused fields (the site-wide focus outline
+  no longer draws a second box inside), the password eye fades in, the
+  Sign in arrow moves 3px on hover, the account icon gets a soft
+  light-pink highlight and scales in without bouncing.
+- Reduced motion: no entrance, no loops; the lit final state shows at once.
+- No new dependencies; the `motion` package is not used here.
+
 ## 2026-11-11 — create account, forgot and reset password in the login design
 
 - `/register`, `/forgot-password` and `/reset-password` now use the same

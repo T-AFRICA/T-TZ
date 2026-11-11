@@ -900,75 +900,216 @@ body:has([data-auth-screen]) {
     linear-gradient(180deg, #c8121b 0%, #a40d15 48%, #7d0910 100%);
 }
 
-/* Entrance: logo, panel, showcase, icon, heading and form arrive in order on
-   the site's drawer curve; the glow breathes slowly. Transform and opacity
-   only; all of it is off under reduced motion. */
-@keyframes login-rise {
+/* Account screen motion (owner brief "cinematic premium login", 2026-11-11).
+   One timeline, transform and opacity only, on the site's drawer curve with
+   no overshoot:
+     0–400ms     backdrop (glow, rings, light curves) fades in over the red
+     150–600ms   logo, then TANZANIA / tagline
+     350–1000ms  showroom rises, products arrive, the LED bulb switches on
+                 (warm halo, light on the globe, pool on the platform) and
+                 the contact shadow settles
+     500–1100ms  white card fades up from 0.98
+     700–1450ms  card contents in a short stagger (--i), form rows included
+   Afterwards only the lights breathe, slowly (opacity, 8–10s). Nothing
+   blocks input: fields can be focused and used while the entrance runs.
+   After a client navigation between account pages the stage stays mounted
+   and the card plays a short swap instead ([data-swap], AuthCardMotion).
+   Under reduced motion all of this is off and the lit final state shows,
+   with only a short fade on the card. */
+@keyframes am-fade {
   from {
     opacity: 0;
-    transform: translateY(14px);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
   }
 }
 
-@keyframes login-panel {
+@keyframes am-rise {
   from {
     opacity: 0;
-    transform: translateY(28px) scale(0.985);
+    transform: translateY(10px);
   }
   to {
     opacity: 1;
-    transform: translateY(0) scale(1);
+    transform: none;
   }
 }
 
-@keyframes login-pop {
+@keyframes am-rise-sm {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes am-card {
+  from {
+    opacity: 0;
+    transform: translateY(18px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes am-swap {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes am-icon {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* The bulb warming up: a quick first glow that settles to full light. */
+@keyframes am-light {
   0% {
     opacity: 0;
-    transform: scale(0.85);
   }
-  70% {
-    opacity: 1;
-    transform: scale(1.04);
+  40% {
+    opacity: 0.7;
   }
   100% {
     opacity: 1;
-    transform: scale(1);
   }
 }
 
-@keyframes login-glow {
+@keyframes am-ambient {
   0%,
   100% {
-    opacity: 0.75;
+    opacity: 1;
   }
   50% {
-    opacity: 1;
+    opacity: 0.8;
   }
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .login-in {
-    animation: login-rise 620ms var(--drawer-ease) both;
+@keyframes am-eye {
+  from {
+    opacity: 0;
+    transform: scale(0.75);
   }
-  .login-in-1 { animation-delay: 40ms; }
-  .login-in-2 { animation-delay: 120ms; }
-  .login-in-3 { animation-delay: 300ms; }
-  .login-in-4 { animation: login-pop 560ms var(--drawer-ease) 420ms both; }
-  .login-in-5 { animation-delay: 480ms; }
-  .login-in-6 { animation-delay: 540ms; }
-  .login-in-7 { animation-delay: 600ms; }
-  .login-in-8 { animation-delay: 660ms; }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Card stagger positions of the form rows (the heading block is 1–3). */
+.login-form > :nth-child(1) { --i: 4; }
+.login-form > :nth-child(2) { --i: 5; }
+.login-form > :nth-child(3) { --i: 6; }
+.login-form > :nth-child(4) { --i: 7; }
+.login-form > :nth-child(5) { --i: 8; }
+.login-form > :nth-child(6) { --i: 9; }
+.login-form > :nth-child(n + 7) { --i: 9; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .am-bg {
+    animation: am-fade 400ms ease-out both;
+  }
+  .am-logo {
+    animation: am-rise 450ms var(--drawer-ease) 150ms both;
+  }
+  .am-sub {
+    animation: am-rise 450ms var(--drawer-ease) 300ms both;
+  }
+  .am-head {
+    animation: am-rise 550ms var(--drawer-ease) 250ms both;
+  }
+  .am-desc {
+    animation: am-rise 550ms var(--drawer-ease) 330ms both;
+  }
+  .am-show {
+    animation: am-rise 650ms var(--drawer-ease) 350ms both;
+  }
+  .am-shadow {
+    animation: am-fade 600ms ease-out 450ms both;
+  }
+  .am-light {
+    animation:
+      am-light 700ms ease-out 700ms both,
+      am-ambient 9s ease-in-out 1.6s infinite;
+  }
+  .am-trust {
+    animation: am-rise 550ms var(--drawer-ease) 800ms both;
+  }
 
   .login-panel {
-    animation: login-panel 760ms var(--drawer-ease) 180ms both;
+    animation: am-card 600ms var(--drawer-ease) 500ms both;
+  }
+  .am-show-m {
+    animation: am-fade 500ms ease-out 650ms both;
+  }
+  .am-light-m {
+    animation:
+      am-light 700ms ease-out 900ms both,
+      am-ambient 9s ease-in-out 1.8s infinite;
+  }
+  .am-icon {
+    animation: am-icon 480ms var(--drawer-ease) 700ms both;
+  }
+  .am-c,
+  .login-form > * {
+    animation: am-rise-sm 320ms var(--drawer-ease) both;
+    animation-delay: calc(700ms + var(--i, 0) * 45ms);
   }
 
+  /* Client navigation between account pages: a short swap of the card. */
+  [data-swap] .login-panel {
+    animation: am-swap 340ms var(--drawer-ease) both;
+  }
+  [data-swap] .am-show-m {
+    animation-delay: 80ms;
+  }
+  [data-swap] .am-light-m {
+    animation-delay: 260ms, 1.2s;
+  }
+  [data-swap] .am-icon {
+    animation-delay: 60ms;
+  }
+  [data-swap] .am-c,
+  [data-swap] .login-form > * {
+    animation-duration: 260ms;
+    animation-delay: calc(60ms + var(--i, 0) * 22ms);
+  }
+
+  .auth-eye {
+    animation: am-eye 180ms ease-out both;
+  }
   .login-glow {
-    animation: login-glow 7s ease-in-out infinite;
+    animation: am-ambient 10s ease-in-out infinite;
+  }
+  .login-lamp {
+    animation: am-ambient 8s ease-in-out infinite;
+  }
+  .login-led {
+    animation: am-ambient 8s ease-in-out 1s infinite;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .login-panel {
+    animation: am-fade 200ms ease-out both;
   }
 }
 
@@ -1054,8 +1195,8 @@ body:has([data-auth-screen]) {
   }
 }
 
-/* Showroom motion: products arrive one by one, the lamp breathes and the
-   platform LED glows. Opacity and transform only; off under reduced motion. */
+/* Showroom products arrive one by one (part of the account screen motion
+   above); off under reduced motion. */
 @keyframes login-prod-in {
   from {
     opacity: 0;
@@ -1067,30 +1208,14 @@ body:has([data-auth-screen]) {
   }
 }
 
-@keyframes login-lamp {
-  0%,
-  100% {
-    opacity: 0.85;
-  }
-  50% {
-    opacity: 1;
-  }
-}
-
 @media (prefers-reduced-motion: no-preference) {
   .login-prod {
-    animation: login-prod-in 700ms var(--drawer-ease) both;
+    animation: login-prod-in 600ms var(--drawer-ease) both;
   }
-  .login-prod-1 { animation-delay: 420ms; }
-  .login-prod-2 { animation-delay: 500ms; }
-  .login-prod-3 { animation-delay: 580ms; }
-  .login-prod-4 { animation-delay: 660ms; }
-  .login-lamp {
-    animation: login-lamp 5s ease-in-out infinite;
-  }
-  .login-led {
-    animation: login-glow 4s ease-in-out infinite;
-  }
+  .login-prod-1 { animation-delay: 380ms; }
+  .login-prod-2 { animation-delay: 430ms; }
+  .login-prod-3 { animation-delay: 490ms; }
+  .login-prod-4 { animation-delay: 550ms; }
 }
 
 /* Desktop stage: deeper burgundy with localized red light (owner reference). */
@@ -1103,37 +1228,44 @@ body:has([data-auth-screen]) {
   }
 }
 
+/* Account-screen inputs: the field shell already shows focus (red border
+   and soft ring via focus-within), so the input's own focus outline would
+   draw a second box inside it. */
+.auth-input:focus-visible {
+  outline: none;
+}
+
 /* Long account forms (register, reset; AuthScreen long): a compact card so
    they fit one screen as well. No account icon (AuthScreen), shorter
    inputs and tighter gaps; on phones the tagline, subtitle and footer line
    step aside. */
-[data-long] .login-form > :not(:last-child) {
+.login-stage:has([data-long]) .login-form > :not(:last-child) {
   margin-bottom: 0.625rem;
 }
 
-[data-long] .login-form label {
+.login-stage:has([data-long]) .login-form label {
   margin-bottom: 0.25rem;
   font-size: 0.8125rem;
 }
 
-[data-long] .login-form input:not([type="checkbox"]) {
+.login-stage:has([data-long]) .login-form input:not([type="checkbox"]) {
   height: 2.75rem;
 }
 
-[data-long] .login-form .grid {
+.login-stage:has([data-long]) .login-form .grid {
   row-gap: 0.625rem;
 }
 
 @media (max-width: 63.999rem) {
-  [data-long] .login-tagline,
-  [data-long] .login-sub,
-  [data-long] .login-tz {
+  .login-stage:has([data-long]) .login-tagline,
+  .login-stage:has([data-long]) .login-sub,
+  .login-stage:has([data-long]) .login-tz {
     display: none;
   }
 }
 
 @media (max-width: 63.999rem) and (max-height: 860px) {
-  [data-long] .login-kicker {
+  .login-stage:has([data-long]) .login-kicker {
     display: none;
   }
 }
@@ -1141,19 +1273,19 @@ body:has([data-auth-screen]) {
 /* Long forms, laptops with short screens: the subtitle, then the kicker step
    aside and the card padding tightens. */
 @media (min-width: 64rem) and (max-height: 800px) {
-  [data-long] .login-sub {
+  .login-stage:has([data-long]) .login-sub {
     display: none;
   }
-  [data-long] .login-back {
+  .login-stage:has([data-long]) .login-back {
     margin-top: 0.5rem;
   }
 }
 
 @media (min-width: 64rem) and (max-height: 700px) {
-  [data-long] .login-kicker {
+  .login-stage:has([data-long]) .login-kicker {
     display: none;
   }
-  [data-long] .login-panel-body {
+  .login-stage:has([data-long]) .login-panel-body {
     padding-top: 1.25rem;
     padding-bottom: 1.5rem;
   }
@@ -1161,18 +1293,18 @@ body:has([data-auth-screen]) {
 
 /* Long forms on phones: smaller heading and tighter gaps. */
 @media (max-width: 63.999rem) {
-  [data-long] .login-title {
+  .login-stage:has([data-long]) .login-title {
     font-size: 1.6rem;
   }
-  [data-long] .login-back {
+  .login-stage:has([data-long]) .login-back {
     margin-top: 0.25rem;
     padding-top: 0.375rem;
     padding-bottom: 0.375rem;
   }
-  [data-long] .login-form > :not(:last-child) {
+  .login-stage:has([data-long]) .login-form > :not(:last-child) {
     margin-bottom: 0.5rem;
   }
-  [data-long] .login-form .grid {
+  .login-stage:has([data-long]) .login-form .grid {
     row-gap: 0.5rem;
   }
 }
@@ -1181,46 +1313,46 @@ body:has([data-auth-screen]) {
    bars take their share): every gap tightens a little more so the register
    form still fits. Inputs stay at least 40px tall for touch. */
 @media (max-width: 63.999rem) and (max-height: 740px) {
-  [data-long] .login-shell {
+  .login-stage:has([data-long]) .login-shell {
     padding-top: calc(0.5rem + env(safe-area-inset-top));
     padding-bottom: 0.5rem;
   }
-  [data-long] .login-shell img {
+  .login-stage:has([data-long]) .login-logo {
     width: 7.5rem;
   }
-  [data-long] .login-panel-wrap {
+  .login-stage:has([data-long]) .login-panel-wrap {
     margin-top: 0.5rem;
   }
-  [data-long] .login-panel-body {
+  .login-stage:has([data-long]) .login-panel-body {
     padding-top: 1rem;
     padding-bottom: 1rem;
   }
-  [data-long] .login-title {
+  .login-stage:has([data-long]) .login-title {
     font-size: 1.45rem;
   }
-  [data-long] .login-sub + div {
+  .login-stage:has([data-long]) .login-sub + div {
     margin-top: 0.75rem;
   }
-  [data-long] .login-form > :not(:last-child) {
+  .login-stage:has([data-long]) .login-form > :not(:last-child) {
     margin-bottom: 0.375rem;
   }
-  [data-long] .login-form .grid {
+  .login-stage:has([data-long]) .login-form .grid {
     row-gap: 0.375rem;
   }
-  [data-long] .login-form label {
+  .login-stage:has([data-long]) .login-form label {
     margin-bottom: 0.125rem;
   }
-  [data-long] .login-form input:not([type="checkbox"]),
-  [data-long] .login-cta {
+  .login-stage:has([data-long]) .login-form input:not([type="checkbox"]),
+  .login-stage:has([data-long]) .login-cta {
     height: 2.5rem;
   }
-  [data-long] .login-form label:has(input[type="checkbox"]) {
+  .login-stage:has([data-long]) .login-form label:has(input[type="checkbox"]) {
     font-size: 0.75rem;
   }
-  [data-long] .login-register {
+  .login-stage:has([data-long]) .login-register {
     margin-top: 0.5rem;
   }
-  [data-long] .login-back {
+  .login-stage:has([data-long]) .login-back {
     margin-top: 0;
     padding-top: 0.25rem;
     padding-bottom: 0.25rem;
