@@ -3,6 +3,25 @@
 Meaningful implementation changes, newest first. Dates are work dates;
 nothing below is released.
 
+## 2026-11-11 — create account, forgot and reset password in the login design
+
+- `/register`, `/forgot-password` and `/reset-password` now use the same
+  screen as `/login` (shared `AuthScreen` shell in `LoginScreen.tsx`): red
+  stage, showroom on laptops and desktops, white card, no site chrome.
+- Shared fields in `components/auth/AuthFields.tsx` (field with icon,
+  password with Show/Hide, red submit button, result message); the old
+  `AuthLayout` and `PasswordInput` are removed.
+- Register fits one screen without scrolling from 375×667 up to 1920×1080:
+  long forms get a compact card (`long` / `data-long`: no account icon,
+  shorter inputs, tighter gaps, extras step aside on short screens).
+  Email and mobile, password and confirm sit side by side from 640px.
+  Only very small phones (320×568) scroll.
+- Password checklist reads "8+ characters", "A letter", "A number" in one
+  row.
+- "Power Every Space." is all white; the cable image is cut out again with
+  a soft matte so no light shadow box shows around it.
+- Still frontend only: every form calls the not-connected auth service.
+
 ## 2026-11-11 — login page redesign: red showroom, one screen
 
 - `/login` follows the owner's references and stands alone: the site
