@@ -2,12 +2,12 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useId, useState, type InputHTMLAttributes, type ReactNode } from "react";
-import { ArrowRight, Eye, EyeOff, Headset, LockKeyhole, Mail, ShieldCheck, ShoppingBag, Truck, UserRound } from "lucide-react";
+import type { ReactNode } from "react";
+import { Headset, Mail, ShieldCheck, ShoppingBag, Truck, UserRound } from "lucide-react";
 import { PASSWORD_POLICY, validateLogin, type LoginValues } from "@/features/auth/rules";
 import { authService } from "@/features/auth/service";
 import { useAuthForm } from "@/features/auth/useAuthForm";
-import { AuthMessage } from "./AuthLayout";
+import { AuthMessage, IconField, PasswordField, SubmitButton } from "./AuthFields";
 
 const HEADING_FONT = { fontFamily: "var(--font-heading, var(--font-fallback-heading))" };
 
@@ -27,26 +27,45 @@ const PRODUCTS = {
 } as const;
 
 /**
- * The customer login page, art-directed after the owner's references
- * (2026-11-11) and sized to fit one screen without scrolling.
+ * Shared shell for the four account screens (login, register, forgot and
+ * reset password), art-directed after the owner's references (2026-11-11).
  *
  * - Phones and tablets: red stage, white logo, one rounded white panel with
  *   a compact product showcase and the form. On shorter screens the extras
  *   step aside first (see the login-* height rules in globals.css).
  * - Laptops and desktops (lg+): a cinematic showroom on the left (brand,
- *   pendant lamp, lit platform with TRONIC products, trust strip) and the
- *   white login card on the right.
+ *   chandelier, lit platform with TRONIC products, trust strip) and the
+ *   white card on the right.
  *
+ * Every screen fits without scrolling; `long` (register, reset) drops the
+ * phone showcase and the account icon and turns on the compact card rules
+ * ([data-long] in globals.css). Only very small phones (320×568) scroll.
  * The page carries data-auth-screen, which hides the site header, navbar,
  * footer, tab bar and chat button; "Back to shopping" returns to the store.
- * Frontend only: the form validates and then calls the not-connected auth
+ * Frontend only: forms validate and then call the not-connected auth
  * service (features/auth/service.ts). No login, session or success state.
  */
-export function LoginScreen() {
+export function AuthScreen({
+  icon,
+  title,
+  subtitle,
+  footer,
+  long = false,
+  children,
+}: {
+  /** The card icon, e.g. <UserRound size={28} strokeWidth={1.9} />. */
+  icon: ReactNode;
+  /** The heading; wrap the highlighted word in <Accent>. */
+  title: ReactNode;
+  subtitle: string;
+  footer: ReactNode;
+  long?: boolean;
+  children: ReactNode;
+}) {
   return (
-    <div data-auth-screen className="login-stage relative isolate min-h-[100dvh] overflow-hidden">
+    <div data-auth-screen data-long={long || undefined} className="login-stage relative isolate min-h-[100dvh] overflow-hidden">
       <StageBackdrop />
-      <div className="relative mx-auto flex min-h-[100dvh] w-full max-w-[30rem] flex-col items-center justify-center px-4 py-[calc(1rem+env(safe-area-inset-top))] lg:grid lg:max-w-[90rem] lg:grid-cols-[minmax(0,1.08fr)_minmax(0,1fr)] lg:items-center lg:gap-10 lg:px-12 lg:py-6 xl:gap-16 xl:px-20">
+      <div className="login-shell relative mx-auto flex min-h-[100dvh] w-full max-w-[30rem] flex-col items-center justify-center px-4 py-[calc(1rem+env(safe-area-inset-top))] lg:grid lg:max-w-[90rem] lg:grid-cols-[minmax(0,1.08fr)_minmax(0,1fr)] lg:items-center lg:gap-10 lg:px-12 lg:py-6 xl:gap-16 xl:px-20">
         {/* Brand column */}
         <div className="flex flex-col items-center text-white lg:items-start">
           <Link href="/" aria-label="TRONIC home" className="login-in login-in-1 flex items-center gap-5 rounded-md">
@@ -72,7 +91,7 @@ export function LoginScreen() {
               className="login-in login-in-2 relative z-10 mt-[clamp(1rem,3vh,2rem)] text-[clamp(2.4rem,3.6vw,3.6rem)] font-bold leading-[1.05] tracking-[-0.02em] [text-shadow:0_4px_24px_rgba(60,0,0,0.35)]"
               style={HEADING_FONT}
             >
-              Power Every <span className="text-[#ff2a36] [text-shadow:0_0_28px_rgba(255,42,54,0.45)]">Space.</span>
+              Power Every Space.
             </p>
             <p className="login-desc login-in login-in-3 relative z-10 mt-3 max-w-[28rem] text-[clamp(0.95rem,1.1vw,1.1rem)] leading-relaxed text-white/85">
               Electrical supplies, LED lighting and switchgear for homes, businesses and industry.
@@ -85,40 +104,37 @@ export function LoginScreen() {
         {/* Form column */}
         <div className="login-panel-wrap mt-4 flex w-full flex-col items-center sm:mt-6 lg:mt-0">
           <section
-            aria-labelledby="login-title"
+            aria-labelledby="auth-title"
             className="login-panel relative w-full overflow-hidden rounded-[28px] bg-white shadow-[0_32px_80px_-28px_rgba(40,0,0,0.6)] sm:rounded-[32px] lg:max-w-[33rem] lg:bg-[linear-gradient(180deg,#ffffff_0%,#fffafa_100%)] lg:shadow-[0_40px_100px_-30px_rgba(40,0,0,0.75),0_0_0_1px_rgba(255,255,255,0.6)]"
           >
-            <PhoneShowcase className="login-showcase-m h-[9rem] sm:h-[10.5rem] lg:hidden" />
-            <div className="login-panel-body relative px-5 pb-5 sm:px-8 sm:pb-7 lg:px-11 lg:pb-9 lg:pt-9">
-              <div className="login-icon login-in login-in-4 mx-auto -mt-7 grid h-14 w-14 place-items-center rounded-2xl bg-[#fdecec] text-[var(--color-action-red)] shadow-[0_10px_24px_-14px_rgba(215,25,32,0.7)] ring-4 ring-white lg:mt-0 lg:h-16 lg:w-16">
-                <UserRound size={28} strokeWidth={1.9} aria-hidden="true" />
+            {long ? null : <PhoneShowcase className="login-showcase-m h-[9rem] sm:h-[10.5rem] lg:hidden" />}
+            <div className={`login-panel-body relative px-5 pb-5 sm:px-8 sm:pb-7 lg:px-11 lg:pb-9 ${long ? "pt-5 lg:pt-7" : "lg:pt-9"}`}>
+              {long ? null : (
+              <div className={`login-icon login-in login-in-4 mx-auto -mt-7 grid h-14 w-14 place-items-center rounded-2xl bg-[#fdecec] text-[var(--color-action-red)] shadow-[0_10px_24px_-14px_rgba(215,25,32,0.7)] ring-4 ring-white lg:mt-0 lg:h-16 lg:w-16`}>
+                {icon}
               </div>
-              <p className="login-kicker login-in login-in-5 mt-3 text-center text-[11px] font-semibold uppercase tracking-[0.28em] text-[var(--color-action-red)] lg:text-xs">
+              )}
+              <p className={`login-kicker login-in login-in-5 text-center ${long ? "" : "mt-3"} text-[11px] font-semibold uppercase tracking-[0.28em] text-[var(--color-action-red)] lg:text-xs`}>
                 TRONIC account
               </p>
               <h1
-                id="login-title"
+                id="auth-title"
                 className="login-title login-in login-in-5 mt-1 text-center text-[1.85rem] font-bold leading-tight tracking-[-0.02em] text-[#141821] sm:text-[2.15rem] lg:text-[2.5rem]"
                 style={HEADING_FONT}
               >
-                Welcome <span className="text-[var(--color-action-red)]">Back</span>
+                {title}
               </h1>
               <p className="login-sub login-in login-in-6 mt-1 text-center text-[13px] text-[var(--text-secondary)] sm:text-sm lg:text-[15px]">
-                Sign in to your TRONIC account and continue shopping.
+                {subtitle}
               </p>
 
               <div className="login-in login-in-6 mt-5 lg:mt-6">
-                <LoginForm />
+                {children}
               </div>
 
               <div className="login-register login-in login-in-7 mt-4 flex items-center gap-3 text-sm text-[var(--text-secondary)] lg:mt-5">
                 <span aria-hidden="true" className="h-px flex-1 bg-[var(--color-light-grey)]" />
-                <span className="text-center">
-                  New to TRONIC?{" "}
-                  <Link href="/register" className="font-semibold text-[var(--color-action-red)] underline-offset-4 hover:underline">
-                    Create an account
-                  </Link>
-                </span>
+                <span className="text-center">{footer}</span>
                 <span aria-hidden="true" className="h-px flex-1 bg-[var(--color-light-grey)]" />
               </div>
 
@@ -143,6 +159,43 @@ export function LoginScreen() {
         </div>
       </div>
     </div>
+  );
+}
+
+
+/** The highlighted word in an account-screen heading ("Welcome <Accent>Back</Accent>"). */
+export function Accent({ children }: { children: ReactNode }) {
+  return <span className="text-[var(--color-action-red)]">{children}</span>;
+}
+
+/** Inline link used in the card footers. */
+export function AuthLink({ href, children }: { href: string; children: ReactNode }) {
+  return (
+    <Link href={href} className="font-semibold text-[var(--color-action-red)] underline-offset-4 hover:underline">
+      {children}
+    </Link>
+  );
+}
+
+/** /login — fits one screen without scrolling. */
+export function LoginScreen() {
+  return (
+    <AuthScreen
+      icon={<UserRound size={28} strokeWidth={1.9} aria-hidden="true" />}
+      title={
+        <>
+          Welcome <Accent>Back</Accent>
+        </>
+      }
+      subtitle="Sign in to your TRONIC account and continue shopping."
+      footer={
+        <>
+          New to TRONIC? <AuthLink href="/register">Create an account</AuthLink>
+        </>
+      }
+    >
+      <LoginForm />
+    </AuthScreen>
   );
 }
 
@@ -275,63 +328,8 @@ function TrustStrip({ tone, className }: { tone: "light" | "dark"; className: st
   );
 }
 
-const FIELD_SHELL =
-  "group relative flex items-center rounded-xl border bg-white transition-[border-color,box-shadow] duration-200 focus-within:shadow-[0_0_0_4px_rgba(215,25,32,0.10)]";
-
-function IconField({
-  label,
-  icon,
-  error,
-  trailing,
-  ...input
-}: {
-  label: string;
-  icon: ReactNode;
-  error?: string;
-  trailing?: ReactNode;
-} & InputHTMLAttributes<HTMLInputElement> & { name: string }) {
-  const id = useId();
-  const errorId = `${id}-error`;
-  return (
-    <div>
-      <label htmlFor={id} className="mb-1.5 block text-sm font-semibold text-[var(--color-premium-black)]">
-        {label}
-        <span aria-hidden="true" className="ml-0.5 text-[var(--color-action-red)]">
-          *
-        </span>
-      </label>
-      <div
-        className={`${FIELD_SHELL} ${
-          error
-            ? "border-[var(--color-action-red)]"
-            : "border-[#f0d9d9] hover:border-[#e6bfbf] focus-within:border-[var(--color-action-red)]"
-        }`}
-      >
-        <span aria-hidden="true" className="pointer-events-none pl-4 text-[var(--text-muted)] transition-colors group-focus-within:text-[var(--color-action-red)]">
-          {icon}
-        </span>
-        <input
-          id={id}
-          required
-          aria-invalid={error ? true : undefined}
-          aria-describedby={error ? errorId : undefined}
-          className="h-12 min-w-0 flex-1 rounded-xl bg-transparent px-3 text-[15px] text-[var(--color-premium-black)] outline-none placeholder:text-[var(--text-muted)]"
-          {...input}
-        />
-        {trailing}
-      </div>
-      {error ? (
-        <p id={errorId} className="auth-message mt-1.5 text-xs font-medium text-[var(--color-action-red)]">
-          {error}
-        </p>
-      ) : null}
-    </div>
-  );
-}
-
 /** Login form: shared rules and the not-connected auth service. */
 export function LoginForm() {
-  const [showPassword, setShowPassword] = useState(false);
   const form = useAuthForm<LoginValues & { remember: boolean }>({
     initial: { email: "", password: "", remember: false },
     validate: validateLogin,
@@ -355,31 +353,16 @@ export function LoginForm() {
         onChange={(event) => form.setValue("email", event.target.value)}
         onBlur={() => form.touch("email")}
       />
-      <IconField
+      <PasswordField
         label="Password"
         name="password"
-        type={showPassword ? "text" : "password"}
         autoComplete="current-password"
-        autoCapitalize="none"
-        spellCheck={false}
         placeholder="Enter your password"
         maxLength={PASSWORD_POLICY.maxLength}
-        icon={<LockKeyhole size={18} strokeWidth={1.8} />}
         value={values.password}
         error={errors.password}
         onChange={(event) => form.setValue("password", event.target.value)}
         onBlur={() => form.touch("password")}
-        trailing={
-          <button
-            type="button"
-            onClick={() => setShowPassword((shown) => !shown)}
-            aria-pressed={showPassword}
-            aria-label={showPassword ? "Hide password" : "Show password"}
-            className="mr-1.5 grid h-10 w-10 place-items-center rounded-xl border-l border-transparent text-[var(--text-secondary)] transition-colors hover:bg-[#fff1f1] hover:text-[var(--color-action-red)]"
-          >
-            {showPassword ? <EyeOff size={18} aria-hidden="true" /> : <Eye size={18} aria-hidden="true" />}
-          </button>
-        }
       />
       <div className="flex items-center justify-between gap-3 text-sm">
         <label className="flex cursor-pointer items-center gap-2 text-[var(--text-secondary)]">
@@ -392,28 +375,9 @@ export function LoginForm() {
           />
           Remember me
         </label>
-        <Link href="/forgot-password" className="font-semibold text-[var(--color-action-red)] underline-offset-4 hover:underline">
-          Forgot password?
-        </Link>
+        <AuthLink href="/forgot-password">Forgot password?</AuthLink>
       </div>
-      <button
-        type="submit"
-        disabled={form.pending}
-        aria-busy={form.pending || undefined}
-        className="login-cta group inline-flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[linear-gradient(180deg,#e8232c_0%,#c4121b_100%)] text-base font-semibold text-white shadow-[0_14px_30px_-14px_rgba(215,25,32,0.85)] transition-[transform,box-shadow,filter] duration-200 hover:-translate-y-px hover:brightness-105 hover:shadow-[0_18px_34px_-14px_rgba(215,25,32,0.9)] active:translate-y-0 active:scale-[0.99] disabled:cursor-wait disabled:opacity-80 motion-reduce:transition-none motion-reduce:hover:translate-y-0"
-      >
-        {form.pending ? (
-          <>
-            <span aria-hidden="true" className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white motion-reduce:animate-none" />
-            Please wait…
-          </>
-        ) : (
-          <>
-            Sign in
-            <ArrowRight size={18} aria-hidden="true" className="transition-transform duration-200 group-hover:translate-x-0.5 motion-reduce:transition-none" />
-          </>
-        )}
-      </button>
+      <SubmitButton pending={form.pending}>Sign in</SubmitButton>
       <AuthMessage message={form.message} />
     </form>
   );

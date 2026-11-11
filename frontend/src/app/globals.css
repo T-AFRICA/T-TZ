@@ -1102,3 +1102,127 @@ body:has([data-auth-screen]) {
       linear-gradient(135deg, #98000b 0%, #7a0009 48%, #650006 100%);
   }
 }
+
+/* Long account forms (register, reset; AuthScreen long): a compact card so
+   they fit one screen as well. No account icon (AuthScreen), shorter
+   inputs and tighter gaps; on phones the tagline, subtitle and footer line
+   step aside. */
+[data-long] .login-form > :not(:last-child) {
+  margin-bottom: 0.625rem;
+}
+
+[data-long] .login-form label {
+  margin-bottom: 0.25rem;
+  font-size: 0.8125rem;
+}
+
+[data-long] .login-form input:not([type="checkbox"]) {
+  height: 2.75rem;
+}
+
+[data-long] .login-form .grid {
+  row-gap: 0.625rem;
+}
+
+@media (max-width: 63.999rem) {
+  [data-long] .login-tagline,
+  [data-long] .login-sub,
+  [data-long] .login-tz {
+    display: none;
+  }
+}
+
+@media (max-width: 63.999rem) and (max-height: 860px) {
+  [data-long] .login-kicker {
+    display: none;
+  }
+}
+
+/* Long forms, laptops with short screens: the subtitle, then the kicker step
+   aside and the card padding tightens. */
+@media (min-width: 64rem) and (max-height: 800px) {
+  [data-long] .login-sub {
+    display: none;
+  }
+  [data-long] .login-back {
+    margin-top: 0.5rem;
+  }
+}
+
+@media (min-width: 64rem) and (max-height: 700px) {
+  [data-long] .login-kicker {
+    display: none;
+  }
+  [data-long] .login-panel-body {
+    padding-top: 1.25rem;
+    padding-bottom: 1.5rem;
+  }
+}
+
+/* Long forms on phones: smaller heading and tighter gaps. */
+@media (max-width: 63.999rem) {
+  [data-long] .login-title {
+    font-size: 1.6rem;
+  }
+  [data-long] .login-back {
+    margin-top: 0.25rem;
+    padding-top: 0.375rem;
+    padding-bottom: 0.375rem;
+  }
+  [data-long] .login-form > :not(:last-child) {
+    margin-bottom: 0.5rem;
+  }
+  [data-long] .login-form .grid {
+    row-gap: 0.5rem;
+  }
+}
+
+/* Long forms on short phones (iPhone SE, and most phones once the browser
+   bars take their share): every gap tightens a little more so the register
+   form still fits. Inputs stay at least 40px tall for touch. */
+@media (max-width: 63.999rem) and (max-height: 740px) {
+  [data-long] .login-shell {
+    padding-top: calc(0.5rem + env(safe-area-inset-top));
+    padding-bottom: 0.5rem;
+  }
+  [data-long] .login-shell img {
+    width: 7.5rem;
+  }
+  [data-long] .login-panel-wrap {
+    margin-top: 0.5rem;
+  }
+  [data-long] .login-panel-body {
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+  }
+  [data-long] .login-title {
+    font-size: 1.45rem;
+  }
+  [data-long] .login-sub + div {
+    margin-top: 0.75rem;
+  }
+  [data-long] .login-form > :not(:last-child) {
+    margin-bottom: 0.375rem;
+  }
+  [data-long] .login-form .grid {
+    row-gap: 0.375rem;
+  }
+  [data-long] .login-form label {
+    margin-bottom: 0.125rem;
+  }
+  [data-long] .login-form input:not([type="checkbox"]),
+  [data-long] .login-cta {
+    height: 2.5rem;
+  }
+  [data-long] .login-form label:has(input[type="checkbox"]) {
+    font-size: 0.75rem;
+  }
+  [data-long] .login-register {
+    margin-top: 0.5rem;
+  }
+  [data-long] .login-back {
+    margin-top: 0;
+    padding-top: 0.25rem;
+    padding-bottom: 0.25rem;
+  }
+}

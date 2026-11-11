@@ -1,7 +1,6 @@
 "use client";
 
-import Link from "next/link";
-import { Input } from "@tronic/ui";
+import { Mail, Phone, UserRound } from "lucide-react";
 import {
   NAME_MAX,
   PASSWORD_POLICY,
@@ -14,20 +13,20 @@ import {
 } from "@/features/auth/rules";
 import { authService } from "@/features/auth/service";
 import { useAuthForm } from "@/features/auth/useAuthForm";
-import { AuthMessage, AuthSubmit } from "./AuthLayout";
-import { PasswordInput } from "./PasswordInput";
+import { AuthMessage, IconField, PasswordField, SubmitButton } from "./AuthFields";
+import { AuthLink } from "./LoginScreen";
 import { PasswordStrength } from "./PasswordStrength";
 
-const LINK = "font-semibold text-[var(--color-action-red)] underline-offset-4 hover:underline";
-
 /**
- * Registration and password-recovery forms (frontend only; the login form
- * lives in LoginScreen.tsx).
- * Each validates in the browser and then calls features/auth/service.ts,
- * which is not connected yet and answers "not_connected", so the form shows
- * "Authentication will be available when account services are connected."
- * No form redirects, claims success, stores credentials or logs values.
+ * Registration and password-recovery forms on the shared account-screen
+ * fields (the login form lives in LoginScreen.tsx). Each validates in the
+ * browser and then calls features/auth/service.ts, which is not connected
+ * yet and answers "not_connected", so the form shows "Authentication will be
+ * available when account services are connected." No form redirects, claims
+ * success, stores credentials or logs values.
  */
+
+const icon = (Icon: typeof Mail) => <Icon size={18} strokeWidth={1.8} />;
 
 export function RegisterForm() {
   const form = useAuthForm<RegisterValues>({
@@ -38,76 +37,75 @@ export function RegisterForm() {
   });
   const { values, errors } = form;
   return (
-    <form ref={form.formRef} noValidate onSubmit={form.onSubmit} className="space-y-4">
-      <Input
-        id="register-name"
-        name="fullName"
+    <form ref={form.formRef} noValidate onSubmit={form.onSubmit} className="login-form space-y-3.5">
+      <IconField
         label="Full name"
+        name="fullName"
         autoComplete="name"
-        required
+        placeholder="Enter your full name"
         maxLength={NAME_MAX}
+        icon={icon(UserRound)}
         value={values.fullName}
         error={errors.fullName}
         onChange={(event) => form.setValue("fullName", event.target.value)}
         onBlur={() => form.touch("fullName")}
       />
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Input
-          id="register-email"
-          name="email"
+      <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
+        <IconField
           label="Email address"
+          name="email"
           type="email"
           inputMode="email"
           autoComplete="email"
-          required
+          placeholder="name@example.com"
           maxLength={254}
+          icon={icon(Mail)}
           value={values.email}
           error={errors.email}
           onChange={(event) => form.setValue("email", event.target.value)}
           onBlur={() => form.touch("email")}
         />
-        <Input
-          id="register-phone"
-          name="phone"
+        <IconField
           label="Mobile number"
+          name="phone"
           type="tel"
           inputMode="tel"
           autoComplete="tel"
           placeholder="0712 345 678"
-          required
           maxLength={20}
+          icon={icon(Phone)}
           value={values.phone}
           error={errors.phone}
           onChange={(event) => form.setValue("phone", event.target.value)}
           onBlur={() => form.touch("phone")}
         />
       </div>
-      <PasswordInput
-        id="register-password"
-        name="password"
-        label="Password"
-        autoComplete="new-password"
-        required
-        maxLength={PASSWORD_POLICY.maxLength}
-        describedBy="register-password-rules"
-        value={values.password}
-        error={errors.password}
-        onChange={(event) => form.setValue("password", event.target.value)}
-        onBlur={() => form.touch("password")}
-      />
+      <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
+        <PasswordField
+          label="Password"
+          name="password"
+          autoComplete="new-password"
+          placeholder="Create a password"
+          maxLength={PASSWORD_POLICY.maxLength}
+          describedBy="register-password-rules"
+          value={values.password}
+          error={errors.password}
+          onChange={(event) => form.setValue("password", event.target.value)}
+          onBlur={() => form.touch("password")}
+        />
+        <PasswordField
+          label="Confirm password"
+          name="confirmPassword"
+          autoComplete="new-password"
+          placeholder="Enter the password again"
+          maxLength={PASSWORD_POLICY.maxLength}
+          value={values.confirmPassword}
+          error={errors.confirmPassword}
+          onChange={(event) => form.setValue("confirmPassword", event.target.value)}
+          onBlur={() => form.touch("confirmPassword")}
+        />
+      </div>
       <PasswordStrength id="register-password-rules" password={values.password} />
-      <PasswordInput
-        id="register-confirm"
-        name="confirmPassword"
-        label="Confirm password"
-        autoComplete="new-password"
-        required
-        maxLength={PASSWORD_POLICY.maxLength}
-        value={values.confirmPassword}
-        error={errors.confirmPassword}
-        onChange={(event) => form.setValue("confirmPassword", event.target.value)}
-        onBlur={() => form.touch("confirmPassword")}
-      />
       <div>
         <label className="flex cursor-pointer items-start gap-2.5 text-sm text-[var(--text-secondary)]">
           <input
@@ -120,27 +118,20 @@ export function RegisterForm() {
               form.setValue("acceptTerms", event.target.checked);
               form.touch("acceptTerms");
             }}
-            className="mt-0.5 h-4 w-4 shrink-0 accent-[var(--color-action-red)]"
+            className="mt-0.5 h-[1.1rem] w-[1.1rem] shrink-0 rounded accent-[var(--color-action-red)]"
           />
           <span>
-            I agree to the{" "}
-            <Link href="/policies/terms" className={LINK}>
-              Terms of Service
-            </Link>{" "}
-            and{" "}
-            <Link href="/policies/privacy" className={LINK}>
-              Privacy Policy
-            </Link>
-            .
+            I agree to the <AuthLink href="/policies/terms">Terms of Service</AuthLink> and{" "}
+            <AuthLink href="/policies/privacy">Privacy Policy</AuthLink>.
           </span>
         </label>
         {errors.acceptTerms ? (
-          <p id="register-terms-error" className="mt-1.5 text-xs font-medium text-[var(--color-action-red)]">
+          <p id="register-terms-error" className="auth-message mt-1.5 text-xs font-medium text-[var(--color-action-red)]">
             {errors.acceptTerms}
           </p>
         ) : null}
       </div>
-      <AuthSubmit pending={form.pending}>Create account</AuthSubmit>
+      <SubmitButton pending={form.pending}>Create account</SubmitButton>
       <AuthMessage message={form.message} />
     </form>
   );
@@ -153,23 +144,23 @@ export function ForgotPasswordForm() {
     submit: ({ email }) => authService.requestPasswordReset({ email: email.trim() }),
   });
   return (
-    <form ref={form.formRef} noValidate onSubmit={form.onSubmit} className="space-y-4">
-      <Input
-        id="forgot-email"
-        name="email"
+    <form ref={form.formRef} noValidate onSubmit={form.onSubmit} className="login-form space-y-3.5">
+      <IconField
         label="Email address"
+        name="email"
         type="email"
         inputMode="email"
         autoComplete="email"
-        required
+        placeholder="Enter your email address"
         maxLength={254}
-        hint="Use the email address of your TRONIC account."
+        icon={icon(Mail)}
         value={form.values.email}
         error={form.errors.email}
         onChange={(event) => form.setValue("email", event.target.value)}
         onBlur={() => form.touch("email")}
       />
-      <AuthSubmit pending={form.pending}>Reset password</AuthSubmit>
+      <p className="text-xs text-[var(--text-secondary)]">Use the email address of your TRONIC account.</p>
+      <SubmitButton pending={form.pending}>Reset password</SubmitButton>
       <AuthMessage message={form.message} />
     </form>
   );
@@ -183,13 +174,12 @@ export function ResetPasswordForm() {
   });
   const { values, errors } = form;
   return (
-    <form ref={form.formRef} noValidate onSubmit={form.onSubmit} className="space-y-4">
-      <PasswordInput
-        id="reset-password"
-        name="password"
+    <form ref={form.formRef} noValidate onSubmit={form.onSubmit} className="login-form space-y-3.5">
+      <PasswordField
         label="New password"
+        name="password"
         autoComplete="new-password"
-        required
+        placeholder="Create a new password"
         maxLength={PASSWORD_POLICY.maxLength}
         describedBy="reset-password-rules"
         value={values.password}
@@ -198,19 +188,18 @@ export function ResetPasswordForm() {
         onBlur={() => form.touch("password")}
       />
       <PasswordStrength id="reset-password-rules" password={values.password} />
-      <PasswordInput
-        id="reset-confirm"
-        name="confirmPassword"
+      <PasswordField
         label="Confirm new password"
+        name="confirmPassword"
         autoComplete="new-password"
-        required
+        placeholder="Enter the new password again"
         maxLength={PASSWORD_POLICY.maxLength}
         value={values.confirmPassword}
         error={errors.confirmPassword}
         onChange={(event) => form.setValue("confirmPassword", event.target.value)}
         onBlur={() => form.touch("confirmPassword")}
       />
-      <AuthSubmit pending={form.pending}>Update password</AuthSubmit>
+      <SubmitButton pending={form.pending}>Update password</SubmitButton>
       <AuthMessage message={form.message} />
     </form>
   );

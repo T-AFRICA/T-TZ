@@ -15,7 +15,7 @@ const LEVEL = {
 export function PasswordStrength({ id, password }: { id: string; password: string }) {
   const level = LEVEL[passwordStrength(password)];
   return (
-    <div id={id} className="-mt-1.5 rounded-lg bg-[var(--surface-card)] px-3 py-2.5">
+    <div id={id} className="-mt-1.5 rounded-lg bg-[var(--surface-card)] px-3 py-2">
       <div className="flex items-center gap-2">
         <div aria-hidden="true" className="flex flex-1 gap-1">
           {[1, 2, 3].map((bar) => (
@@ -29,7 +29,7 @@ export function PasswordStrength({ id, password }: { id: string; password: strin
           {level.label ? `Strength: ${level.label}` : ""}
         </span>
       </div>
-      <ul className="mt-2 grid gap-1 text-xs sm:grid-cols-3">
+      <ul className="mt-1.5 grid grid-cols-3 gap-1 text-[11px] sm:text-xs">
         {passwordChecks(password).map((check) => (
           <li key={check.id} className={`flex items-center gap-1.5 ${check.met ? "text-[var(--color-success)]" : "text-[var(--text-secondary)]"}`}>
             <span aria-hidden="true" className="inline-grid h-3.5 w-3.5 place-items-center rounded-full border border-current text-[9px] leading-none">

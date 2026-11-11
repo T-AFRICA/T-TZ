@@ -1,22 +1,28 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import { KeyRound } from "lucide-react";
 import { ForgotPasswordForm } from "@/components/auth/AuthForms";
-import { AuthLayout } from "@/components/auth/AuthLayout";
+import { Accent, AuthLink, AuthScreen } from "@/components/auth/LoginScreen";
 
 export const metadata: Metadata = { title: "Forgot your password?", robots: { index: false, follow: false } };
 
+/** /forgot-password — same showroom shell as /login. No reset email is sent yet. */
 export default function ForgotPasswordPage() {
   return (
-    <AuthLayout
-      title="Forgot your password?"
+    <AuthScreen
+      icon={<KeyRound size={28} strokeWidth={1.9} aria-hidden="true" />}
+      title={
+        <>
+          Forgot <Accent>Password?</Accent>
+        </>
+      }
       subtitle="Enter your email and we'll send you a link to choose a new one."
       footer={
-        <Link href="/login" className="font-semibold text-[var(--color-action-red)] underline-offset-4 hover:underline">
-          ← Back to sign in
-        </Link>
+        <>
+          Remembered it? <AuthLink href="/login">Back to sign in</AuthLink>
+        </>
       }
     >
       <ForgotPasswordForm />
-    </AuthLayout>
+    </AuthScreen>
   );
 }

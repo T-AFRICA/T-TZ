@@ -28,7 +28,7 @@ export function passwordChecks(password: string): PasswordCheck[] {
   const checks: PasswordCheck[] = [
     {
       id: "length",
-      label: `At least ${PASSWORD_POLICY.minLength} characters`,
+      label: `${PASSWORD_POLICY.minLength}+ characters`,
       met: password.length >= PASSWORD_POLICY.minLength && password.length <= PASSWORD_POLICY.maxLength,
     },
   ];

@@ -3,6 +3,8 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { ForgotPasswordForm, RegisterForm, ResetPasswordForm } from "./AuthForms";
 import { LoginForm, LoginScreen } from "./LoginScreen";
+import RegisterPage from "@/app/(auth)/register/page";
+import ForgotPasswordPage from "@/app/(auth)/forgot-password/page";
 
 const NOT_CONNECTED = "Authentication will be available when account services are connected.";
 const SUCCESS = /(login|sign[- ]?in|account created|password (updated|changed)|email (has been )?sent).*success|successful|welcome back,|check your (inbox|email)/i;
@@ -47,6 +49,20 @@ describe("login form", () => {
   it("links to forgot password", () => {
     render(<LoginForm />);
     expect(screen.getByRole("link", { name: "Forgot password?" })).toHaveAttribute("href", "/forgot-password");
+  });
+});
+
+describe("account screens share one design", () => {
+  it("register and forgot password use the same showroom shell", () => {
+    const { container, unmount } = render(<RegisterPage />);
+    expect(container.querySelector("[data-auth-screen]")).not.toBeNull();
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Create your Account");
+    expect(screen.getByRole("link", { name: "Sign in" })).toHaveAttribute("href", "/login");
+    expect(screen.getByRole("link", { name: "Back to shopping" })).toHaveAttribute("href", "/");
+    unmount();
+    render(<ForgotPasswordPage />);
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Forgot Password?");
+    expect(screen.getByRole("link", { name: "Back to sign in" })).toHaveAttribute("href", "/login");
   });
 });
 
