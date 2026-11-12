@@ -42,16 +42,25 @@
   --text-muted: var(--color-mid-grey);
   --text-on-dark: var(--color-white);
 
-  /* Typography — Outfit (one variable family for headings, body and UI;
-     owner decision 2026-11-07, replacing Montserrat + Poppins) is injected
-     by next/font/local as --font-body, and the storefront points
-     --font-heading at it (self-hosted WOFF2 in apps/storefront/src/fonts).
-     The fallback stacks below apply wherever the variables are not injected
-     (tests, isolated component rendering). */
-  --font-fallback-heading: "Outfit", "Segoe UI", Arial, sans-serif;
-  --font-fallback-body:
-    -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto,
-    "Helvetica Neue", Arial, sans-serif;
+  /* Typography (owner brief 2026-11-12, replacing Outfit):
+     - primary: Myriad Pro for all interface text, headings included;
+     - display: Arial Black, only for hero, campaign and brand headlines
+       (.font-display in the storefront's globals.css).
+     Myriad Pro comes from the owner's Adobe Fonts web project (family
+     "myriad-pro": Regular 400, Semibold 600, Bold 700, Black 900), loaded in
+     the storefront's layout.tsx; "Myriad Pro" also matches an installed
+     copy. Until the web font arrives, or if it is blocked, text shows in
+     Arial (Android: its sans-serif). Arial Black is a system font on
+     Windows and macOS and is never served; other devices fall back to the
+     heaviest Arial / sans-serif. */
+  --font-primary: "myriad-pro", "Myriad Pro", Arial, sans-serif;
+  --font-display: "Arial Black", "Arial Bold", Gadget, Arial, sans-serif;
+  --font-body: var(--font-primary);
+  --font-heading: var(--font-primary);
+  /* Kept so existing var(--font-heading, var(--font-fallback-heading))
+     references resolve the same family. */
+  --font-fallback-heading: var(--font-primary);
+  --font-fallback-body: var(--font-primary);
 
   /* Fluid type scale (master prompt §4.3): desktop ↔ mobile ranges.
      Display 56→32 (capped below the 68px ceiling after the visual review

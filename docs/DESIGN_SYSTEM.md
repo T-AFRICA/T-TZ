@@ -6,25 +6,34 @@ SRS v1.2 NFR-11, SSD §4, and the engineering master prompt §§3–7.
 
 ## Typography
 
-One family, self-hosted as a variable WOFF2 via `next/font/local` in
-`frontend/src/app/layout.tsx` (asset and SIL OFL license in
-`frontend/src/fonts/` — the `next/font/google` loader broke CI builds
-on Next 15.5.x, and self-hosting removes the build-time network dependency):
+Two families, set as font stacks in `packages/ui/src/tokens.css` (owner
+brief 2026-11-12). Myriad Pro is served by the owner's Adobe Fonts web
+project (kit loaded in `frontend/src/app/layout.tsx`); Arial Black is a
+system font. `frontend/src/fonts/README.md` covers the kit and why the
+desktop font files are not self-hosted.
 
-| Variable | Family | Weights loaded | Use |
+| Token | Stack | Weights | Use |
 | --- | --- | --- | --- |
-| `--font-heading` | Outfit (same file) | variable 100–900; 600/700 used | Hero, page and section headings, brand expression |
-| `--font-body` | Outfit | variable 100–900; 400/500/600 used | Body, navigation, buttons, prices, forms, tables |
+| `--font-primary` (also `--font-body`, `--font-heading`) | "myriad-pro", "Myriad Pro", Arial, sans-serif | 400 / 600 / 700 | Navigation, product names and descriptions, prices, stock, categories, search, buttons, filters, forms, cart, checkout, order tracking, footer, page and section headings |
+| `--font-display` (`.font-display`) | "Arial Black", "Arial Bold", Gadget, Arial, sans-serif | 900 | Only the homepage hero headline, the "Power Every Space." brand statement on the account screens, and the TRONIC Meter banner headings |
+
+What visitors see: Myriad Pro once the Adobe Fonts kit has loaded; Arial
+(Android: its default sans-serif) before that or if the kit is blocked.
+Arial Black is built
+into Windows and macOS; elsewhere the display stack falls back to the
+heaviest Arial or sans-serif. Keep Arial Black off product titles, section
+headings, forms and navigation, and avoid setting it in all caps.
 
 Family history: the master prompt §4 named Montserrat + Poppins; on
 2026-11-02 the owner asked for SF Pro, then (being Apple-proprietary)
 settled on the native system stack after an Inter interim. On 2026-11-04 the
 owner reinstated Poppins as the body family, self-hosted. On 2026-11-07,
 after reviewing tz.oraimo.com (which sets Outfit everywhere), the owner moved
-the whole storefront to Outfit; the system stack remains as the fallback
-chain.
+the whole storefront to Outfit. On 2026-11-12 the owner moved to Myriad Pro
+(interface) and Arial Black (display headlines).
 
-Fallback stacks live in `--font-fallback-heading` / `--font-fallback-body`.
+`--font-fallback-heading` / `--font-fallback-body` now alias
+`--font-primary` so existing references resolve the same family.
 
 ### Fluid scale (tokens)
 
@@ -35,7 +44,7 @@ Fallback stacks live in `--font-fallback-heading` / `--font-fallback-body`.
 | `--text-h2` | 24 → 38px | Section H2 |
 | `--text-h3` | 20 → 27px | Sub-sections, feature headings |
 
-Body text is 16px Outfit; labels/captions 12–14px. Line heights: display
+Body text is 16px Myriad Pro (Arial fallback); labels/captions 12–14px. Line heights: display
 1.05–1.15, headings 1.15–1.3 (`leading-tight`), body 1.5–1.65.
 
 ## Color

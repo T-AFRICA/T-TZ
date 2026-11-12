@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import localFont from "next/font/local";
 import { ToastProvider } from "@tronic/ui";
 import { ACTIVE_COUNTRY } from "@tronic/country-config";
 import { Header } from "@/components/header/Header";
@@ -9,28 +8,12 @@ import { BottomNav } from "@/components/nav/BottomNav";
 import { WhatsAppButton } from "@/components/whatsapp/WhatsAppButton";
 import "./globals.css";
 
-// Brand typography (owner decision 2026-11-07, supersedes Montserrat +
-// Poppins): Outfit, one variable file for headings, body and UI. It sets
-// --font-body; globals.css points --font-heading at the same family so the
-// components' heading/body variables keep working unchanged. Served as
-// self-hosted WOFF2 via next/font/local — the next/font/google loader fails
-// intermittently on CI (Next 15.5.x "Cannot read properties of null
-// (reading '1')") and self-hosting removes the build-time network
-// dependency. Asset + SIL OFL license live in src/fonts (see its README).
-const outfit = localFont({
-  src: [{ path: "../fonts/outfit-latin-variable.woff2", weight: "100 900", style: "normal" }],
-  variable: "--font-body",
-  display: "swap",
-  fallback: [
-    "-apple-system",
-    "BlinkMacSystemFont",
-    "Segoe UI",
-    "Roboto",
-    "Helvetica Neue",
-    "Arial",
-    "sans-serif",
-  ],
-});
+// Brand typography (owner brief 2026-11-12): Myriad Pro for the interface,
+// Arial Black for selected display headlines (stacks in @tronic/ui
+// tokens.css). Myriad Pro is served by the owner's Adobe Fonts web project
+// (family "myriad-pro"); it cannot be self-hosted (src/fonts/README.md).
+// The kit ID is public. Its hosts are allowed in next.config.ts's CSP.
+const ADOBE_FONTS_KIT_CSS = "https://use.typekit.net/ikx8ykc.css";
 
 export const metadata: Metadata = {
   title: {
@@ -69,10 +52,14 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang={ACTIVE_COUNTRY.locale}>
+      <head>
+        <link rel="preconnect" href="https://use.typekit.net" crossOrigin="anonymous" />
+        <link rel="stylesheet" href={ADOBE_FONTS_KIT_CSS} />
+      </head>
       {/* max-md bottom padding keeps content clear of the fixed mobile tab
           bar, including the device safe-area inset the bar itself absorbs */}
       <body
-        className={`${outfit.variable} flex min-h-screen flex-col max-md:pb-[calc(3.5rem+env(safe-area-inset-bottom))]`}
+        className={`flex min-h-screen flex-col max-md:pb-[calc(3.5rem+env(safe-area-inset-bottom))]`}
       >
         <a
           href="#main-content"

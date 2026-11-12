@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { HEADING_FONT, ShowroomScene, StageBackdrop, TrustStrip } from "./AuthShowroom";
+import { ShowroomScene, StageBackdrop, TrustStrip } from "./AuthShowroom";
 
 /**
  * The stage shared by the four account screens, rendered once by the (auth)
@@ -43,8 +43,7 @@ export function AuthStage({ children }: { children: ReactNode }) {
           </p>
           <div className="hidden w-full lg:block">
             <p
-              className="am-head relative z-10 mt-[clamp(1rem,3vh,2rem)] text-[clamp(2.4rem,3.6vw,3.6rem)] font-bold leading-[1.05] tracking-[-0.02em] [text-shadow:0_4px_24px_rgba(60,0,0,0.35)]"
-              style={HEADING_FONT}
+              className="font-display am-head relative z-10 mt-[clamp(1rem,3vh,2rem)] text-[clamp(2.4rem,3.6vw,3.6rem)] leading-[1.05] [text-shadow:0_4px_24px_rgba(60,0,0,0.35)]"
             >
               Power Every Space.
             </p>

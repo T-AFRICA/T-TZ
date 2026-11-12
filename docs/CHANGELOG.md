@@ -3,6 +3,24 @@
 Meaningful implementation changes, newest first. Dates are work dates;
 nothing below is released.
 
+## 2026-11-12 — typography: Myriad Pro and Arial Black
+
+- Interface font is now Myriad Pro (`--font-primary`: "myriad-pro",
+  "Myriad Pro", Arial, sans-serif) for navigation, products, prices, search, buttons, forms,
+  cart, checkout, order tracking, footer and headings.
+- Arial Black (`--font-display`, `.font-display`) only on the homepage hero
+  headline, the "Power Every Space." statement on the account screens and
+  the TRONIC Meter banner headings.
+- Myriad Pro is served by the owner's Adobe Fonts web project (kit
+  `ikx8ykc`: Regular, Semibold and Bold); the CSP now allows use.typekit.net (styles
+  and fonts) and p.typekit.net (Adobe's licence page-view stylesheet). Arial
+  is the fallback. The desktop Myriad Pro files are not licensed for web
+  hosting and stay out of the public repository. Outfit and its self-hosted
+  file were removed. Details in `frontend/src/fonts/README.md`.
+- Logo, colours, sizes, layouts and animations unchanged. Checked 11 pages
+  at 320, 375, 390, 430, 768, 1024, 1440 and 1920px: no horizontal
+  overflow; display headlines keep their line breaks.
+
 ## 2026-11-11 — mobile cart fits the screen
 
 - Cause found on a 360px screen: the cart's outer grid had an auto column,

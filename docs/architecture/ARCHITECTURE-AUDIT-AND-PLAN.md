@@ -32,7 +32,7 @@ T-TZ/                                   pnpm + Turborepo monorepo
 │       ├── public/                     banners, products, brand, og, robots/llms
 │       └── src/
 │           ├── app/
-│           │   ├── layout.tsx          fonts (Outfit, self-hosted), metadata
+│           │   ├── layout.tsx          metadata, Adobe Fonts kit (Myriad Pro)
 │           │   ├── page.tsx            homepage
 │           │   ├── products/[id]/      product page (static params from samples)
 │           │   ├── categories/[slug]/  category page
@@ -70,7 +70,7 @@ Not in the repository: `backend/api`, `admin`, `database/`, `prisma/`,
 | --- | --- | --- |
 | Runtime | Node >= 20, pnpm 10.34.9 (pinned), Turborepo 2.11 | CI uses `--frozen-lockfile` |
 | Framework | Next.js **16.4.5** (merged 2026-11-07 via Dependabot #24), React 19.3 | `eslint-config-next` still 15.x — align to 16 |
-| Styling | Tailwind CSS 4, `@tronic/ui` tokens | Outfit typeface, self-hosted |
+| Styling | Tailwind CSS 4, `@tronic/ui` tokens | Myriad Pro (interface, Adobe Fonts web project) and Arial Black (display, system font) |
 | Animation | `motion` 14.9 (ui accordion, product gallery) | |
 | Icons | `lucide-react` 1.68 | |
 | Tests | Vitest 4.1 + Testing Library + jsdom 26 | storefront only; packages have no test runner |

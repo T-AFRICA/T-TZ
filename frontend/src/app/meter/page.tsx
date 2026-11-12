@@ -44,7 +44,7 @@ export default function MeterPage() {
             <span aria-hidden="true" className="h-px w-8 bg-[var(--color-action-red)]" />
             Utility service
           </p>
-          <h1 className="mt-3 text-[length:var(--text-h1)] font-bold leading-tight tracking-[-0.01em]">
+          <h1 className="font-display mt-3 text-[length:var(--text-h1)] leading-tight">
             TRONIC <span className="text-[var(--color-brand-red)]">Meter</span>
           </h1>
           <p className="mt-3 max-w-xl text-sm leading-relaxed text-white/75 sm:text-base">
