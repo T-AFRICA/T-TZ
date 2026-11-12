@@ -3,6 +3,22 @@
 Meaningful implementation changes, newest first. Dates are work dates;
 nothing below is released.
 
+## 2026-11-12 — category icon rail back under the hero
+
+- The circular category rail (one icon per navbar category, news-ticker
+  motion right to left at about 35–45px per second) is back directly under
+  the hero, as it was from 2026-11-05 to 2026-11-07 (owner request). The
+  photographic category banners and the service strip stay off.
+- Hover, touch and keyboard focus pause it; reduced motion shows one still,
+  swipeable row. The loop copy is hidden from assistive tech and the tab
+  order.
+- Keyboard fix: a focused category is now scrolled fully into view, and on
+  wide screens the stopped row fits the frame, so the last category is no
+  longer cut off at the right edge (it was, at 1440px and up).
+- Checked at 320, 390, 768, 1024, 1440 and 1920px: no page overflow, the
+  rail moves, pauses on hover, stays still with reduced motion, and every
+  category is fully visible when tabbed to.
+
 ## 2026-11-12 — desktop category bar on one line
 
 - Cause: below 1280px the bar split every label onto two lines on purpose
