@@ -14,9 +14,13 @@ const contentSecurityPolicy = [
   // Dev only: Next.js hot reloading evaluates module code and uses eval
   // source maps. Production bundles never need it.
   `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""}`,
-  "style-src 'self' 'unsafe-inline'",
+  // Adobe Fonts web project (Myriad Pro, layout.tsx): the kit stylesheet
+  // comes from use.typekit.net and imports Adobe's licence page-view
+  // counter stylesheet from p.typekit.net; the font files come from
+  // use.typekit.net.
+  "style-src 'self' 'unsafe-inline' https://use.typekit.net https://p.typekit.net",
   "img-src 'self' data: blob:",
-  "font-src 'self'",
+  "font-src 'self' https://use.typekit.net",
   "connect-src 'self'",
   "frame-ancestors 'none'",
   "form-action 'self'",

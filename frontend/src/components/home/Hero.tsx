@@ -90,8 +90,7 @@ export function Hero() {
           {/* Phones show only the banner and CTA; the copy stays for screen
               readers and search engines. */}
           <h1
-            className="animate-[hero-copy-in_500ms_ease-out_both] text-[length:var(--text-display)] font-bold leading-[1.04] tracking-[-0.015em] max-md:sr-only"
-            style={{ fontFamily: "var(--font-heading, var(--font-fallback-heading))" }}
+            className="font-display animate-[hero-copy-in_500ms_ease-out_both] text-[length:var(--text-display)] leading-[1.04] max-md:sr-only"
           >
             Power Every
             <span className="block text-[var(--color-brand-red)]">Space.</span>

@@ -32,10 +32,7 @@ export default function HomePage() {
               <p className="text-xs font-semibold uppercase tracking-[0.25em] text-[#ff6b72]">
                 Utility service
               </p>
-              <h2
-                className="mt-2 text-[length:var(--text-h3)] font-bold leading-tight"
-                style={{ fontFamily: "var(--font-heading, var(--font-fallback-heading))" }}
-              >
+              <h2 className="font-display mt-2 text-[length:var(--text-h3)] leading-tight">
                 TRONIC <span className="text-[var(--color-brand-red)]">Meter</span>
               </h2>
               <p className="mt-2 text-sm leading-relaxed text-white/75">
