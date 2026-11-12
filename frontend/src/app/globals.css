@@ -570,6 +570,49 @@ details.drawer-acc[open] > ul > li {
    without animation-timeline play a one-shot fade on load. Explicitly
    disabled under reduced motion because scroll-driven progress is not
    covered by the duration-zeroing override below. */
+/* Homepage collections (2026-11-12): the brand banner's warm light breathes
+   and the Spotlights band's beams sway slowly. Opacity/transform only; still
+   under reduced motion. */
+@keyframes promo-glow {
+  0%,
+  100% {
+    opacity: 0.6;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+}
+
+.promo-glow {
+  animation: promo-glow 7s ease-in-out infinite;
+}
+
+@keyframes spot-beam {
+  0%,
+  100% {
+    opacity: 0.55;
+    transform: rotate(-5deg);
+  }
+  50% {
+    opacity: 1;
+    transform: rotate(5deg);
+  }
+}
+
+.spot-beam {
+  transform-origin: 50% 0;
+  animation: spot-beam 9s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .promo-glow,
+  .spot-beam {
+    animation: none;
+  }
+}
+
 @keyframes reveal-in {
   from {
     opacity: 0;

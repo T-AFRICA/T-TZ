@@ -3,6 +3,33 @@
 Meaningful implementation changes, newest first. Dates are work dates;
 nothing below is released.
 
+## 2026-11-12 — homepage brand banner and four product collections
+
+- Directly under the category rail (owner brief, sections 9–13; the brief's
+  sections 1–8 do not exist on this homepage, so the owner chose this
+  position): a full-width brand banner, then Switchgear & Protection,
+  Adapters & Extensions, Spotlights (New collection) and Garden Lights. The
+  existing product rails and the Meter callout follow unchanged.
+- Banner: the owner's TRONIC product cut-outs on a lit platform with a
+  slowly breathing warm light; Arial Black headline from the existing brand
+  line ("Your electrical partner."), Shop lighting / Shop by use. No offer,
+  price or claim (owner choice).
+- Collections read the catalogue by taxonomy scope through getCatalog()
+  (SAMPLE catalogue now, Postgres/Supabase in database mode) with
+  explicit empty and error states, the shared ProductCard (Add to Cart,
+  Buy Now, wishlist, product page link) and View all links into the
+  matching category pages. Spotlights and Garden Lights use the owner's
+  category photography; motion is opacity/transform only and off under
+  reduced motion.
+- Catalogue: 18 real TRONIC products added as SAMPLE records (name, SKU and
+  photo from tronic.co.ke, owner-approved download; photos re-encoded to
+  1080px, about 0.5MB in all). TZS prices are SAMPLE demo values (about the
+  Kenya list price × 20), no discounts, all in stock. Two track lights that
+  share one photo on the source store were left out.
+- Checked at 390, 768, 1024 and 1440px: section order, no page overflow, no
+  broken images, no console errors; all 28 links in the new sections open;
+  Add to Cart fills the cart and Buy Now opens checkout for that product.
+
 ## 2026-11-12 — category icon rail back under the hero
 
 - The circular category rail (one icon per navbar category, news-ticker
