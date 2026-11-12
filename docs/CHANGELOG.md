@@ -3,6 +3,21 @@
 Meaningful implementation changes, newest first. Dates are work dates;
 nothing below is released.
 
+## 2026-11-12 — desktop category bar on one line
+
+- Cause: below 1280px the bar split every label onto two lines on purpose
+  (2026-11-10 layout), which also caught laptops at 125% zoom
+  (1366px → 1093px). Not caused by the font change.
+- Every label is now on one line (Myriad Pro Semibold, 12px; 13px from
+  1360px; 44px bar). The bar measures the labels in the rendered font at the
+  current width and zoom and shows as many sections as fit; the rest move,
+  in order, into the "More" menu, where each opens its usual panel and
+  focus moves into it (Escape returns to More). From 1280px to 1679px the
+  same menu also holds the company links. Mobile navigation unchanged.
+- Checked at 1024, 1152, 1280, 1366, 1440, 1600 and 1920px and at 125% and
+  150% zoom: one-line labels, no clipping, overlap or page overflow, panels
+  and More menu inside the viewport, keyboard open/close works.
+
 ## 2026-11-12 — typography: Myriad Pro and Arial Black
 
 - Interface font is now Myriad Pro (`--font-primary`: "myriad-pro",
