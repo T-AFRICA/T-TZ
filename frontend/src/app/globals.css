@@ -233,6 +233,148 @@ details.drawer-acc[open] > ul > li {
   }
 }
 
+/* Category ticker: two identical groups slide left by exactly one group, so the
+   loop has no jump. The speed stays about 30 to 45px per second on every screen,
+   because a wider screen has a longer group and so gets a longer duration. */
+.category-rail-frame {
+  --rail-fade: var(--surface-page);
+  position: relative;
+  container-type: inline-size;
+  overflow: hidden;
+  overflow: clip;
+}
+
+@media (max-width: 47.9375rem) {
+  .category-rail-frame {
+    --rail-fade: var(--color-off-white);
+  }
+
+  /* The frame bleeds to the screen edge, so the row starts one gutter in: the
+     first category lines up with the content and sits clear of the edge fade.
+     The padding moves from the right to the left, so the seam gap is unchanged. */
+  .category-rail-group {
+    padding-left: var(--gutter);
+    padding-right: 0;
+  }
+}
+
+/* Soft edges painted in the page colour. A CSS mask would do the same, but it
+   makes the browser redraw the whole moving row through an extra surface on
+   every frame, which costs the most on the weakest phones. */
+.category-rail-frame::before,
+.category-rail-frame::after {
+  content: "";
+  position: absolute;
+  inset-block: 0;
+  z-index: 1;
+  width: 3%;
+  pointer-events: none;
+}
+
+.category-rail-frame::before {
+  left: 0;
+  background: linear-gradient(90deg, var(--rail-fade), transparent);
+}
+
+.category-rail-frame::after {
+  right: 0;
+  background: linear-gradient(270deg, var(--rail-fade), transparent);
+}
+
+/* Wider than the screen by one item, so a category is never visible twice. With
+   space-around, the end padding keeps the gap across the seam equal to the rest. */
+.category-rail-group {
+  display: flex;
+  flex-shrink: 0;
+  justify-content: space-around;
+  gap: 1rem;
+  min-width: calc(100cqw + 7rem);
+  padding-right: 1rem;
+}
+
+@keyframes category-rail-ticker {
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.category-rail {
+  animation: category-rail-ticker 20s linear infinite;
+  will-change: transform;
+}
+
+@media (min-width: 48rem) {
+  .category-rail {
+    animation-duration: 32s;
+  }
+
+  .category-rail-group {
+    gap: 2rem;
+    padding-right: 2rem;
+  }
+}
+
+@media (min-width: 80rem) {
+  .category-rail {
+    animation-duration: 45s;
+  }
+}
+
+.category-rail:hover,
+.category-rail:active,
+.category-rail:focus-within {
+  animation-play-state: paused;
+}
+
+/* A keyboard user may tab to a category that is off screen. The rail stops at its
+   start and the frame scrolls, so the browser can bring that link into view. */
+.category-rail-frame:has(a:focus-visible) {
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.category-rail-frame:has(a:focus-visible) .category-rail {
+  animation: none;
+}
+
+/* While stopped for the keyboard, the row is no wider than the frame where
+   all eight fit, so the last category is not left past the edge (wide
+   screens); where they do not fit, the frame scrolls as above. */
+.category-rail-frame:has(a:focus-visible) .category-rail-group {
+  min-width: 100cqw;
+}
+
+.category-rail-frame:has(a:focus-visible)::before,
+.category-rail-frame:has(a:focus-visible)::after {
+  display: none;
+}
+
+/* No motion: one still row, with the far categories reachable by swiping. */
+@media (prefers-reduced-motion: reduce) {
+  .category-rail-frame {
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .category-rail-frame::before,
+  .category-rail-frame::after {
+    display: none;
+  }
+
+  .category-rail {
+    animation: none;
+  }
+
+  .category-rail-copy {
+    display: none;
+  }
+
+  .category-rail-group {
+    min-width: 100cqw;
+    padding-inline: var(--gutter);
+  }
+}
+
 /* Announcement ticker: each message slides up into place like a news line. */
 @keyframes ticker-in {
   from {
@@ -428,6 +570,49 @@ details.drawer-acc[open] > ul > li {
    without animation-timeline play a one-shot fade on load. Explicitly
    disabled under reduced motion because scroll-driven progress is not
    covered by the duration-zeroing override below. */
+/* Homepage collections (2026-11-12): the brand banner's warm light breathes
+   and the Spotlights band's beams sway slowly. Opacity/transform only; still
+   under reduced motion. */
+@keyframes promo-glow {
+  0%,
+  100% {
+    opacity: 0.6;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+}
+
+.promo-glow {
+  animation: promo-glow 7s ease-in-out infinite;
+}
+
+@keyframes spot-beam {
+  0%,
+  100% {
+    opacity: 0.55;
+    transform: rotate(-5deg);
+  }
+  50% {
+    opacity: 1;
+    transform: rotate(5deg);
+  }
+}
+
+.spot-beam {
+  transform-origin: 50% 0;
+  animation: spot-beam 9s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .promo-glow,
+  .spot-beam {
+    animation: none;
+  }
+}
+
 @keyframes reveal-in {
   from {
     opacity: 0;

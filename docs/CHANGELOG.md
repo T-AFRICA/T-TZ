@@ -3,6 +3,64 @@
 Meaningful implementation changes, newest first. Dates are work dates;
 nothing below is released.
 
+## 2026-11-12 — homepage brand banner and four product collections
+
+- Directly under the category rail (owner brief, sections 9–13; the brief's
+  sections 1–8 do not exist on this homepage, so the owner chose this
+  position): a full-width brand banner, then Switchgear & Protection,
+  Adapters & Extensions, Spotlights (New collection) and Garden Lights. The
+  existing product rails and the Meter callout follow unchanged.
+- Banner: the owner's TRONIC product cut-outs on a lit platform with a
+  slowly breathing warm light; Arial Black headline from the existing brand
+  line ("Your electrical partner."), Shop lighting / Shop by use. No offer,
+  price or claim (owner choice).
+- Collections read the catalogue by taxonomy scope through getCatalog()
+  (SAMPLE catalogue now, Postgres/Supabase in database mode) with
+  explicit empty and error states, the shared ProductCard (Add to Cart,
+  Buy Now, wishlist, product page link) and View all links into the
+  matching category pages. Spotlights and Garden Lights use the owner's
+  category photography; motion is opacity/transform only and off under
+  reduced motion.
+- Catalogue: 18 real TRONIC products added as SAMPLE records (name, SKU and
+  photo from tronic.co.ke, owner-approved download; photos re-encoded to
+  1080px, about 0.5MB in all). TZS prices are SAMPLE demo values (about the
+  Kenya list price × 20), no discounts, all in stock. Two track lights that
+  share one photo on the source store were left out.
+- Checked at 390, 768, 1024 and 1440px: section order, no page overflow, no
+  broken images, no console errors; all 28 links in the new sections open;
+  Add to Cart fills the cart and Buy Now opens checkout for that product.
+
+## 2026-11-12 — category icon rail back under the hero
+
+- The circular category rail (one icon per navbar category, news-ticker
+  motion right to left at about 35–45px per second) is back directly under
+  the hero, as it was from 2026-11-05 to 2026-11-07 (owner request). The
+  photographic category banners and the service strip stay off.
+- Hover, touch and keyboard focus pause it; reduced motion shows one still,
+  swipeable row. The loop copy is hidden from assistive tech and the tab
+  order.
+- Keyboard fix: a focused category is now scrolled fully into view, and on
+  wide screens the stopped row fits the frame, so the last category is no
+  longer cut off at the right edge (it was, at 1440px and up).
+- Checked at 320, 390, 768, 1024, 1440 and 1920px: no page overflow, the
+  rail moves, pauses on hover, stays still with reduced motion, and every
+  category is fully visible when tabbed to.
+
+## 2026-11-12 — desktop category bar on one line
+
+- Cause: below 1280px the bar split every label onto two lines on purpose
+  (2026-11-10 layout), which also caught laptops at 125% zoom
+  (1366px → 1093px). Not caused by the font change.
+- Every label is now on one line (Myriad Pro Semibold, 12px; 13px from
+  1360px; 44px bar). The bar measures the labels in the rendered font at the
+  current width and zoom and shows as many sections as fit; the rest move,
+  in order, into the "More" menu, where each opens its usual panel and
+  focus moves into it (Escape returns to More). From 1280px to 1679px the
+  same menu also holds the company links. Mobile navigation unchanged.
+- Checked at 1024, 1152, 1280, 1366, 1440, 1600 and 1920px and at 125% and
+  150% zoom: one-line labels, no clipping, overlap or page overflow, panels
+  and More menu inside the viewport, keyboard open/close works.
+
 ## 2026-11-12 — typography: Myriad Pro and Arial Black
 
 - Interface font is now Myriad Pro (`--font-primary`: "myriad-pro",
