@@ -401,7 +401,7 @@ function QuickViewDetails({
           >
             {status === "added"
               ? "Added to your cart."
-              : (hint ?? (quantity >= MAX_PURCHASE_QUANTITY ? "Maximum quantity reached" : "Demo prices: checkout is not open yet."))}
+              : (hint ?? (quantity >= MAX_PURCHASE_QUANTITY ? "Maximum quantity reached" : "Prices in Tanzanian shillings (TZS)."))}
           </p>
           <Link
             href={productHref(hit)}

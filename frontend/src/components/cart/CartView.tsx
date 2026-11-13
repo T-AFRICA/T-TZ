@@ -138,8 +138,8 @@ export function CartView() {
             </span>
           )}
           <p id="checkout-note" className="mt-3 text-xs leading-relaxed text-[var(--text-secondary)]">
-            Prices are demo values. Online payment is not connected yet, so no order is placed and
-            nothing is charged. Your cart is saved on this device.
+            Online payment is not connected yet, so no order is placed and nothing is charged. Your
+            cart is saved on this device.
           </p>
           <Link
             href="/"

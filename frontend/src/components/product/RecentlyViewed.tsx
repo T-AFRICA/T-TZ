@@ -41,7 +41,7 @@ export function RecentlyViewed({ currentId }: { currentId: string }) {
   }
 
   return (
-    <section aria-label="Recently viewed — sample products" className="mt-10 md:mt-14">
+    <section aria-label="Recently viewed" className="mt-10 md:mt-14">
       <h2
         className="text-lg font-bold leading-tight md:text-[length:var(--text-h3)]"
         style={{ fontFamily: "var(--font-heading, var(--font-fallback-heading))" }}

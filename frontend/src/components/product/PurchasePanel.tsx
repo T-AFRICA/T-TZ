@@ -26,7 +26,7 @@ export function PurchasePanel({ product }: { product: SampleProduct }) {
 
   const saving = discountPercent(product);
   const selection = selectionLabel(color, variant);
-  const sku = `${product.id.toUpperCase()}${selection ? ` · ${selection}` : ""}`;
+  const sku = `${product.sku}${selection ? ` · ${selection}` : ""}`;
 
   const line = { productId: product.id, name: product.name, quantity, color, variant };
 
@@ -68,9 +68,8 @@ export function PurchasePanel({ product }: { product: SampleProduct }) {
           </span>
         ) : null}
       </div>
-      {/* Availability, SKU and the demo marker on one quiet line. The marker
-          stays for as long as demo data is active (the site is public), but
-          as a discreet indicator rather than a banner in the hierarchy. */}
+      {/* Availability and SKU on one quiet line (the demo marker was removed
+          2026-11-12, owner request). */}
       <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
         <span
           className={`inline-flex items-center gap-1.5 font-medium ${
@@ -81,13 +80,6 @@ export function PurchasePanel({ product }: { product: SampleProduct }) {
           {product.inStock ? "In stock" : "Out of stock"}
         </span>
         <span className="tracking-wide text-[var(--text-muted)]">SKU {sku}</span>
-        <span
-          title="Prices, options and stock are demonstration values until the live catalogue launches."
-          className="inline-flex items-center gap-1.5 rounded-full border border-dashed border-[var(--color-light-grey)] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--text-muted)] md:ml-auto"
-        >
-          <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-[#d97706]" />
-          Demo price &amp; stock
-        </span>
       </div>
 
       {/* Colour swatches (reference style) — shown only for products with
@@ -214,7 +206,7 @@ export function PurchasePanel({ product }: { product: SampleProduct }) {
       </div>
       {!product.inStock ? (
         <p className="mt-3 text-xs text-[var(--text-muted)]">
-          This sample item is marked out of stock, so purchasing is disabled.
+          This item is out of stock, so purchasing is disabled.
         </p>
       ) : null}
 

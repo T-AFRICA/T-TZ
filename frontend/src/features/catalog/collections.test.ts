@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { CatalogClient } from "@tronic/api-client";
-import { loadCollection } from "./collections";
+import { loadCollection, loadOffers, loadProducts } from "./collections";
 
 const state = vi.hoisted(() => ({ failing: false }));
 
@@ -56,6 +56,27 @@ describe("loadCollection", () => {
   it("returns an empty collection, not an error, when nothing matches", async () => {
     const result = await loadCollection([{ category: "lighting", group: "outdoor-lighting", subcategory: "street-lights" }]);
     expect(result).toEqual({ status: "ok", products: [] });
+  });
+
+  it("loads hand-picked products in order and skips unknown ids", async () => {
+    const result = await loadProducts(["sample-mcb-4p-50a", "no-such-product", "sample-adaptor-3-way-fused"]);
+    expect(result.status).toBe("ok");
+    if (result.status !== "ok") return;
+    expect(result.products.map((product) => product.id)).toEqual(["sample-mcb-4p-50a", "sample-adaptor-3-way-fused"]);
+    expect(result.products[0]?.sku).toBe("MC 4050-6K");
+  });
+
+  it("lists as offers only products the catalogue prices below their was-price, biggest saving first", async () => {
+    const result = await loadOffers(20);
+    expect(result.status).toBe("ok");
+    if (result.status !== "ok") return;
+    expect(result.products.length).toBeGreaterThan(0);
+    const ratios = result.products.map((product) => {
+      expect(product.wasPriceMinor).toBeDefined();
+      expect(product.wasPriceMinor ?? 0).toBeGreaterThan(product.priceMinor);
+      return 1 - product.priceMinor / (product.wasPriceMinor ?? 1);
+    });
+    expect(ratios).toEqual([...ratios].sort((a, b) => b - a));
   });
 
   it("reports a failed catalogue read as an error state", async () => {

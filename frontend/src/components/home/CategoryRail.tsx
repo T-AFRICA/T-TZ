@@ -19,7 +19,10 @@ function CategoryCircle({
       tabIndex={isLoopCopy ? -1 : undefined}
       className="group flex flex-col items-center gap-1.5 text-center md:gap-2.5"
     >
-      <span className="grid h-16 w-16 place-items-center rounded-full bg-white text-[var(--color-dark-grey)] shadow-[0_3px_10px_rgba(17,17,17,0.08)] transition-all duration-200 group-hover:scale-105 group-hover:text-[var(--color-action-red)] group-active:scale-105 group-active:text-[var(--color-action-red)] md:h-24 md:w-24 md:shadow-[0_4px_14px_rgba(17,17,17,0.08)]">
+      {/* Phones: white on the off-white page. md+: a soft grey surface on the
+          white page that turns white with a red ring on hover (design pass
+          2026-11-12). */}
+      <span className="grid h-16 w-16 place-items-center rounded-full bg-white text-[var(--color-dark-grey)] shadow-[0_3px_10px_rgba(17,17,17,0.08)] transition-all duration-200 group-hover:scale-105 group-hover:text-[var(--color-action-red)] group-active:scale-105 group-active:text-[var(--color-action-red)] md:h-24 md:w-24 md:bg-[#f4f4f5] md:shadow-[inset_0_0_0_1px_rgba(17,17,17,0.04)] md:group-hover:bg-white md:group-hover:shadow-[0_0_0_2px_var(--color-action-red),0_12px_24px_-10px_rgba(215,25,32,0.45)]">
         <span className="md:scale-125">
           <CategoryArt slug={section.slug} size={30} />
         </span>

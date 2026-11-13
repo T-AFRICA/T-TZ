@@ -21,7 +21,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   return {
     title: product ? product.name : "Product",
     description: product
-      ? (product.description ?? `${product.name} — ${product.categoryName} at TRONIC Tanzania (sample catalogue entry).`)
+      ? (product.description ?? `${product.name} — ${product.categoryName} at TRONIC Tanzania.`)
       : undefined,
     alternates: product ? { canonical: `/products/${product.slug}` } : undefined,
   };

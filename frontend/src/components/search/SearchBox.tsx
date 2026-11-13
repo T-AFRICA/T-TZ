@@ -544,11 +544,6 @@ export function SearchBox({ client }: SearchBoxProps) {
           </aside>
         ) : null}
         </div>
-        {response?.simulated && (state === "results" || state === "empty") ? (
-          <p className="border-t border-[var(--color-light-grey)] px-4 py-1.5 text-[11px] text-[var(--text-muted)]">
-            Sample catalogue — prices and stock are demo values.
-          </p>
-        ) : null}
       </div>
 
       <SearchQuickSheet hit={sheetHit} onClosed={onSheetClosed} onNavigate={close} />

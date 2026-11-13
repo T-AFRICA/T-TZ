@@ -3,6 +3,106 @@
 Meaningful implementation changes, newest first. Dates are work dates;
 nothing below is released.
 
+## 2026-11-12 — red Add button, Offers ticker
+
+- Owner request: the card's Add button is brand red and turns black on
+  hover/focus (it was charcoal turning red).
+- Owner request: Offers & Promotions moves slowly right to left like the
+  category rail (TickerRow, "Product ticker" in globals.css): about
+  35–40px per second, pure CSS with an inert, aria-hidden loop copy. Hover,
+  touch and keyboard focus pause it; a focused card is scrolled fully into
+  view; reduced motion shows a still, swipeable row. With fewer than five
+  offers the row stays still, so a product is never on screen twice.
+- Checked at 390, 1024, 1440 and 1920px and with reduced motion: speed,
+  hover pause, keyboard focus in view, no overflow, no errors.
+
+## 2026-11-12 — design pass: calmer product cards, finished empty states
+
+- Owner rated the UI 6/10. Audit of the whole homepage found: red Buy Now /
+  Add pills on every one of ~60 cards dominating the page, dense cards with
+  9–10px text, dashed "empty" boxes, a black gap beside two products in
+  Chandeliers, flat category icons, and a dark run at the bottom (Meter,
+  banner, footer).
+- Product card (everywhere it is used): a soft grey photo stage where the
+  photos' white backgrounds blend in, larger name and price, a stock dot,
+  neutral lift on hover instead of a red glow and scale, discount chip top
+  left. Buy now is a quiet outline and Add is charcoal, turning brand red
+  on hover/focus; both keep their accessible names.
+- Empty and error states are soft panels with a button instead of dashed
+  boxes. Best-Selling is a finished panel offering four departments (not a
+  ranking). Wall Lights shows its "none listed yet" note inside the band.
+  Chandeliers puts copy and products side by side over the photo. A single
+  cable product gets one card-width column.
+- Category icons sit on a soft grey surface on desktop and turn white with
+  a red ring on hover. The Meter callout is a light card.
+- Checked: homepage at 390 and 1440px (full page), category, search,
+  product and wishlist pages at 390, 1024 and 1440px — no overflow, no
+  clipped card buttons, no errors.
+
+## 2026-11-12 — eight core homepage sections
+
+- Owner brief: under the category rail, in this order, Offers &
+  Promotions, Featured Products, Best-Selling Products, New Arrivals, Shop
+  Collections, Luxury Chandeliers & Lighting, Cables & Wiring and New
+  Arrival Wall Lights (HomeEssentials); then the existing Switchgear,
+  Adapters & Extensions, Spotlights and Garden Lights collections, the
+  Meter callout and the brand banner.
+- Data comes from the catalogue (getCatalog), never invented:
+  - Offers: products the catalogue prices below their was-price, biggest
+    saving first, in a swipeable red band. No campaign claims.
+  - Featured: a hand-picked id list (products with real TRONIC SKUs), SKU
+    shown on the card.
+  - Best-Selling: there is no sales data, so the section says it is waiting
+    for it; no ranking is shown.
+  - New Arrivals: catalogue order (newest first); no NEW badge, because the
+    catalogue has no publish date per product.
+  - Chandeliers (decorative and ceiling lights: 2 products), Cables (1) and
+    Wall Lights (0, empty state) show what the catalogue has.
+- Layouts vary: two swipeable rows with arrow buttons, product grids, an
+  editorial photo grid (Home & Appliances, Switches & Sockets, Cable
+  Management, Tools), a warm pendant band, an industrial split panel with
+  Power Cables / Data & Signal / Cable Accessories links, and a wall-light
+  showcase.
+- Imagery: owner category photos; the pendant and wall-light photos are
+  cropped from the Black November campaign art with its "up to 50% off"
+  text cut away (banners/pendants-warm-wall.webp, wall-lights-showcase.webp).
+- The phone product tabs (New Arrivals, Best Sellers, Featured, All) were
+  removed: the new sections cover them on every screen, and their "Best
+  Sellers" tab was a hand-picked list, not sales data.
+- Checked at 390, 768 and 1440px: order, no page overflow, no broken
+  images or console errors; all 33 links in the eight sections open; Add to
+  Cart and the row buttons work.
+
+## 2026-11-12 — sample and demo labels removed
+
+- Owner request: every visible SAMPLE / demo label is gone — the card chip,
+  the product gallery chip, "Demo price & stock" on the product page, the
+  demo notes in cart, checkout, search and the quick view, "sample" in the
+  out-of-stock note, the product meta description and the "— sample
+  products" section names for screen readers. The functional notes stay
+  (online payment is not connected, no order is placed or charged).
+- The catalogue data is unchanged: prices and stock are still synthetic
+  until the live catalogue is connected, now without a label on the site.
+- Fix: the product page built its SKU from the product id in capitals
+  instead of the product's SKU, so the 18 real TRONIC SKUs did not show.
+  It now shows product.sku (as search and checkout already did).
+- Still showing "sample": the 16 original demo products keep their
+  placeholder SKUs (SAMPLE-…) and every product URL keeps its sample-…
+  slug.
+
+## 2026-11-12 — homepage: desktop rails removed, brand banner last
+
+- Owner request: the desktop rails "Special for you", "Light up every room"
+  and "Fans & cooling" are removed (FeaturedSamples deleted; ProductSection
+  stays for the product page). Phones keep their product tabs, now after
+  the collections.
+- The brand banner moves from under the category rail to the end of the
+  page, after the Meter callout and just above the footer.
+- Order now: hero, category rail, Switchgear & Protection, Adapters &
+  Extensions, Spotlights, Garden Lights, (phones) product tabs, Meter
+  callout, brand banner. Checked at 390, 1024 and 1440px: that order, no
+  page overflow, no errors.
+
 ## 2026-11-12 — homepage brand banner and four product collections
 
 - Directly under the category rail (owner brief, sections 9–13; the brief's

@@ -14,60 +14,70 @@ import { discountPercent, formatPrice, type SampleProduct } from "./sampleProduc
  * browser's cart and wishlist (features/cart). The photo carries a 3D hover tilt (interim
  * for real 360° photography, owner request).
  */
-export function ProductCard({ product }: { product: SampleProduct }) {
+export function ProductCard({
+  product,
+  showSku = false,
+  className = "",
+}: {
+  product: SampleProduct;
+  /** Show the SKU under the name (Featured Products). */
+  showSku?: boolean;
+  /** Extra classes on the card, e.g. a fixed width inside a carousel. */
+  className?: string;
+}) {
   const saving = discountPercent(product);
   return (
-    <li className="group/card flex flex-col rounded-xl bg-white p-2 shadow-[0_2px_10px_rgba(17,17,17,0.05)] transition-all duration-300 ease-out hover:z-10 hover:-translate-y-1 hover:scale-[1.02] hover:shadow-[0_0_0_1px_rgba(215,25,32,0.25),0_6px_16px_-6px_rgba(215,25,32,0.25),0_18px_38px_-12px_rgba(215,25,32,0.4)] active:translate-y-0 active:scale-[1.01] md:border md:border-[var(--color-light-grey)] md:p-2.5 md:shadow-none md:hover:border-transparent">
-      {/* 4:3 photo area (was square) keeps the card shorter on phones and in
-          the 5-6 per row desktop grid; object-contain still shows the whole
-          product. */}
-      <div className="relative aspect-[4/3] overflow-hidden rounded-lg bg-white">
+    <li className={`group/card flex flex-col rounded-2xl bg-white p-2 shadow-[0_1px_2px_rgba(17,17,17,0.04),0_4px_14px_-6px_rgba(17,17,17,0.08)] transition-[transform,box-shadow] duration-300 ease-out hover:z-10 hover:-translate-y-1 hover:shadow-[0_2px_4px_rgba(17,17,17,0.04),0_18px_36px_-14px_rgba(17,17,17,0.28)] md:p-2.5 ${className}`}>
+      {/* Product "stage" (design pass 2026-11-12): a soft grey surface; the
+          photos' white studio backgrounds blend into it (multiply), so mixed
+          photography reads as one set. 5:4 keeps the card compact. */}
+      <div className="relative aspect-[5/4] overflow-hidden rounded-xl bg-[#f4f4f5]">
         <Tilt3D className="absolute inset-0">
           <Link
             href={`/products/${product.slug}`}
             tabIndex={-1}
             aria-hidden="true"
-            className="relative block h-full w-full"
+            className="relative block h-full w-full bg-[#f4f4f5]"
           >
             <Image
               src={product.image}
               alt={product.name}
               fill
               sizes="(min-width: 1280px) 10rem, (min-width: 768px) 11rem, 45vw"
-              className="object-contain p-2.5 transition-transform duration-300 group-hover/card:scale-105"
+              className="object-contain p-3 mix-blend-multiply transition-transform duration-500 ease-out group-hover/card:scale-[1.06] md:p-4"
             />
           </Link>
         </Tilt3D>
-        {/* Badge pair shares one size/radius/padding system (9px, rounded,
-            1.5 inset) so chips read as a family across every card */}
-        <span className="absolute left-1.5 top-1.5 rounded bg-[var(--color-premium-black)]/85 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-white">
-          Sample
-        </span>
+        {/* Discount chip: 9px, rounded, 1.5 inset. The SAMPLE chip was
+            removed 2026-11-12 (owner request). */}
         {saving !== null ? (
-          <span className="absolute bottom-1.5 left-1.5 rounded bg-[var(--color-action-red)] px-1.5 py-0.5 text-[9px] font-semibold text-white">
+          <span className="absolute left-2 top-2 rounded-full bg-[var(--color-action-red)] px-2 py-0.5 text-[10px] font-bold text-white">
             Save {saving}%
           </span>
         ) : null}
         <WishlistButton
           productId={product.id}
           productName={product.name}
-          className="absolute right-1.5 top-1.5 flex h-7 w-7 items-center justify-center rounded-full bg-white shadow-sm transition-all hover:scale-110 active:scale-90"
+          className="absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-full bg-white shadow-[0_2px_8px_rgba(17,17,17,0.12)] transition-all hover:scale-110 active:scale-90"
         />
       </div>
-      <div className="flex flex-1 flex-col px-1 pb-0.5 pt-1">
-        <p className="text-[9px] font-semibold uppercase tracking-[0.1em] text-[var(--text-muted)]">
+      <div className="flex flex-1 flex-col px-1 pb-0.5 pt-2.5">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--text-muted)]">
           {product.categoryName}
         </p>
         <Link
           href={`/products/${product.slug}`}
-          className="mt-0.5 line-clamp-2 min-h-[2.5em] text-xs font-semibold leading-snug transition-colors hover:text-[var(--color-action-red)] md:text-[13px]"
+          className="mt-1 line-clamp-2 min-h-[2.6em] text-[13px] font-semibold leading-snug text-[var(--text-primary)] transition-colors hover:text-[var(--color-action-red)] md:text-sm"
         >
           {product.name}
         </Link>
-        <div className="mt-auto pt-1">
+        {showSku ? (
+          <p className="mt-0.5 truncate text-[10px] tracking-wide text-[var(--text-muted)]">SKU {product.sku}</p>
+        ) : null}
+        <div className="mt-auto pt-1.5">
           <p className="flex flex-wrap items-baseline gap-x-1.5">
             <span
-              className={`text-[13px] font-bold md:text-sm ${
+              className={`text-sm font-bold tabular-nums md:text-[15px] ${
                 product.wasPriceMinor !== undefined
                   ? "text-[var(--color-action-red)]"
                   : "text-[var(--color-premium-black)]"
@@ -82,10 +92,11 @@ export function ProductCard({ product }: { product: SampleProduct }) {
             ) : null}
           </p>
           <p
-            className={`mt-0.5 text-[10px] font-medium md:text-[11px] ${
+            className={`mt-0.5 inline-flex items-center gap-1 text-[11px] font-medium ${
               product.inStock ? "text-[var(--color-success)]" : "text-[var(--text-muted)]"
             }`}
           >
+            <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-current" />
             {product.inStock ? "In stock" : "Out of stock"}
           </p>
           {product.inStock ? (
@@ -93,10 +104,10 @@ export function ProductCard({ product }: { product: SampleProduct }) {
           ) : (
             <span
               aria-disabled="true"
-              className="mt-1.5 flex h-8 w-full cursor-not-allowed items-center justify-center gap-1.5 rounded-full bg-[var(--color-light-grey)] text-[9px] font-semibold uppercase tracking-[0.04em] text-[var(--text-muted)] md:text-[10px]"
+              className="mt-2 flex h-[34px] w-full cursor-not-allowed items-center justify-center gap-1.5 rounded-full bg-[#f4f4f5] text-[11px] font-semibold text-[var(--text-muted)]"
             >
               <CartIcon size={13} />
-              Out of Stock
+              Out of stock
             </span>
           )}
         </div>

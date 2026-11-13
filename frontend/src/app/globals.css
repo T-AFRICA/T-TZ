@@ -570,6 +570,79 @@ details.drawer-acc[open] > ul > li {
    without animation-timeline play a one-shot fade on load. Explicitly
    disabled under reduced motion because scroll-driven progress is not
    covered by the duration-zeroing override below. */
+/* Product ticker (TickerRow; Offers, owner request 2026-11-12): two
+   identical groups slide left by exactly one group, so the loop has no
+   jump, like the category rail. --ticker-duration sets the speed. */
+.ticker-frame {
+  position: relative;
+  overflow: hidden;
+  overflow: clip;
+}
+
+.ticker-track {
+  display: flex;
+  width: max-content;
+  animation: ticker-move var(--ticker-duration, 50s) linear infinite;
+  will-change: transform;
+}
+
+/* The padding equals the gap, so the seam between the groups matches. */
+.ticker-group {
+  display: flex;
+  flex-shrink: 0;
+  gap: 0.75rem;
+  padding-right: 0.75rem;
+}
+
+@media (min-width: 48rem) {
+  .ticker-group {
+    gap: 1rem;
+    padding-right: 1rem;
+  }
+}
+
+@keyframes ticker-move {
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.ticker-frame:hover .ticker-track,
+.ticker-frame:active .ticker-track,
+.ticker-frame:focus-within .ticker-track {
+  animation-play-state: paused;
+}
+
+/* Keyboard: stop at the start and let the frame scroll to the focused card. */
+.ticker-frame:has(:focus-visible) {
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.ticker-frame:has(:focus-visible) .ticker-track {
+  animation: none;
+}
+
+.ticker-frame:has(:focus-visible) .ticker-copy {
+  display: none;
+}
+
+/* No motion: one still, swipeable row. */
+@media (prefers-reduced-motion: reduce) {
+  .ticker-frame {
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .ticker-track {
+    animation: none;
+  }
+
+  .ticker-copy {
+    display: none;
+  }
+}
+
 /* Homepage collections (2026-11-12): the brand banner's warm light breathes
    and the Spotlights band's beams sway slowly. Opacity/transform only; still
    under reduced motion. */

@@ -107,7 +107,7 @@ export function CheckoutSummary({ quote }: { quote: CheckoutQuote }) {
         </div>
       </dl>
       <p className="mt-1.5 text-xs leading-relaxed text-[var(--text-muted)]">
-        Prices are checked on our server and are demo values for now.
+        Prices are checked on our server.
         {quote.totalIsPartial ? " Delivery and any VAT are added before you pay." : null}
       </p>
     </div>

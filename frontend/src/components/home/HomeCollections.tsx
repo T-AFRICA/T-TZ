@@ -1,11 +1,11 @@
 import { Container } from "@tronic/ui";
 import { loadCollection } from "@/features/catalog/collections";
 import { GridCollection, PanelCollection, SpotlightCollection } from "./CollectionSections";
-import { PromoBanner } from "./PromoBanner";
 
 /**
- * Homepage sections 9–13 (owner brief 2026-11-12), directly under the
- * category rail: the brand banner, then four catalogue collections. Each
+ * Homepage collections (owner brief 2026-11-12), directly under the
+ * category rail; the brand banner that came first moved to the end of the
+ * page (PromoBanner in app/page.tsx). Each
  * collection is read from the catalogue by its taxonomy scope (the same
  * scopes as the category pages its "View all" opens), in parallel.
  * Photography for the panels is the owner-supplied category art.
@@ -27,7 +27,6 @@ export async function HomeCollections() {
 
   return (
     <>
-      <PromoBanner />
       <Container>
         <PanelCollection
           id="collection-switchgear"
