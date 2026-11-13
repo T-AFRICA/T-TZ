@@ -69,7 +69,7 @@ describe("SearchBox", () => {
     expect(option).toHaveTextContent("In stock");
     expect(screen.getByRole("option", { name: /9W LED Bulb/ })).toHaveTextContent("Out of stock");
     expect(screen.getByRole("option", { name: /View all 9 results for “led”/ })).toBeInTheDocument();
-    expect(screen.getByText(/Sample catalogue/)).toBeInTheDocument();
+    expect(screen.queryByText(/Sample catalogue|demo values/)).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: /24W LED Panel Light/ })).toHaveAttribute("href", "/products/sample-led-panel");
   });
 

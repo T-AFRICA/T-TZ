@@ -90,9 +90,15 @@ describe("PurchasePanel", () => {
     expect(screen.getByText("Maximum quantity reached")).toBeInTheDocument();
   });
 
-  it("labels synthetic price and stock as demo data", () => {
+  it("shows the product's own SKU, not one made from its id", () => {
+    renderPanel({ ...baseProduct, sku: "MC 4050-6K", colors: undefined, variants: undefined });
+    expect(screen.getByText("SKU MC 4050-6K")).toBeInTheDocument();
+  });
+
+  it("shows no demo or sample label (removed 2026-11-12, owner request)", () => {
     renderPanel(baseProduct);
-    expect(screen.getByText("Demo price & stock")).toBeInTheDocument();
+    expect(screen.queryByText(/demo/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/^sample$/i)).not.toBeInTheDocument();
   });
 
   it("disables purchasing and the quantity stepper when out of stock", () => {

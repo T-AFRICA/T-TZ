@@ -142,9 +142,6 @@ export function ProductGallery({ product }: { product: SampleProduct }) {
               </span>
             </motion.span>
           </AnimatePresence>
-          <span className="absolute left-4 top-4 rounded bg-[var(--color-premium-black)]/85 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-white">
-            Sample
-          </span>
           <span className="absolute bottom-4 right-4 flex h-9 w-9 items-center justify-center rounded-full bg-white/90 text-[var(--text-secondary)] shadow-sm backdrop-blur transition-colors group-hover:text-[var(--color-action-red)]">
             <SearchIcon size={16} />
           </span>

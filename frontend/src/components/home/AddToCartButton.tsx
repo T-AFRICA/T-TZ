@@ -6,18 +6,19 @@ import type { Product } from "@tronic/types";
 import { usePurchaseActions } from "@/features/cart/purchase";
 
 /**
- * Two compact CTAs in one row: Buy Now (outline, fixed width) and Add to
- * Cart (filled, takes the rest). 32px tall so the pair costs the card no
- * more height than the old single button; the whole row is still a clean
- * tap target per button. Press feedback is CSS (active:scale) so SSR markup
- * never depends on the reduced-motion preference — the global CSS override
+ * Two compact CTAs in one row: Buy Now (quiet outline, fixed width) and
+ * Add to Cart (filled, takes the rest). 34px tall; each button is its own
+ * tap target. Add is brand red and turns black on hover/focus (owner
+ * request 2026-11-12); Buy Now is a neutral outline so the red stays on the
+ * one main action. Press feedback is CSS (active:scale) so SSR markup never
+ * depends on the reduced-motion preference — the global CSS override
  * disables it there.
  */
-const ROW_CLASSES = "mt-1.5 flex gap-1.5";
+const ROW_CLASSES = "mt-2 flex gap-1.5";
 const BASE_CLASSES =
-  "flex h-8 items-center justify-center gap-1 rounded-full text-[9px] font-semibold uppercase tracking-[0.04em] transition-all duration-200 active:scale-[0.97] md:text-[10px]";
-const BUY_CLASSES = `${BASE_CLASSES} shrink-0 border-[1.5px] border-[var(--color-action-red)] px-2 text-[var(--color-action-red)] hover:bg-[#fdecec] max-[359px]:px-1.5 md:px-3`;
-const ADD_CLASSES = `${BASE_CLASSES} min-w-0 flex-1 bg-[var(--color-action-red)] px-1.5 text-white shadow-[0_5px_12px_-6px_rgba(215,25,32,0.55)] hover:-translate-y-0.5 hover:bg-[var(--color-action-red-dark)] sm:px-2`;
+  "flex h-[34px] items-center justify-center gap-1 rounded-full text-[11px] font-semibold transition-colors duration-200 active:scale-[0.97]";
+const BUY_CLASSES = `${BASE_CLASSES} shrink-0 border border-[var(--color-light-grey)] px-2.5 text-[var(--text-primary)] hover:border-[var(--color-premium-black)] max-[359px]:px-2 md:px-3`;
+const ADD_CLASSES = `${BASE_CLASSES} min-w-0 flex-1 bg-[var(--color-action-red)] px-2 text-white hover:bg-[var(--color-premium-black)] focus-visible:bg-[var(--color-premium-black)]`;
 
 type Mode = "add" | "buy";
 
@@ -79,7 +80,7 @@ export function AddToCartButton({ product }: { product: Pick<Product, "id" | "na
           onClick={() => start("buy")}
           className={BUY_CLASSES}
         >
-          Buy Now
+          Buy now
         </button>
         <button
           type="button"
@@ -90,7 +91,7 @@ export function AddToCartButton({ product }: { product: Pick<Product, "id" | "na
         >
           {/* Cards are 170-190px wide in every grid, so the label is "Add";
               the accessible name still says "Add to cart". */}
-          <CartIcon size={12} />
+          <CartIcon size={13} />
           <span>Add</span>
         </button>
       </div>

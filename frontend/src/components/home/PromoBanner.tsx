@@ -25,8 +25,8 @@ function Cutout({ name, className, sizes }: { name: keyof typeof ART; className:
 }
 
 /**
- * Premium brand banner between the category rail and the product
- * collections (owner brief 2026-11-12, section 9). Full width, dark, with
+ * Premium brand banner, last on the homepage just above the footer (owner
+ * brief 2026-11-12, moved to the end the same day). Full width, dark, with
  * TRONIC products on a lit platform under a pendant; the warm light
  * breathes slowly (promo-glow in globals.css, still under reduced motion).
  * Brand message only — the owner chose no offer, so there are no prices,

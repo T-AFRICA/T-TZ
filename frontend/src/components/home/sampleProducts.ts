@@ -15,7 +15,6 @@ import { ACTIVE_COUNTRY, formatMoney } from "@tronic/country-config";
  */
 export type SampleProduct = Product;
 export type { ProductColor as SampleColor } from "@tronic/types";
-export { SPECIAL_FOR_YOU, LIGHTING_PICKS, FANS_COOLING_PICKS } from "@tronic/api-client";
 
 /** Formats a stored price (minor units) for the active country: 2_800_000 → "TZS 28,000". */
 export function formatPrice(amount: number): string {

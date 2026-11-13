@@ -27,40 +27,62 @@ interface Photo {
   alt: string;
 }
 
-function Notice({ result, title, viewAllHref, tone }: Pick<CollectionBase, "result" | "title" | "viewAllHref"> & { tone: "light" | "dark" }) {
+type NoticeProps = Pick<CollectionBase, "result" | "title" | "viewAllHref"> & {
+  tone: "light" | "dark";
+  /** Text when the catalogue has nothing for this collection. */
+  emptyMessage?: string;
+};
+
+/** Empty or error state of a collection, with a way into its category. */
+export function Notice({ result, title, viewAllHref, tone, emptyMessage = "No products in this collection yet." }: NoticeProps) {
   const message =
-    result.status === "error"
-      ? "These products could not be loaded right now. Please try again shortly."
-      : "No products in this collection yet.";
+    result.status === "error" ? "These products could not be loaded right now. Please try again shortly." : emptyMessage;
   return (
     <div
       role={result.status === "error" ? "alert" : "status"}
-      className={`flex min-h-40 flex-col items-center justify-center gap-2 rounded-xl border border-dashed p-6 text-center text-sm ${
-        tone === "dark" ? "border-white/25 text-white/80" : "border-[var(--color-light-grey)] text-[var(--text-secondary)]"
+      className={`flex flex-col items-center justify-between gap-3 rounded-2xl px-5 py-5 text-sm sm:flex-row sm:px-6 ${
+        tone === "dark" ? "bg-white/[0.07] text-white/85" : "bg-[#f6f6f7] text-[var(--text-secondary)]"
       }`}
     >
-      <p>{message}</p>
-      <Link href={viewAllHref} className="font-semibold text-[var(--color-action-red)] hover:underline">
+      <p className="text-center sm:text-left">{message}</p>
+      <Link
+        href={viewAllHref}
+        className={`inline-flex h-10 shrink-0 items-center gap-1.5 rounded-full px-4 font-semibold transition-colors ${
+          tone === "dark"
+            ? "bg-white text-[var(--color-premium-black)] hover:bg-[var(--color-action-red)] hover:text-white"
+            : "bg-white text-[var(--text-primary)] shadow-[0_1px_3px_rgba(17,17,17,0.08)] hover:text-[var(--color-action-red)]"
+        }`}
+      >
         Browse {title}
+        <ArrowRightIcon size={14} />
       </Link>
     </div>
   );
 }
 
-function ProductGrid({ result, title, viewAllHref, columns, tone = "light" }: Pick<CollectionBase, "result" | "title" | "viewAllHref"> & { columns: string; tone?: "light" | "dark" }) {
+/** Product cards in a grid, or the collection's empty / error state. */
+export function ProductGrid({
+  result,
+  title,
+  viewAllHref,
+  columns,
+  tone = "light",
+  emptyMessage,
+  showSku = false,
+}: Omit<NoticeProps, "tone"> & { columns: string; tone?: "light" | "dark"; showSku?: boolean }) {
   if (result.status !== "ok" || result.products.length === 0) {
-    return <Notice result={result} title={title} viewAllHref={viewAllHref} tone={tone} />;
+    return <Notice result={result} title={title} viewAllHref={viewAllHref} tone={tone} emptyMessage={emptyMessage} />;
   }
   return (
     <ul className={`grid gap-3 md:gap-4 ${columns}`}>
       {result.products.map((product) => (
-        <ProductCard key={product.id} product={product} />
+        <ProductCard key={product.id} product={product} showSku={showSku} />
       ))}
     </ul>
   );
 }
 
-function ViewAll({ href, label, tone }: { href: string; label: string; tone: "red" | "light" }) {
+export function ViewAll({ href, label, tone }: { href: string; label: string; tone: "red" | "light" }) {
   return (
     <Link
       href={href}
