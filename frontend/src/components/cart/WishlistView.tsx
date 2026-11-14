@@ -11,16 +11,21 @@ import { resolveWishlist } from "@/features/cart/lines";
  * the heart on this device, shown as the usual product cards, so a product
  * can be added to the cart or un-saved right here. Products no longer
  * listed in this country are skipped.
+ *
+ * `embedded` is for the customer portal (/account/wishlist): the portal
+ * already provides the page width and padding, and its content column is
+ * narrower, so the grid uses fewer columns there.
  */
-export function WishlistView() {
+export function WishlistView({ embedded = false }: { embedded?: boolean }) {
+  const Frame = embedded ? "div" : Container;
   const hydrated = useHydrated();
   const { ids } = useWishlist();
 
   if (!hydrated) {
     return (
-      <Container className="py-6 lg:py-8">
+      <Frame className={embedded ? "" : "py-6 lg:py-8"}>
         <div aria-busy="true" aria-label="Loading your wishlist" className="h-48 animate-pulse rounded-2xl bg-white" />
-      </Container>
+      </Frame>
     );
   }
 
@@ -28,7 +33,7 @@ export function WishlistView() {
 
   if (products.length === 0) {
     return (
-      <Container className="flex flex-col items-center py-14 text-center lg:py-20">
+      <Frame className={`flex flex-col items-center text-center ${embedded ? "rounded-2xl bg-white px-4 py-12" : "py-14 lg:py-20"}`}>
         <span
           aria-hidden="true"
           className="grid h-16 w-16 place-items-center rounded-full bg-white text-[var(--color-action-red)] shadow-[0_3px_14px_rgba(17,17,17,0.08)]"
@@ -46,20 +51,24 @@ export function WishlistView() {
           Browse products
           <ArrowRightIcon size={16} />
         </Link>
-      </Container>
+      </Frame>
     );
   }
 
   return (
-    <Container className="py-6 lg:py-8">
+    <Frame className={embedded ? "" : "py-6 lg:py-8"}>
       <p className="text-sm text-[var(--text-secondary)]">
         {products.length} saved {products.length === 1 ? "product" : "products"} · saved on this device
       </p>
-      <ul className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 md:mt-4 md:grid-cols-4 md:gap-4 lg:grid-cols-5 xl:grid-cols-6">
+      <ul
+        className={`mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 md:mt-4 md:gap-4 ${
+          embedded ? "md:grid-cols-4 lg:grid-cols-3 xl:grid-cols-4" : "md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6"
+        }`}
+      >
         {products.map((product) => (
           <ProductCard key={product.id} product={product} />
         ))}
       </ul>
-    </Container>
+    </Frame>
   );
 }

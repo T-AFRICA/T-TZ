@@ -128,6 +128,8 @@ export class FakeAuth {
       const user = this.userFromRequest(request);
       if (!user) return send(response, 401, { code: 401, error_code: "bad_jwt", msg: "invalid JWT" });
       if (typeof body.password === "string") user.password = body.password;
+      // Profile updates (updateUser({ data })) merge into the user metadata, as Supabase does.
+      if (body.data && typeof body.data === "object") user.metadata = { ...user.metadata, ...(body.data as Record<string, unknown>) };
       return send(response, 200, this.userJson(user));
     }
     if (route === "POST /auth/v1/logout") {

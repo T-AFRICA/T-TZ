@@ -58,7 +58,8 @@ test("guest: catalogue → cart → checkout → confirmed order that exists in 
   const email = "guest.flow@example.test";
   const stockBefore = await stockOf(PANEL.slug);
 
-  await page.goto(`${BASE}/categories/lighting`);
+  // The panel's own subcategory: the Lighting category has more than one page of products.
+  await page.goto(`${BASE}/categories/lighting/indoor-lighting/panel-lights`);
   await page.getByRole("link", { name: PANEL.name }).first().click();
   await expect(page.getByRole("heading", { level: 1, name: PANEL.name })).toBeVisible();
   await page.getByRole("button", { name: "Add to Cart" }).first().click();
@@ -183,12 +184,12 @@ test("customers see only their own orders; guests track with number plus contact
   const [aliceOrder] = await ordersFor("alice.e2e@example.test");
   expect(aliceOrder!.user_id).not.toBeNull();
 
-  await alice.goto(`${BASE}/account`);
+  await alice.goto(`${BASE}/account/orders`);
   await expect(alice.getByRole("list", { name: "Orders" })).toContainText(aliceOrder!.order_number);
 
   const bob = await (await browser.newContext()).newPage();
   await signIn(bob, "bob.e2e@example.test", "Bob-Secret-1");
-  await expect(bob.getByText("No orders yet.")).toBeVisible();
+  await expect(bob.getByText("No orders yet")).toBeVisible();
   await expect(bob.getByText(aliceOrder!.order_number)).toHaveCount(0);
 
   // A guest with the number but the wrong contact learns nothing.

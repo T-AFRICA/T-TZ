@@ -3,6 +3,37 @@
 Meaningful implementation changes, newest first. Dates are work dates;
 nothing below is released.
 
+## 2026-11-14 — customer portal under /account
+
+- Owner brief: a customer portal with a sidebar on desktop and a swipeable
+  section row on phones. Screens: dashboard, My orders (status tabs, search
+  by number, date range, sort, paging), order details, order tracking
+  timeline, orders in progress, wishlist, payments, profile (name and phone
+  editable), security, addresses, invoices, notifications, help & support.
+- No sample data. Orders, details, tracking, payments and the profile read
+  the signed-in customer's own records (Row Level Security); addresses,
+  invoices, notifications, sessions and phone verification have no backend
+  yet and say "Not connected yet" with what they are waiting for.
+- Tracking shows the recorded status only: the order date is the one
+  timestamp; courier, tracking number and delivery estimate are "Not
+  available yet"; cancellation and payment problems are shown beside the
+  timeline, not as steps. The page states it is not live courier tracking.
+- New read-only queries in @tronic/database (no schema change):
+  listCustomerOrderPage, countCustomerOrdersByStatus, getCustomerOrder.
+  Another customer's order and an unknown number show the same "Page not
+  found".
+- Every /account page checks the session itself as well as the proxy and
+  the layout. The profile form is a server action that updates the
+  customer's own Supabase Auth profile.
+- docs/CUSTOMER-PORTAL.md: screen-by-screen data sources, the typed
+  services, the rules the portal follows and a proposal (not applied) for
+  status events, shipments, payments, addresses, wishlist, notifications
+  and invoices tables.
+- Supabase Auth and the order database are not configured on this machine
+  or the deployed site, so the portal was verified with the disposable test
+  database and the stand-in auth server (browser tests), not on a real
+  Supabase project.
+
 ## 2026-11-12 — red Add button, Offers ticker
 
 - Owner request: the card's Add button is brand red and turns black on
