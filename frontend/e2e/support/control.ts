@@ -42,3 +42,16 @@ export async function setPriceMinor(slug: string, priceMinor: number): Promise<v
     [slug, String(priceMinor)],
   );
 }
+
+/** Ends every session of a customer in the stand-in auth server, as a sign-out on another device does. */
+export async function revokeSessions(email: string): Promise<void> {
+  const response = await fetch(`http://127.0.0.1:${PORTS.control}/revoke`, { method: "POST", body: JSON.stringify({ email }) });
+  if (!response.ok) throw new Error(`control revoke failed: ${response.status}`);
+}
+
+/** How many times the app has asked the stand-in auth server who a token belongs to. */
+export async function userLookups(): Promise<number> {
+  const response = await fetch(`http://127.0.0.1:${PORTS.control}/auth-stats`, { method: "POST", body: "{}" });
+  if (!response.ok) throw new Error(`control auth-stats failed: ${response.status}`);
+  return ((await response.json()) as { userLookups: number }).userLookups;
+}

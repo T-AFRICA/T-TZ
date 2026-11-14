@@ -3,6 +3,28 @@
 Meaningful implementation changes, newest first. Dates are work dates;
 nothing below is released.
 
+## 2026-11-14 — the cookie of an ended session is removed instead of asked about forever
+
+- Owner report: the Supabase log showed a run of "GET /auth/v1/user 403"
+  after a sign-out. Sign out ends the customer's sessions on every
+  device. Another browser still had the cookie of the ended session and
+  nothing removed it: each account page, each prefetched account link and
+  each visit to the sign-in page asked the Auth server about the same
+  dead session and was refused again.
+- The proxy now also covers /login and /register. When the Auth server
+  answers that a session is not valid, the proxy removes that session's
+  cookies on the response, where cookies can still be set (a server
+  component cannot). After that the browser has no cookie to ask about,
+  and the header says "Login" again.
+- A cookie is kept when the Auth server could not be reached or limited
+  the request: that says nothing about the session.
+- /login, /login/registered and /register redirect a signed-in customer
+  to /account in the proxy, before the page renders; a visitor without a
+  session cookie causes no call to the Auth server.
+- Tests: unit tests of the proxy with the Auth client replaced, and a
+  browser test that ends a customer's sessions on the stand-in auth
+  server and checks the cookie is cleared and no further lookups follow.
+
 ## 2026-11-14 — homepage sections lose their small labels
 
 - Owner request: remove the small uppercase label above each product and

@@ -2,7 +2,7 @@ import { mkdirSync } from "node:fs";
 import path from "node:path";
 import { expect, test, type Page } from "@playwright/test";
 import { PORTS } from "./ports";
-import { createCustomer, sql } from "./support/control";
+import { createCustomer, revokeSessions, sql, userLookups } from "./support/control";
 
 /**
  * The customer portal against the disposable test database and the
@@ -210,6 +210,32 @@ test("a signed-in customer who goes shopping gets back to their account; signing
   await expect(page.getByRole("banner").getByRole("link", { name: "Login" })).toHaveAttribute("href", "/login");
   await page.goto(`${BASE}/account`);
   await expect(page).toHaveURL(`${BASE}/login`);
+});
+
+test("a session ended on another device is cleared here once, not asked about on every page", async ({ browser }) => {
+  const context = await browser.newContext();
+  const page = await context.newPage();
+  const sessionCookies = async () => (await context.cookies()).filter((cookie) => /^sb-.+-auth-token(\.\d+)?$/.test(cookie.name));
+  await signIn(page, DAVID);
+  expect(await sessionCookies()).not.toHaveLength(0);
+
+  // David signs out somewhere else: this browser still has its cookie.
+  await revokeSessions(DAVID[0]);
+  await page.goto(`${BASE}/account/orders`);
+  await expect(page).toHaveURL(`${BASE}/login`);
+  // The dead cookie is gone, so the store offers Login again...
+  expect(await sessionCookies()).toHaveLength(0);
+  await page.goto(BASE + "/");
+  await expect(page.getByRole("banner").getByRole("link", { name: "Login" })).toHaveAttribute("href", "/login");
+
+  // ...and further pages ask the auth server nothing about it.
+  const asked = await userLookups();
+  for (const route of ["/account", "/account/profile", "/login", "/register", "/"]) await page.goto(`${BASE}${route}`);
+  expect(await userLookups()).toBe(asked);
+
+  // Signing in again works as usual.
+  await signIn(page, DAVID);
+  await context.close();
 });
 
 test("the optional profile photo is uploaded, served only to its owner, and can be removed", async ({ page, browser }) => {
