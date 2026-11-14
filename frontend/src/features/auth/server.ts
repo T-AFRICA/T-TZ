@@ -45,6 +45,8 @@ export interface SessionUser {
   email: string | null;
   fullName: string | null;
   phone: string | null;
+  /** True once the customer has confirmed their email address with Supabase Auth. */
+  emailVerified: boolean;
 }
 
 /**
@@ -65,6 +67,7 @@ export async function currentUser(): Promise<SessionUser | null> {
     email: data.user.email ?? null,
     fullName: typeof meta?.full_name === "string" ? meta.full_name : null,
     phone: typeof meta?.phone === "string" ? meta.phone : null,
+    emailVerified: Boolean(data.user.email_confirmed_at),
   };
 }
 

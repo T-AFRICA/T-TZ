@@ -59,7 +59,8 @@ test.describe("account and order forms without JavaScript (services connected)",
     await page.getByLabel(/^Password/).fill("Right-Secret-42");
     await page.getByRole("button", { name: "Sign in" }).click();
     await expect(page).toHaveURL(`${CONNECTED}/account`);
-    await expect(page.getByText("nojs.customer@example.test")).toBeVisible();
+    // The email is in the desktop sidebar and in the phone header; the sidebar is the visible one here.
+    await expect(page.getByRole("complementary").getByText("nojs.customer@example.test")).toBeVisible();
     expectPosted(requests, "/login");
     expectCleanUrls(page, requests, ["Right-Secret-42", "nojs.customer@example.test"]);
   });
