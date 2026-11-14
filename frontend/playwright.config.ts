@@ -43,6 +43,9 @@ export default defineConfig({
         DATA_SOURCE: "database",
         DATABASE_URL: `postgres://postgres:postgres@127.0.0.1:${PORTS.database}/postgres`,
         DATABASE_POOL_MAX: "1",
+        // Off by default so every test reads the test database as it is now;
+        // E2E_CATALOG_CACHE_SECONDS turns the shared catalogue cache on for a run.
+        CATALOG_CACHE_SECONDS: process.env.E2E_CATALOG_CACHE_SECONDS ?? "0",
         SUPABASE_URL: `http://127.0.0.1:${PORTS.auth}`,
         SUPABASE_ANON_KEY: "e2e-anon-key-not-a-secret",
         WEB_ORIGIN: `http://localhost:${PORTS.connected}`,

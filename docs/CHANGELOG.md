@@ -3,6 +3,31 @@
 Meaningful implementation changes, newest first. Dates are work dates;
 nothing below is released.
 
+## 2026-11-14 — catalogue pages share one read of the database for a minute
+
+- Owner report: with the database connected the site loads slower than
+  before. Measured on tronic.live from an edge in Cape Town: pages served
+  from the build answered in 0.1 s; pages rendered by a server function
+  (in Washington, the hosting default) took 0.4 s to the first byte, a
+  category listing 0.9 to 1.8 s and a search 0.4 to 2.1 s, most of it
+  waiting for the database.
+- The public catalogue of a country is now kept in the framework's data
+  cache for CATALOG_CACHE_SECONDS (default 60; 0 turns it off), shared by
+  every server instance. Before, each instance kept its own copy for 15
+  seconds, which on serverless hosting is rarely reused. Only what the
+  anon role may read is cached, the same for every visitor.
+- A price or stock change shows on listing, product and search pages
+  within about a minute. Unchanged: the checkout quote and the order read
+  the current price and stock every time, and the order reprices in the
+  database.
+- Browser tests run with the cache off, so each test sees the test
+  database as it is; one full run with the cache on (60 s) also passed.
+- vercel.json: server functions run in Dublin (dub1). The owner's
+  Supabase project is in Ireland (eu-west-1), so a function and the
+  database are now in the same place instead of an ocean apart, and
+  Dublin is also closer to visitors in East Africa than Washington.
+- Not measured after deployment yet.
+
 ## 2026-11-14 — sample catalogue script for a new Supabase project
 
 - Owner request: set up the database so the storefront can take orders.

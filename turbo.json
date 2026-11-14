@@ -8,6 +8,7 @@
         "DATA_SOURCE",
         "DATABASE_URL",
         "DATABASE_POOL_MAX",
+        "CATALOG_CACHE_SECONDS",
         "SUPABASE_URL",
         "SUPABASE_ANON_KEY",
         "WEB_ORIGIN",
