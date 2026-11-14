@@ -3,7 +3,17 @@
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
-      "outputs": [".next/**", "!.next/cache/**", "dist/**"]
+      "outputs": [".next/**", "!.next/cache/**", "dist/**"],
+      "env": [
+        "DATA_SOURCE",
+        "DATABASE_URL",
+        "DATABASE_POOL_MAX",
+        "SUPABASE_URL",
+        "SUPABASE_ANON_KEY",
+        "WEB_ORIGIN",
+        "NEXT_PUBLIC_*",
+        "NEXT_DIST_DIR"
+      ]
     },
     "lint": {},
     "typecheck": {},

@@ -38,3 +38,6 @@ gitleaks-report.*
 # Operating-system files
 .DS_Store
 Thumbs.db
+
+# Generated setup SQL for a new database (pnpm --filter @tronic/database run setup:sql).
+database/out/
