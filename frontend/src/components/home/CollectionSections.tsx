@@ -103,7 +103,6 @@ export function ViewAll({ href, label, tone }: { href: string; label: string; to
  */
 export function PanelCollection({
   id,
-  eyebrow,
   title,
   description,
   viewAllHref,
@@ -111,7 +110,7 @@ export function PanelCollection({
   result,
   photo,
   reverse = false,
-}: CollectionBase & { eyebrow: string; viewAllLabel: string; photo: Photo; reverse?: boolean }) {
+}: CollectionBase & { viewAllLabel: string; photo: Photo; reverse?: boolean }) {
   return (
     <section aria-labelledby={id} className="mt-8 md:mt-14">
       <Reveal>
@@ -131,8 +130,7 @@ export function PanelCollection({
               className="-z-10 object-cover transition-transform duration-700 ease-out motion-safe:group-hover:scale-[1.04]"
             />
             <div aria-hidden="true" className="absolute inset-0 -z-10 bg-[linear-gradient(180deg,rgba(0,0,0,0.05)_0%,rgba(0,0,0,0.35)_45%,rgba(0,0,0,0.82)_100%)]" />
-            <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[#ff8a8f]">{eyebrow}</p>
-            <h2 id={id} className="mt-1.5 text-2xl font-bold leading-tight md:text-[length:var(--text-h3)]">
+            <h2 id={id} className="text-2xl font-bold leading-tight md:text-[length:var(--text-h3)]">
               {title}
             </h2>
             <p className="mt-1.5 max-w-sm text-sm leading-relaxed text-white/80">{description}</p>
@@ -190,13 +188,12 @@ export function GridCollection({ id, title, description, viewAllHref, result }: 
  */
 export function SpotlightCollection({
   id,
-  eyebrow,
   title,
   description,
   viewAllHref,
   result,
   photo,
-}: CollectionBase & { eyebrow: string; photo: Photo }) {
+}: CollectionBase & { photo: Photo }) {
   return (
     <section aria-labelledby={id} className="mt-8 md:mt-14">
       <Reveal>
@@ -215,8 +212,7 @@ export function SpotlightCollection({
           </div>
           <div className="flex items-end justify-between gap-3">
             <div className="min-w-0">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[#ffcf8a]">{eyebrow}</p>
-              <h2 id={id} className="mt-1.5 text-2xl font-bold leading-tight md:text-[length:var(--text-h2)]">
+              <h2 id={id} className="text-2xl font-bold leading-tight md:text-[length:var(--text-h2)]">
                 {title}
               </h2>
               <p className="mt-1 max-w-lg text-sm text-white/75">{description}</p>

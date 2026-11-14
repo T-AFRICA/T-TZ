@@ -106,7 +106,7 @@ export function AuthScreen({
       >
         <span aria-hidden="true" className="hidden h-px w-12 bg-white/35 lg:block" />
         <ShoppingBag size={18} strokeWidth={1.9} aria-hidden="true" />
-        Back to shopping
+        Back to Store
         <span aria-hidden="true" className="hidden h-px w-12 bg-white/35 lg:block" />
       </Link>
       <p

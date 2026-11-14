@@ -28,6 +28,17 @@ describe("HomeEssentials", () => {
     ]);
   });
 
+  it("has no small label above a section heading (owner request 2026-11-14)", async () => {
+    await renderEssentials();
+    for (const label of ["Deals", "Selected for you", "Most popular", "Just added", "Collections", "Lighting collection", "Power & data", "New arrivals"]) {
+      expect(screen.queryByText(label), label).not.toBeInTheDocument();
+    }
+    // Every section heading is the first text of its heading block.
+    for (const heading of screen.getAllByRole("heading", { level: 2 })) {
+      expect(heading.previousElementSibling?.tagName, heading.textContent ?? "").not.toBe("P");
+    }
+  });
+
   it("shows no invented best-seller ranking while there is no sales data", async () => {
     await renderEssentials();
     const section = screen.getByRole("region", { name: "Best-Selling Products" });

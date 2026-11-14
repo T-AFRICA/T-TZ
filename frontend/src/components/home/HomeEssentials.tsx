@@ -61,13 +61,11 @@ const COLLECTIONS = [
 
 function SectionHeading({
   id,
-  eyebrow,
   title,
   description,
   action,
 }: {
   id: string;
-  eyebrow?: string;
   title: string;
   description?: string;
   action?: React.ReactNode;
@@ -75,10 +73,7 @@ function SectionHeading({
   return (
     <div className="flex items-end justify-between gap-3">
       <div className="min-w-0">
-        {eyebrow ? (
-          <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[var(--color-action-red)]">{eyebrow}</p>
-        ) : null}
-        <h2 id={id} className="mt-1 text-lg font-bold leading-tight md:text-[length:var(--text-h2)] md:tracking-[-0.01em]">
+        <h2 id={id} className="text-lg font-bold leading-tight md:text-[length:var(--text-h2)] md:tracking-[-0.01em]">
           {title}
         </h2>
         {description ? <p className="mt-1 text-sm text-[var(--text-secondary)]">{description}</p> : null}
@@ -111,8 +106,7 @@ function OffersSection({ result }: { result: CollectionResult }) {
         <div className="relative isolate overflow-hidden rounded-2xl bg-[linear-gradient(135deg,#d71920_0%,#9e1118_100%)] px-4 py-6 text-white sm:px-6 md:px-8 md:py-8">
           <div aria-hidden="true" className="absolute -right-24 -top-24 -z-10 h-80 w-80 rounded-full border-[40px] border-white/[0.06]" />
           <div aria-hidden="true" className="absolute -bottom-32 left-1/3 -z-10 h-72 w-72 rounded-full bg-[radial-gradient(circle,rgba(255,255,255,0.12),transparent_65%)]" />
-          <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-white/80">Deals</p>
-          <h2 id="home-offers" className="font-display mt-1 text-[clamp(1.6rem,1.1rem+1.6vw,2.4rem)] leading-tight">
+          <h2 id="home-offers" className="font-display text-[clamp(1.6rem,1.1rem+1.6vw,2.4rem)] leading-tight">
             Offers &amp; Promotions
           </h2>
           <p className="mt-1 max-w-xl text-sm text-white/85">Products with a reduced price in our catalogue.</p>
@@ -151,7 +145,6 @@ function FeaturedSection({ result }: { result: CollectionResult }) {
       <Reveal>
         <SectionHeading
           id="home-featured"
-          eyebrow="Selected for you"
           title="Featured Products"
           description="Hand-picked TRONIC products across our departments."
           action={<ViewAll href={ALL_PRODUCTS_HREF} label="View all" tone="red" />}
@@ -190,8 +183,7 @@ function BestSellersSection() {
               <TrendingUpIcon size={22} />
             </span>
             <div className="min-w-0">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[var(--color-action-red)]">Most popular</p>
-              <h2 id="home-best-sellers" className="mt-1 text-lg font-bold leading-tight md:text-[length:var(--text-h3)]">
+              <h2 id="home-best-sellers" className="text-lg font-bold leading-tight md:text-[length:var(--text-h3)]">
                 Best-Selling Products
               </h2>
               <p role="status" className="mt-1.5 text-sm text-[var(--text-secondary)]">
@@ -226,7 +218,6 @@ function NewArrivalsSection({ result }: { result: CollectionResult }) {
       <Reveal>
         <SectionHeading
           id="home-new-arrivals"
-          eyebrow="Just added"
           title="New Arrivals"
           description="The latest products in our catalogue."
           action={<ViewAll href={ALL_PRODUCTS_HREF} label="View all" tone="red" />}
@@ -249,7 +240,7 @@ function ShopCollectionsSection() {
   return (
     <section aria-labelledby="home-collections" className="mt-8 md:mt-14">
       <Reveal>
-        <SectionHeading id="home-collections" eyebrow="Collections" title="Shop Collections" description="Explore our departments." />
+        <SectionHeading id="home-collections" title="Shop Collections" description="Explore our departments." />
         <ul className="mt-3 grid grid-cols-2 gap-3 md:mt-5 md:h-[30rem] md:grid-cols-4 md:grid-rows-2 md:gap-4 lg:h-[34rem]">
           {cards.map((card, index) => (
             <li
@@ -306,8 +297,7 @@ function ChandeliersSection({ result }: { result: CollectionResult }) {
           <div aria-hidden="true" className="promo-glow absolute right-[30%] top-[20%] -z-10 h-72 w-72 rounded-full bg-[radial-gradient(circle,rgba(255,196,120,0.3),transparent_65%)]" />
           <div>
             <div className="max-w-lg">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[#ffcf8a]">Lighting collection</p>
-              <h2 id="home-chandeliers" className="font-display mt-2 text-[clamp(1.6rem,1.1rem+1.8vw,2.6rem)] leading-[1.08]">
+              <h2 id="home-chandeliers" className="font-display text-[clamp(1.6rem,1.1rem+1.8vw,2.6rem)] leading-[1.08]">
                 Luxury Chandeliers &amp; Lighting
               </h2>
               <p className="mt-2 text-sm text-white/80 md:text-base">Pendants, chandeliers and ceiling lights that set the mood of a room.</p>
@@ -354,8 +344,7 @@ function CablesSection({ result }: { result: CollectionResult }) {
               className="-z-10 object-cover transition-transform duration-700 ease-out motion-safe:group-hover:scale-[1.03]"
             />
             <div aria-hidden="true" className="absolute inset-0 -z-10 bg-[linear-gradient(180deg,rgba(0,0,0,0.1)_0%,rgba(0,0,0,0.45)_45%,rgba(0,0,0,0.88)_100%)]" />
-            <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[#ff8a8f]">Power &amp; data</p>
-            <h2 id="home-cables" className="mt-1.5 text-2xl font-bold leading-tight md:text-[length:var(--text-h2)]">
+            <h2 id="home-cables" className="text-2xl font-bold leading-tight md:text-[length:var(--text-h2)]">
               Cables &amp; Wiring
             </h2>
             <p className="mt-1.5 max-w-md text-sm text-white/80">Power, data and signal cables with the accessories to install them.</p>
@@ -418,8 +407,7 @@ function WallLightsSection({ result }: { result: CollectionResult }) {
             <div aria-hidden="true" className="absolute inset-y-0 left-0 hidden w-1/4 bg-[linear-gradient(90deg,#0b0b0e,transparent)] md:block" />
           </div>
           <div className="px-5 py-6 md:px-10 md:py-8">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[#ff8a8f]">New arrivals</p>
-            <h2 id="home-wall-lights" className="mt-1.5 text-2xl font-bold leading-tight md:text-[length:var(--text-h2)]">
+            <h2 id="home-wall-lights" className="text-2xl font-bold leading-tight md:text-[length:var(--text-h2)]">
               New Arrival Wall Lights
             </h2>
             <p className="mt-1.5 text-sm text-white/80">Modern wall lights for living rooms, stairways and facades.</p>
