@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { normalizeTzPhone } from "@/features/checkout/validation";
 import { validateForgot, validateLogin, validateRegister, validateReset } from "./rules";
 import { authConfigured, safeNextPath, siteOrigin, supabaseServer } from "./server";
-import { authErrorFromSupabase, isUnexpectedAuthError } from "./service";
+import { AUTH_REGISTERED_PATH, authErrorFromSupabase, isUnexpectedAuthError } from "./service";
 import type { AuthFormState } from "./state";
 
 /**
@@ -84,11 +84,11 @@ export async function signUpAction(_previous: AuthFormState, form: FormData): Pr
   });
   if (error) return providerError("sign-up", error);
   // With email confirmation on (the expected setting) there is no session
-  // yet; Supabase answers the same way for a new and an existing email, so
-  // the page cannot be used to find out who has an account.
-  if (!data.session) {
-    return { status: "sent", text: "Check your email: we sent a link to confirm your account. Then sign in." };
-  }
+  // yet: the customer goes to the sign-in page, which asks them to confirm
+  // by email first. Supabase answers the same way for a new and an existing
+  // email, so neither page can be used to find out who has an account.
+  if (!data.session) redirect(AUTH_REGISTERED_PATH);
+  // Confirmation off: the provider has already signed the customer in.
   redirect("/account");
 }
 
@@ -132,7 +132,14 @@ export async function updatePasswordAction(_previous: AuthFormState, form: FormD
 export async function signOutAction(): Promise<void> {
   if (authConfigured()) {
     const supabase = await supabaseServer();
-    await supabase.auth.signOut();
+    const { error } = await supabase.auth.signOut();
+    // If the provider could not end the session (it could not be reached,
+    // for example) the cookies would stay and the customer would still be
+    // signed in here. End it on this device regardless.
+    if (error) {
+      logUnexpected("sign-out", error);
+      await supabase.auth.signOut({ scope: "local" });
+    }
   }
   redirect("/login");
 }

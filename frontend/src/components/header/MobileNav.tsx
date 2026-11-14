@@ -7,14 +7,16 @@ import { CATEGORY_SECTIONS, METER_NAV_ITEM } from "@tronic/country-config";
 import { BrandMark, HeartIcon, MeterIcon, ShieldCheckIcon, TruckIcon, UserIcon } from "@tronic/ui";
 import { CountrySelector } from "@/components/country/CountrySelector";
 import { CategoryArt } from "@/components/home/CategoryArt";
-import { ACCOUNT_LINK, CHECK_WARRANTY_LINK, TRACK_ORDER_LINK, WISHLIST_LINK } from "@/config/site";
+import { ACCOUNT_LINK, CHECK_WARRANTY_LINK, SIGNED_IN_ACCOUNT_LINK, TRACK_ORDER_LINK, WISHLIST_LINK } from "@/config/site";
+import { useSignedInHint } from "@/features/auth/sessionHint";
 
 /**
  * Mobile navigation drawer built on the native <dialog> element, which
  * provides focus containment and Escape handling for free. Premium app
  * styling (owner iterations, Nov 2026): off-white canvas with white cards,
  * per-category icon chips. Order per owner: categories, Meter Token Issuer,
- * Track Order, Check Warranty, Wishlist, country, red Login last; company
+ * Track Order, Check Warranty, Wishlist, country, red Login (Account for a
+ * signed-in customer) last; company
  * links live in the footer.
  *
  * Motion (owner request 2026-11-08): the panel slides in over 400ms with the
@@ -30,6 +32,7 @@ export function MobileNav() {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const touchStart = useRef<{ x: number; y: number } | null>(null);
   const pathname = usePathname();
+  const accountLink = useSignedInHint() ? SIGNED_IN_ACCOUNT_LINK : ACCOUNT_LINK;
 
   const close = useCallback(() => {
     const dialog = dialogRef.current;
@@ -256,12 +259,12 @@ export function MobileNav() {
           <div className="rounded-2xl bg-white p-3 shadow-[0_3px_14px_rgba(17,17,17,0.06)]">
             <CountrySelector />
             <Link
-              href={ACCOUNT_LINK.href}
+              href={accountLink.href}
               onClick={close}
               className="mt-3 flex items-center justify-center gap-2 rounded-full bg-[var(--color-action-red)] px-4 py-2.5 font-semibold text-white transition-all duration-200 hover:-translate-y-0.5 hover:bg-[var(--color-action-red-dark)] hover:shadow-[0_8px_18px_-8px_rgba(215,25,32,0.6)]"
             >
               <UserIcon size={18} />
-              {ACCOUNT_LINK.label}
+              {accountLink.label}
             </Link>
           </div>
           <p className="pt-4 text-center text-[10px] font-semibold uppercase tracking-[0.3em] text-[var(--color-light-grey)]">

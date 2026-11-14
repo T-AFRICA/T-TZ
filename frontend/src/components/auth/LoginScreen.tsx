@@ -5,6 +5,7 @@ import { useActionState, type CSSProperties, type ReactNode } from "react";
 import { Mail, ShoppingBag, UserRound } from "lucide-react";
 import { PASSWORD_POLICY, validateLogin, type LoginValues } from "@/features/auth/rules";
 import { signInAction } from "@/features/auth/actions";
+import { AUTH_REGISTERED_NOTICE } from "@/features/auth/service";
 import { IDLE } from "@/features/auth/state";
 import { useAuthForm } from "@/features/auth/useAuthForm";
 import { AuthCardMotion } from "./AuthCardMotion";
@@ -67,22 +68,16 @@ export function AuthScreen({
               <span className="relative">{icon}</span>
             </div>
           )}
-          <p
-            className={`login-kicker am-c text-center ${long ? "" : "mt-3"} text-[11px] font-semibold uppercase tracking-[0.28em] text-[var(--color-action-red)] lg:text-xs`}
-            style={at(1)}
-          >
-            TRONIC account
-          </p>
           <h1
             id="auth-title"
-            className="login-title am-c mt-1 text-center text-[1.85rem] font-bold leading-tight tracking-[-0.02em] text-[#141821] sm:text-[2.15rem] lg:text-[2.5rem]"
-            style={{ ...HEADING_FONT, ...at(2) }}
+            className={`login-title am-c ${long ? "" : "mt-3"} text-center text-[1.85rem] font-bold leading-tight tracking-[-0.02em] text-[#141821] sm:text-[2.15rem] lg:text-[2.5rem]`}
+            style={{ ...HEADING_FONT, ...at(1) }}
           >
             {title}
           </h1>
           <p
             className="login-sub am-c mt-1 text-center text-[13px] text-[var(--text-secondary)] sm:text-sm lg:text-[15px]"
-            style={at(3)}
+            style={at(2)}
           >
             {subtitle}
           </p>
@@ -140,8 +135,12 @@ export function AuthLink({ href, children }: { href: string; children: ReactNode
   );
 }
 
-/** /login — fits one screen without scrolling. `authEnabled` is false until Supabase Auth is configured. */
-export function LoginScreen({ authEnabled }: { authEnabled: boolean }) {
+/**
+ * /login — fits one screen without scrolling. `authEnabled` is false until
+ * Supabase Auth is configured; `registered` is true when the customer has
+ * just come from the registration form.
+ */
+export function LoginScreen({ authEnabled, registered = false }: { authEnabled: boolean; registered?: boolean }) {
   return (
     <AuthScreen
       icon={<UserRound size={28} strokeWidth={1.9} aria-hidden="true" />}
@@ -157,7 +156,7 @@ export function LoginScreen({ authEnabled }: { authEnabled: boolean }) {
         </>
       }
     >
-      <LoginForm enabled={authEnabled} />
+      <LoginForm enabled={authEnabled} registered={registered} />
     </AuthScreen>
   );
 }
@@ -167,8 +166,11 @@ export function LoginScreen({ authEnabled }: { authEnabled: boolean }) {
  * signInAction, which signs in with Supabase Auth and goes to /account.
  * Sessions persist until sign-out (Supabase's refresh token); the Remember
  * me box does not shorten them yet.
+ *
+ * `registered`: the customer has just registered, so the form opens with
+ * the confirm-by-email note. Any answer of the form's own replaces it.
  */
-export function LoginForm({ enabled }: { enabled: boolean }) {
+export function LoginForm({ enabled, registered = false }: { enabled: boolean; registered?: boolean }) {
   const [state, action, pending] = useActionState(signInAction, IDLE);
   const form = useAuthForm<LoginValues & { remember: boolean }>({
     initial: { email: "", password: "", remember: false },
@@ -177,6 +179,7 @@ export function LoginForm({ enabled }: { enabled: boolean }) {
     enabled,
   });
   const { values, errors } = form;
+  const message = form.message ?? (registered ? { tone: "info" as const, text: AUTH_REGISTERED_NOTICE } : null);
 
   return (
     <form ref={form.formRef} action={action} noValidate onSubmit={form.onSubmit} className="login-form space-y-3.5">
@@ -221,7 +224,7 @@ export function LoginForm({ enabled }: { enabled: boolean }) {
       <SubmitButton pending={pending} disabled={!enabled}>
         Sign in
       </SubmitButton>
-      <AuthMessage message={form.message} />
+      <AuthMessage message={message} />
     </form>
   );
 }

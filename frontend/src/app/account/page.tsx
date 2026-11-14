@@ -54,8 +54,7 @@ export default async function AccountDashboardPage() {
     <PortalPage>
       <section className="relative overflow-hidden rounded-2xl bg-white p-5 shadow-[0_1px_2px_rgba(17,17,17,0.04)] md:p-7">
         <div aria-hidden="true" className="pointer-events-none absolute -right-16 -top-20 h-56 w-56 rounded-full border-[30px] border-[var(--color-action-red)]/[0.06]" />
-        <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--color-action-red)]">TRONIC account</p>
-        <h1 className="mt-1 text-[1.6rem] font-bold leading-tight tracking-[-0.01em] md:text-[2rem]">
+        <h1 className="text-[1.6rem] font-bold leading-tight tracking-[-0.01em] md:text-[2rem]">
           {name ? `Welcome back, ${name}` : "Welcome back"}
         </h1>
         <p className="mt-1.5 max-w-xl text-sm text-[var(--text-secondary)] md:text-[15px]">

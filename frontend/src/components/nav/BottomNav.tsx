@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { CartIcon, GridIcon, HeartIcon, HomeIcon, UserIcon } from "@tronic/ui";
-import { ACCOUNT_LINK, CART_LINK, WISHLIST_LINK } from "@/config/site";
+import { ACCOUNT_LINK, CART_LINK, SIGNED_IN_ACCOUNT_LINK, WISHLIST_LINK } from "@/config/site";
+import { useSignedInHint } from "@/features/auth/sessionHint";
 import type { IconProps } from "@tronic/ui";
 import { CartCountBadge, CartCountText, WishlistCountBadge, WishlistCountText } from "@/components/cart/CountBadge";
 
@@ -17,9 +18,10 @@ interface TabItem {
 
 /**
  * Mobile bottom tab bar (approved mobile UI reference, Nov 2026): Home,
- * Categories, Wishlist, Cart, Profile. The account route is a W03-04
- * placeholder; Wishlist and Cart show this browser's item counts
- * (features/cart), never invented numbers. Hidden from md upward.
+ * Categories, Wishlist, Cart, Profile. Profile opens the sign-in page for
+ * a visitor and the account for a signed-in customer; Wishlist and Cart
+ * show this browser's item counts (features/cart), never invented numbers.
+ * Hidden from md upward.
  */
 const TABS: readonly TabItem[] = [
   { href: "/", label: "Home", icon: HomeIcon, activePath: "/" },
@@ -31,6 +33,10 @@ const TABS: readonly TabItem[] = [
 
 export function BottomNav() {
   const pathname = usePathname();
+  const signedIn = useSignedInHint();
+  const tabs = TABS.map((tab) =>
+    tab.href === ACCOUNT_LINK.href && signedIn ? { ...tab, href: SIGNED_IN_ACCOUNT_LINK.href, activePath: SIGNED_IN_ACCOUNT_LINK.href } : tab,
+  );
 
   return (
     <nav
@@ -38,9 +44,11 @@ export function BottomNav() {
       className="fixed inset-x-0 bottom-0 z-40 border-t border-[var(--color-light-grey)] bg-white pb-[env(safe-area-inset-bottom)] md:hidden"
     >
       <ul className="flex items-stretch">
-        {TABS.map((tab) => {
+        {tabs.map((tab) => {
           const Icon = tab.icon;
-          const isActive = tab.activePath !== null && pathname === tab.activePath;
+          const isActive =
+            tab.activePath !== null &&
+            (pathname === tab.activePath || (tab.activePath === SIGNED_IN_ACCOUNT_LINK.href && Boolean(pathname?.startsWith(`${tab.activePath}/`))));
           return (
             <li key={tab.label} className="flex-1">
               <Link

@@ -9,7 +9,8 @@ import { createCustomer, sql } from "./support/control";
  * stand-in Supabase Auth: who may see it, that it shows the signed-in
  * customer's own records (and only those), that the order list filters on
  * the server, that the timeline follows the recorded status, that the
- * profile saves, and that no page overflows from 320px to 1920px.
+ * profile saves, that the optional profile photo is private to its owner,
+ * and that no page overflows from 320px to 1920px.
  */
 const BASE = `http://localhost:${PORTS.connected}`;
 const CART_KEY = "tronic.tz.cart.v1";
@@ -23,6 +24,8 @@ type Customer = readonly [email: string, phrase: string];
 const CAROL: Customer = ["carol.portal@example.test", "Carol-Portal-Test-1"];
 const DAVID: Customer = ["david.portal@example.test", "David-Portal-Test-1"];
 const SHOTS = path.join(process.cwd(), "test-results", "portal");
+/** A one-pixel PNG: a real image the browser can decode. */
+const ONE_PIXEL_PNG = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==", "base64");
 
 const PORTAL_PAGES = [
   "/account",
@@ -177,6 +180,82 @@ test("the profile form saves the customer's own name and phone", async ({ page }
   await page.goto(`${BASE}/account`);
   await expect(page.getByRole("heading", { level: 1, name: "Welcome back, Carol" })).toBeVisible();
   expect(new URL(page.url()).search).toBe("");
+});
+
+test("a signed-in customer who goes shopping gets back to their account; signing out ends that", async ({ page }) => {
+  // A visitor is offered Login.
+  await page.goto(`${BASE}/`);
+  await expect(page.getByRole("banner").getByRole("link", { name: "Login" })).toHaveAttribute("href", "/login");
+
+  await signIn(page, CAROL);
+  await page.goto(`${BASE}/`);
+  // The header now offers the account, and one click opens it.
+  const account = page.getByRole("banner").getByRole("link", { name: "Account" });
+  await expect(account).toHaveAttribute("href", "/account");
+  await expect(page.getByRole("banner").getByRole("link", { name: "Login" })).toHaveCount(0);
+  await account.click();
+  await expect(page).toHaveURL(`${BASE}/account`);
+  await expect(page.getByRole("heading", { level: 1, name: /Welcome back/ })).toBeVisible();
+
+  // The sign-in and register addresses do not show a form to a signed-in customer.
+  for (const route of ["/login", "/login/registered", "/register"]) {
+    await page.goto(`${BASE}${route}`);
+    await expect(page, route).toHaveURL(`${BASE}/account`);
+  }
+
+  // Signing out ends the session: the store offers Login again and the account is closed.
+  await page.getByRole("complementary").getByRole("button", { name: "Sign out" }).click();
+  await expect(page).toHaveURL(`${BASE}/login`);
+  await page.goto(`${BASE}/`);
+  await expect(page.getByRole("banner").getByRole("link", { name: "Login" })).toHaveAttribute("href", "/login");
+  await page.goto(`${BASE}/account`);
+  await expect(page).toHaveURL(`${BASE}/login`);
+});
+
+test("the optional profile photo is uploaded, served only to its owner, and can be removed", async ({ page, browser }) => {
+  await signIn(page, CAROL);
+  await page.goto(`${BASE}/account/profile`);
+  const photos = page.locator('img[src^="/account/photo/"]:visible');
+  // Optional: the profile works without one, and says so.
+  await expect(photos).toHaveCount(0);
+  await expect(page.getByText(/^Optional\./)).toBeVisible();
+
+  // Not an image, whatever its name says.
+  await page.getByLabel("Choose a photo").setInputFiles({ name: "photo.png", mimeType: "image/png", buffer: Buffer.from("<!doctype html><script>1</script>") });
+  await page.getByRole("button", { name: "Upload photo" }).click();
+  await expect(page.getByText("Use a JPEG, PNG or WebP image.")).toBeVisible();
+  await expect(photos).toHaveCount(0);
+
+  await page.getByLabel("Choose a photo").setInputFiles({ name: "carol.png", mimeType: "image/png", buffer: ONE_PIXEL_PNG });
+  await page.getByRole("button", { name: "Upload photo" }).click();
+  await expect(page.getByText("Photo saved.")).toBeVisible();
+  await expect(photos.first()).toBeVisible();
+  const address = await photos.first().getAttribute("src");
+  expect(address).toMatch(/^\/account\/photo\/\d+$/);
+
+  // Carol gets her photo: an image, and never from a shared cache.
+  const own = await page.request.get(`${BASE}${address}`);
+  expect(own.status()).toBe(200);
+  expect(own.headers()["content-type"]).toMatch(/^image\/(jpeg|png|webp)$/);
+  expect(own.headers()["cache-control"]).toBe("private, no-cache");
+  expect(own.headers()["x-content-type-options"]).toBe("nosniff");
+
+  // The same address shows David nothing, signed in as himself...
+  const david = await (await browser.newContext()).newPage();
+  await signIn(david, DAVID);
+  expect((await david.request.get(`${BASE}${address}`)).status()).toBe(404);
+  await david.goto(`${BASE}/account/profile`);
+  await expect(david.locator('img[src^="/account/photo/"]')).toHaveCount(0);
+  // ...and a signed-out visitor is sent to sign in.
+  const guest = await browser.newContext();
+  const signedOut = await guest.request.get(`${BASE}${address}`, { maxRedirects: 0 });
+  expect(signedOut.status()).toBe(303);
+  expect(signedOut.headers()["location"]).toContain("/login");
+
+  await page.getByRole("button", { name: "Remove photo" }).click();
+  await expect(page.getByText("Photo removed.")).toBeVisible();
+  await expect(photos).toHaveCount(0);
+  expect((await page.request.get(`${BASE}${address}`)).status()).toBe(404);
 });
 
 test("no portal page overflows sideways from 320px to 1920px", async ({ page }) => {

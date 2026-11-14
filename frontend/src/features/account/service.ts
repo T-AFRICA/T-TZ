@@ -10,6 +10,7 @@ import {
 import { ACTIVE_COUNTRY } from "@tronic/country-config";
 import type { SessionUser } from "@/features/auth/server";
 import { getCatalog, getDb, ordersEnabled } from "@/features/data/source";
+import { avatarUrl } from "./avatar";
 import { ACTIVE_STATUSES, buildTracking, type OrderTracking, type TrackableOrder } from "./tracking";
 
 /**
@@ -29,6 +30,8 @@ export interface CustomerProfile {
   fullName: string | null;
   email: string | null;
   phone: string | null;
+  /** The customer's optional photo, served only to them; null without one. */
+  photoUrl: string | null;
   /** The storefront's country (one deployment per country). */
   country: string;
 }
@@ -123,6 +126,7 @@ export function createAccountService(user: SessionUser): AccountService {
       fullName: user.fullName,
       email: user.email,
       phone: user.phone,
+      photoUrl: avatarUrl(user.avatarVersion),
       country: ACTIVE_COUNTRY.name,
     }),
 

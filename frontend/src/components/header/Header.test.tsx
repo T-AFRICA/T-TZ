@@ -1,5 +1,5 @@
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { SUPPORT_PHONE } from "@/config/site";
 import { Header } from "./Header";
 
@@ -8,6 +8,10 @@ vi.mock("next/navigation", async (importOriginal) => ({
   ...(await importOriginal<typeof import("next/navigation")>()),
   useRouter: () => ({ push: vi.fn() }),
 }));
+
+afterEach(() => {
+  document.cookie = "sb-testproject-auth-token=; path=/; max-age=0";
+});
 
 describe("Header", () => {
   it("keeps the dedicated Meter link in the main header row (FR-003)", () => {
@@ -28,6 +32,16 @@ describe("Header", () => {
     expect(loginLinks[0]).toHaveAttribute("href", "/login");
     const wishlistLinks = screen.getAllByRole("link", { name: /Wishlist/ });
     expect(wishlistLinks[0]).toHaveAttribute("href", "/wishlist");
+  });
+
+  it("offers a signed-in customer their account instead of Login, in the header and the drawer", () => {
+    document.cookie = "sb-testproject-auth-token=session; path=/";
+    render(<Header />);
+    // hidden: true also finds the link inside the closed drawer.
+    const accountLinks = screen.getAllByRole("link", { name: "Account", hidden: true });
+    expect(accountLinks.length).toBe(2);
+    for (const link of accountLinks) expect(link).toHaveAttribute("href", "/account");
+    expect(screen.queryByRole("link", { name: /Login/, hidden: true })).not.toBeInTheDocument();
   });
 
   it("does not render the top bar: no social links or support phone in the header (owner request 2026-11-09)", () => {

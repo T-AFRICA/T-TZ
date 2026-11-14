@@ -75,7 +75,11 @@ test.describe("account and order forms without JavaScript (services connected)",
     await page.getByLabel(/Confirm password/).fill("Tronic-Secret-9");
     await page.getByRole("checkbox").check();
     await page.getByRole("button", { name: "Create account" }).click();
+    // The registration ends on the sign-in page: a fixed address, with the
+    // confirm-by-email note above an empty form.
+    await expect(page).toHaveURL(`${CONNECTED}/login/registered`);
     await expect(page.getByText(/Check your email/)).toBeVisible();
+    await expect(page.getByLabel(/Email address/)).toHaveValue("");
     expectPosted(requests, "/register");
     expectCleanUrls(page, requests, ["Neema", "neema@example.test", "0754", "Tronic-Secret-9"]);
   });

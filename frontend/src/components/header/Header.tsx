@@ -8,14 +8,13 @@ import {
   MeterIcon,
   ShieldCheckIcon,
   TruckIcon,
-  UserIcon,
 } from "@tronic/ui";
 import { METER_NAV_ITEM } from "@tronic/country-config";
+import { AccountButton } from "./AccountButton";
 import { MobileNav } from "./MobileNav";
 import { SearchBox } from "@/components/search/SearchBox";
 import { CartCountBadge, CartCountText, WishlistCountBadge, WishlistCountText } from "@/components/cart/CountBadge";
 import {
-  ACCOUNT_LINK,
   CART_LINK,
   CHECK_WARRANTY_LINK,
   WISHLIST_LINK,
@@ -108,14 +107,9 @@ export function Header() {
             <CartCountBadge className="-right-0.5 top-0" />
           </Link>
           {/* Red account CTA (owner request, Nov 2026), placed after the
-              cart (owner request Nov 2026). */}
-          <Link
-            href={ACCOUNT_LINK.href}
-            className="hidden items-center gap-2 rounded-full bg-[var(--color-action-red)] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[var(--color-action-red-dark)] md:flex"
-          >
-            <UserIcon size={18} />
-            <span className="hidden lg:inline">{ACCOUNT_LINK.label}</span>
-          </Link>
+              cart (owner request Nov 2026): "Login", or "Account" for a
+              signed-in customer. */}
+          <AccountButton />
         </div>
       </Container>
 

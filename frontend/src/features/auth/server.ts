@@ -47,6 +47,12 @@ export interface SessionUser {
   phone: string | null;
   /** True once the customer has confirmed their email address with Supabase Auth. */
   emailVerified: boolean;
+  /**
+   * Set while the customer has a profile photo (features/account/avatar.ts);
+   * changes with every upload. A flag only: the customer can edit their own
+   * metadata, so it never says where a photo is or whose it is.
+   */
+  avatarVersion: string | null;
 }
 
 /**
@@ -68,6 +74,7 @@ export async function currentUser(): Promise<SessionUser | null> {
     fullName: typeof meta?.full_name === "string" ? meta.full_name : null,
     phone: typeof meta?.phone === "string" ? meta.phone : null,
     emailVerified: Boolean(data.user.email_confirmed_at),
+    avatarVersion: typeof meta?.avatar_version === "string" && /^\d{1,16}$/.test(meta.avatar_version) ? meta.avatar_version : null,
   };
 }
 

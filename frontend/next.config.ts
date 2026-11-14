@@ -61,6 +61,12 @@ const nextConfig: NextConfig = {
   images: {
     qualities: [75, 85, 90],
   },
+  experimental: {
+    // Server actions accept 1 MB by default. The profile photo form may
+    // post a file of up to 2 MB (features/account/avatar.ts) when the
+    // browser could not make it smaller first.
+    serverActions: { bodySizeLimit: "3mb" },
+  },
   async headers() {
     return [{ source: "/(.*)", headers: securityHeaders }];
   },

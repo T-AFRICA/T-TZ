@@ -15,6 +15,15 @@ export type AuthErrorCode =
   | "unavailable"
   | "network";
 
+/**
+ * Where a registration ends when the provider opened no session (email
+ * confirmation on): the sign-in page with AUTH_REGISTERED_NOTICE above an
+ * empty form. A path of its own, so the address has no query string and
+ * nothing the customer typed.
+ */
+export const AUTH_REGISTERED_PATH = "/login/registered";
+export const AUTH_REGISTERED_NOTICE = "Check your email: we sent a link to confirm your account. Then sign in.";
+
 /** Shown while Supabase Auth is not configured for this deployment. */
 export const AUTH_NOT_CONNECTED_MESSAGE = "Authentication will be available when account services are connected.";
 
