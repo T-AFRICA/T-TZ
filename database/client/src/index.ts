@@ -7,10 +7,21 @@ export { ANON, toSafeInteger, withAccess, type Access, type Db, type Row } from 
 export { createPostgresDb } from "./postgres-db";
 export { DatabaseCatalogClient, loadPublicProducts, rowToProduct } from "./catalog";
 export {
+  CUSTOMER_ORDER_PAGE_SIZE,
+  ORDER_STATUSES,
+  countCustomerOrdersByStatus,
+  getCustomerOrder,
+  listCustomerOrderPage,
   listCustomerOrders,
   placeCodOrder,
   trackOrder,
   type CustomerOrder,
+  type CustomerOrderDetail,
+  type CustomerOrderLine,
+  type CustomerOrderPage,
+  type CustomerOrderQuery,
+  type CustomerOrderSummary,
+  type OrderStatus,
   type LineProblem,
   type OrderLineInput,
   type PlaceCodOrderInput,

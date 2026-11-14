@@ -157,3 +157,220 @@ function parseJson(value: unknown): Json {
   if (value && typeof value === "object") return value as Json;
   throw new Error("Unexpected database function result");
 }
+
+/* ───────────── Customer portal reads (signed-in customers only) ───────────── */
+
+/** Statuses of migration 0004, in the order an order normally moves through them. */
+export const ORDER_STATUSES = [
+  "pending_payment",
+  "confirmed",
+  "processing",
+  "packed",
+  "dispatched",
+  "in_transit",
+  "delivered",
+  "cancelled",
+] as const;
+export type OrderStatus = (typeof ORDER_STATUSES)[number];
+
+export interface CustomerOrderLine {
+  lineNo: number;
+  productSlug: string;
+  sku: string;
+  name: string;
+  color: string | null;
+  variant: string | null;
+  quantity: number;
+  unitPriceMinor: number;
+  lineTotalMinor: number;
+}
+
+export interface CustomerOrderSummary extends CustomerOrder {
+  paymentStatus: string;
+  paymentMethod: string;
+  deliveryMethod: string;
+  /** Sum of the quantities. */
+  itemCount: number;
+  lines: Pick<CustomerOrderLine, "productSlug" | "sku" | "name" | "quantity">[];
+}
+
+export interface CustomerOrderDetail extends CustomerOrderSummary {
+  contact: { name: string; email: string; phone: string };
+  delivery: {
+    region: string | null;
+    district: string | null;
+    ward: string | null;
+    street: string | null;
+    extra: string | null;
+    notes: string | null;
+  };
+  subtotalMinor: number;
+  /** null until a delivery fee is quoted for the order. */
+  deliveryFeeMinor: number | null;
+  detailLines: CustomerOrderLine[];
+}
+
+export interface CustomerOrderQuery {
+  /** Only these statuses; empty or absent means all. */
+  statuses?: readonly string[];
+  /** Part of an order number, any case. */
+  search?: string;
+  /** Inclusive start and exclusive end of the order date (ISO timestamps). */
+  from?: string;
+  to?: string;
+  sort?: "newest" | "oldest";
+  /** 1-based. */
+  page?: number;
+  pageSize?: number;
+}
+
+export interface CustomerOrderPage {
+  items: CustomerOrderSummary[];
+  total: number;
+  page: number;
+  pageSize: number;
+  pageCount: number;
+}
+
+export const CUSTOMER_ORDER_PAGE_SIZE = 10;
+const MAX_CUSTOMER_ORDER_PAGE_SIZE = 50;
+
+type Authenticated = Extract<Access, { role: "authenticated" }>;
+
+function iso(value: unknown): string {
+  return value instanceof Date ? value.toISOString() : String(value);
+}
+
+function nullableText(value: unknown): string | null {
+  return value === null || value === undefined || value === "" ? null : String(value);
+}
+
+function parseJsonArray(value: unknown): Json[] {
+  const parsed: unknown = typeof value === "string" ? JSON.parse(value) : value;
+  if (!Array.isArray(parsed)) throw new Error("Unexpected database array result");
+  return parsed as Json[];
+}
+
+const SUMMARY_COLUMNS = `
+  o.order_number, o.status, o.payment_status, o.payment_method, o.delivery_method,
+  o.created_at, o.total_minor, o.currency,
+  coalesce((select jsonb_agg(jsonb_build_object('slug', l.product_slug, 'sku', l.sku, 'name', l.name, 'quantity', l.quantity)
+                             order by l.line_no)
+              from order_lines l where l.order_id = o.id), '[]'::jsonb) as lines`;
+
+function rowToSummary(row: Json): CustomerOrderSummary {
+  const lines = parseJsonArray(row.lines).map((line) => ({
+    productSlug: String(line.slug),
+    sku: String(line.sku),
+    name: String(line.name),
+    quantity: toSafeInteger(line.quantity, "quantity"),
+  }));
+  return {
+    orderNumber: String(row.order_number),
+    status: String(row.status),
+    paymentStatus: String(row.payment_status),
+    paymentMethod: String(row.payment_method),
+    deliveryMethod: String(row.delivery_method),
+    createdAt: iso(row.created_at),
+    totalMinor: toSafeInteger(row.total_minor, "total_minor"),
+    currency: String(row.currency),
+    itemCount: lines.reduce((sum, line) => sum + line.quantity, 0),
+    lines,
+  };
+}
+
+/**
+ * One page of the signed-in customer's own orders, filtered, sorted and
+ * paged in the database. Runs as the authenticated role, so Row Level
+ * Security returns no one else's orders whatever the filters say.
+ */
+export async function listCustomerOrderPage(db: Db, access: Authenticated, query: CustomerOrderQuery = {}): Promise<CustomerOrderPage> {
+  const pageSize = Math.min(Math.max(Math.trunc(query.pageSize ?? CUSTOMER_ORDER_PAGE_SIZE), 1), MAX_CUSTOMER_ORDER_PAGE_SIZE);
+  const requestedPage = Math.max(Math.trunc(query.page ?? 1), 1);
+  const statuses = (query.statuses ?? []).filter((status) => (ORDER_STATUSES as readonly string[]).includes(status));
+  const search = query.search?.trim().toUpperCase() ?? "";
+  // Passed as text and split in SQL: the same on every driver.
+  const params = [statuses.join(","), search, query.from ?? "", query.to ?? ""];
+  const where = `
+    where ($1 = '' or o.status = any(string_to_array($1, ',')))
+      and ($2 = '' or position($2 in o.order_number) > 0)
+      and ($3 = '' or o.created_at >= $3::timestamptz)
+      and ($4 = '' or o.created_at < $4::timestamptz)`;
+  const direction = query.sort === "oldest" ? "asc" : "desc";
+
+  return withAccess(db, access, async (tx) => {
+    const [count] = await tx.query(`select count(*) as n from orders o ${where}`, params);
+    const total = toSafeInteger(count?.n ?? 0, "count");
+    const pageCount = Math.max(1, Math.ceil(total / pageSize));
+    const page = Math.min(requestedPage, pageCount);
+    const rows = await tx.query(
+      `select ${SUMMARY_COLUMNS} from orders o ${where}
+        order by o.created_at ${direction}, o.order_number ${direction}
+        limit ${pageSize} offset ${(page - 1) * pageSize}`,
+      params,
+    );
+    return { items: rows.map(rowToSummary), total, page, pageSize, pageCount };
+  });
+}
+
+/** How many orders the signed-in customer has in each status. */
+export async function countCustomerOrdersByStatus(db: Db, access: Authenticated): Promise<Record<string, number>> {
+  const rows = await withAccess(db, access, (tx) => tx.query(`select status, count(*) as n from orders group by status`));
+  const counts: Record<string, number> = {};
+  for (const row of rows) counts[String(row.status)] = toSafeInteger(row.n, "count");
+  return counts;
+}
+
+/**
+ * One of the signed-in customer's own orders with its lines, or null. An
+ * order of another customer and an unknown number both give null, so the
+ * answer never confirms that an order number exists.
+ */
+export async function getCustomerOrder(db: Db, access: Authenticated, orderNumber: string): Promise<CustomerOrderDetail | null> {
+  const number = orderNumber.trim().toUpperCase();
+  if (number.length < 4 || number.length > 40) return null;
+  return withAccess(db, access, async (tx) => {
+    const [row] = await tx.query(
+      `select o.id, ${SUMMARY_COLUMNS},
+              o.contact_name, o.contact_email, o.contact_phone,
+              o.delivery_region, o.delivery_district, o.delivery_ward, o.delivery_street, o.delivery_extra, o.delivery_notes,
+              o.subtotal_minor, o.delivery_fee_minor
+         from orders o where o.order_number = $1`,
+      [number],
+    );
+    if (!row) return null;
+    const lines = await tx.query(
+      `select line_no, product_slug, sku, name, color, variant, quantity, unit_price_minor, line_total_minor
+         from order_lines where order_id = $1 order by line_no`,
+      [row.id],
+    );
+    return {
+      ...rowToSummary(row),
+      contact: { name: String(row.contact_name), email: String(row.contact_email), phone: String(row.contact_phone) },
+      delivery: {
+        region: nullableText(row.delivery_region),
+        district: nullableText(row.delivery_district),
+        ward: nullableText(row.delivery_ward),
+        street: nullableText(row.delivery_street),
+        extra: nullableText(row.delivery_extra),
+        notes: nullableText(row.delivery_notes),
+      },
+      subtotalMinor: toSafeInteger(row.subtotal_minor, "subtotal_minor"),
+      deliveryFeeMinor:
+        row.delivery_fee_minor === null || row.delivery_fee_minor === undefined
+          ? null
+          : toSafeInteger(row.delivery_fee_minor, "delivery_fee_minor"),
+      detailLines: lines.map((line) => ({
+        lineNo: toSafeInteger(line.line_no, "line_no"),
+        productSlug: String(line.product_slug),
+        sku: String(line.sku),
+        name: String(line.name),
+        color: nullableText(line.color),
+        variant: nullableText(line.variant),
+        quantity: toSafeInteger(line.quantity, "quantity"),
+        unitPriceMinor: toSafeInteger(line.unit_price_minor, "unit_price_minor"),
+        lineTotalMinor: toSafeInteger(line.line_total_minor, "line_total_minor"),
+      })),
+    };
+  });
+}
