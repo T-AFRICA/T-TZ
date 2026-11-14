@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 /**
  * The account server actions against a stand-in Supabase client: they
@@ -42,9 +42,17 @@ const form = (values: Record<string, string>) => {
   return data;
 };
 
+/** The server log: provider refusals that are ours to fix are written here. */
+let serverLog: ReturnType<typeof vi.spyOn>;
+
 beforeEach(() => {
   configured.value = true;
   for (const fn of Object.values(supabase.auth)) fn.mockReset();
+  serverLog = vi.spyOn(console, "error").mockImplementation(() => undefined);
+});
+
+afterEach(() => {
+  serverLog.mockRestore();
 });
 
 describe("sign in", () => {
@@ -74,6 +82,8 @@ describe("sign in", () => {
     const failed = await signInAction(IDLE, form({ email: "amina@example.com", password: "wrong-pass-1" }));
     expect(failed).toEqual({ status: "error", code: "invalid_credentials" });
     expect(JSON.stringify(failed)).not.toMatch(/gotrue|wrong-pass/);
+    // A wrong password is the customer's to fix: nothing for the server log.
+    expect(serverLog).not.toHaveBeenCalled();
   });
 
   it("follows only same-site paths after sign-in", async () => {
@@ -116,6 +126,27 @@ describe("sign up", () => {
     expect(await signUpAction(IDLE, form({ ...valid, phone: "0812 000 000" }))).toMatchObject({ status: "invalid" });
     expect(supabase.auth.signUp).not.toHaveBeenCalled();
   });
+
+  it("a sign-up the provider refuses is not reported as a wrong password, and the log gets the code only", async () => {
+    supabase.auth.signUp.mockResolvedValueOnce({
+      data: { user: null, session: null },
+      error: { code: "captcha_failed", status: 400, message: "captcha verification process failed for amina@example.com" },
+    });
+    const refused = await signUpAction(IDLE, form(valid));
+    expect(refused).toEqual({ status: "error", code: "unavailable" });
+    expect(serverLog).toHaveBeenCalledTimes(1);
+    expect(serverLog).toHaveBeenCalledWith("auth: sign-up refused by the provider", { code: "captcha_failed", status: 400 });
+    expect(JSON.stringify(serverLog.mock.calls)).not.toMatch(/amina|Tronic-2026|verification process/);
+  });
+
+  it("an address the provider will not accept gets its own message and no log line", async () => {
+    supabase.auth.signUp.mockResolvedValueOnce({
+      data: { user: null, session: null },
+      error: { code: "email_address_invalid", status: 400, message: "Email address is invalid" },
+    });
+    expect(await signUpAction(IDLE, form(valid))).toEqual({ status: "error", code: "email_invalid" });
+    expect(serverLog).not.toHaveBeenCalled();
+  });
 });
 
 describe("password recovery", () => {
@@ -128,6 +159,8 @@ describe("password recovery", () => {
     expect(supabase.auth.resetPasswordForEmail).toHaveBeenCalledWith("amina@example.com", {
       redirectTo: "https://shop.example.test/auth/confirm?next=/reset-password",
     });
+    // The refusal is hidden from the page but not from the server log.
+    expect(serverLog).toHaveBeenCalledWith("auth: password reset request refused by the provider", { code: "user_not_found", status: 400 });
   });
 
   it("updates the password only inside the session the reset link opened", async () => {
