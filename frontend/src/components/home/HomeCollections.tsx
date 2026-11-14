@@ -30,7 +30,6 @@ export async function HomeCollections() {
       <Container>
         <PanelCollection
           id="collection-switchgear"
-          eyebrow="Protection"
           title="Switchgear & Protection"
           description="Circuit breakers, consumer units, distribution boards and surge protection."
           viewAllHref="/categories/switchgear-protection"
@@ -50,7 +49,6 @@ export async function HomeCollections() {
         />
         <SpotlightCollection
           id="collection-spotlights"
-          eyebrow="New collection"
           title="Spotlights"
           description="Track spotlights, spot downlights and GU10 lamps for accent and architectural lighting."
           viewAllHref="/categories/lighting/indoor-lighting"
@@ -59,7 +57,6 @@ export async function HomeCollections() {
         />
         <PanelCollection
           id="collection-garden"
-          eyebrow="Outdoor"
           title="Garden Lights"
           description="Post lights, bollards and wall lights for gardens, paths and gates."
           viewAllHref="/categories/lighting/outdoor-lighting"

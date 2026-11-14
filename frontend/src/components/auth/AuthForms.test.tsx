@@ -146,7 +146,7 @@ describe("account screens share one design", () => {
     expect(container.querySelector("[data-long]")).not.toBeNull();
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Create your Account");
     expect(screen.getByRole("link", { name: "Sign in" })).toHaveAttribute("href", "/login");
-    expect(screen.getByRole("link", { name: "Back to shopping" })).toHaveAttribute("href", "/");
+    expect(screen.getByRole("link", { name: "Back to Store" })).toHaveAttribute("href", "/");
     unmount();
     render(await ForgotPasswordPage());
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Forgot Password?");
@@ -167,7 +167,7 @@ describe("login screen", () => {
     // One showcase for phones and one for laptops; CSS shows only one at a time.
     expect(screen.getAllByRole("img", { name: "TRONIC LED bulb" }).length).toBeGreaterThan(0);
     expect(screen.getByRole("link", { name: "Create an account" })).toHaveAttribute("href", "/register");
-    expect(screen.getByRole("link", { name: "Back to shopping" })).toHaveAttribute("href", "/");
+    expect(screen.getByRole("link", { name: "Back to Store" })).toHaveAttribute("href", "/");
     // No decorative step dots and no unverified delivery promises.
     expect(container.textContent).not.toMatch(/across tanzania|24\/7|same[- ]day|guaranteed/i);
   });

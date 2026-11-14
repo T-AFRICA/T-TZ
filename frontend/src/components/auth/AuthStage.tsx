@@ -14,7 +14,7 @@ import { ShowroomScene, StageBackdrop, TrustStrip } from "./AuthShowroom";
  * registration navigation).
  *
  * data-auth-screen hides the site header, navbar, footer, tab bar and chat
- * button (globals.css); the card's "Back to shopping" returns to the store.
+ * button (globals.css); the card's "Back to Store" returns to the store.
  */
 export function AuthStage({ children }: { children: ReactNode }) {
   return (

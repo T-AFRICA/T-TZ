@@ -23,7 +23,6 @@ describe("homepage collection sections", () => {
       <ToastProvider>
         <PanelCollection
           {...base}
-          eyebrow="Outdoor"
           viewAllLabel="Shop collection"
           photo={photo}
           result={{ status: "ok", products: garden }}
@@ -44,7 +43,7 @@ describe("homepage collection sections", () => {
   });
 
   it("shows an error state, not an empty one, when the catalogue could not be read", () => {
-    render(<SpotlightCollection {...base} eyebrow="New collection" photo={photo} result={{ status: "error" }} />);
+    render(<SpotlightCollection {...base} photo={photo} result={{ status: "error" }} />);
     expect(screen.getByRole("alert")).toHaveTextContent("could not be loaded");
     expect(screen.queryByRole("status")).not.toBeInTheDocument();
   });

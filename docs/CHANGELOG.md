@@ -3,6 +3,19 @@
 Meaningful implementation changes, newest first. Dates are work dates;
 nothing below is released.
 
+## 2026-11-14 — homepage sections lose their small labels
+
+- Owner request: remove the small uppercase label above each product and
+  category section heading on the homepage. Removed: "Deals", "Selected
+  for you", "Most popular", "Just added", "Collections", "Lighting
+  collection", "Power & data", "New arrivals", "Protection", "New
+  collection" and "Outdoor". Headings and descriptions are unchanged.
+- Kept: "Utility service" on the Meter card and "TRONIC Tanzania" on the
+  brand banner, which are not product or category sections.
+- Owner request: the link under the account cards (sign in, create
+  account, forgot and reset password) says "Back to Store" instead of
+  "Back to shopping". It still goes to the home page.
+
 ## 2026-11-14 — catalogue pages share one read of the database for a minute
 
 - Owner report: with the database connected the site loads slower than
