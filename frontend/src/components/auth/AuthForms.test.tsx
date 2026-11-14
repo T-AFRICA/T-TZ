@@ -44,7 +44,7 @@ const sent = (form: FormData) => Object.fromEntries([...form.entries()].map(([ke
 
 describe("account forms while auth is not configured", () => {
   it("disable submission and say why; nothing is posted", async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     const { unmount } = render(<LoginForm enabled={false} />);
     expect(screen.getByRole("status")).toHaveTextContent(NOT_CONNECTED);
     expect(screen.getByRole("button", { name: "Sign in" })).toBeDisabled();
@@ -68,7 +68,7 @@ describe("account forms while auth is not configured", () => {
 
 describe("login form", () => {
   it("validates in the browser first, then posts the form to the sign-in action", async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     const log = vi.spyOn(console, "log");
     const setItem = vi.spyOn(Storage.prototype, "setItem");
     actions.signInAction.mockResolvedValueOnce({ status: "error", code: "invalid_credentials" });
@@ -92,7 +92,7 @@ describe("login form", () => {
   });
 
   it("shows errors the server found (a post without JavaScript)", async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     actions.signInAction.mockResolvedValueOnce({
       status: "invalid",
       fieldErrors: { email: "Enter a valid email address, like name@example.com." },
@@ -105,7 +105,7 @@ describe("login form", () => {
   });
 
   it("shows and hides the password with a real button", async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     render(<LoginForm enabled />);
     const password = screen.getByLabelText(/^Password/);
     expect(password).toHaveAttribute("type", "password");
@@ -115,7 +115,7 @@ describe("login form", () => {
   });
 
   it("after a registration it opens with the confirm-by-email note, which the form's own answer replaces", async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     const { unmount } = render(<LoginForm enabled />);
     expect(screen.queryByRole("status")).toBeNull();
     unmount();
@@ -175,7 +175,7 @@ describe("login screen", () => {
 
 describe("register form", () => {
   it("checks phone, password rules, matching and terms before posting", async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     render(<RegisterForm enabled />);
     await user.type(screen.getByLabelText(/Full name/), "Amina Juma");
     await user.type(screen.getByLabelText(/Email address/), "amina@example.com");
@@ -213,7 +213,7 @@ describe("register form", () => {
 
 describe("password recovery forms", () => {
   it("forgot password validates the email, posts it and gives the same answer for any address", async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     actions.requestPasswordResetAction.mockResolvedValueOnce({
       status: "sent",
       text: "If an account uses that email, a link to choose a new password is on its way.",
@@ -228,7 +228,7 @@ describe("password recovery forms", () => {
   });
 
   it("reset password requires matching passwords that meet the policy", async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     actions.updatePasswordAction.mockResolvedValueOnce({ status: "error", code: "link_expired" });
     render(<ResetPasswordForm enabled />);
     await user.type(screen.getByLabelText(/New password/), "abcdefg1");

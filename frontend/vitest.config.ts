@@ -12,5 +12,10 @@ export default defineConfig({
     environment: "jsdom",
     setupFiles: ["./src/test/setup.ts"],
     include: ["src/**/*.test.{ts,tsx}"],
+    // Form tests type whole forms through user-event. They finish in well
+    // under a second here, but a busy CI runner has taken several times
+    // longer (two timed out at the 5 s default on 2026-11-14 in a run where
+    // every suite was twice as slow). The limit only bounds a hung test.
+    testTimeout: 15_000,
   },
 });

@@ -3,6 +3,18 @@
 Meaningful implementation changes, newest first. Dates are work dates;
 nothing below is released.
 
+## 2026-11-14 — form tests no longer sit near the CI time limit
+
+- CI failed on the phone header pull request: two checkout form tests
+  timed out at the 5 second default. Nothing in them had changed. The
+  runner was about twice as slow as in the previous passing run (every
+  suite, the database one included), and these tests typed whole forms
+  one key at a time with a pause after each key.
+- The checkout and account form tests type without that pause: the same
+  keys and the same assertions, four to five times faster.
+- The storefront's per-test limit is 15 seconds. It only bounds a test
+  that hangs; no assertion depends on it.
+
 ## 2026-11-14 — phone header in one row, search panel, smart scroll
 
 - Owner brief: the phone header is one row, Menu, TRONIC logo, Search,
