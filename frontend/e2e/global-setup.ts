@@ -46,6 +46,11 @@ export default async function globalSetup() {
           } else if (request.url === "/users") {
             const user = await auth.addUser(String(body.email), String(body.password), body.confirmed !== false);
             response.writeHead(200, { "content-type": "application/json" }).end(JSON.stringify({ id: user.id, email: user.email }));
+          } else if (request.url === "/revoke") {
+            auth.revokeSessions(String(body.email));
+            response.writeHead(200, { "content-type": "application/json" }).end("{}");
+          } else if (request.url === "/auth-stats") {
+            response.writeHead(200, { "content-type": "application/json" }).end(JSON.stringify({ userLookups: auth.userLookups }));
           } else {
             response.writeHead(404).end();
           }

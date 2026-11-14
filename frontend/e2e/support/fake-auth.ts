@@ -30,6 +30,8 @@ export class FakeAuth {
   readonly users = new Map<string, FakeUser>();
   private tokens = new Map<string, string>();
   private refresh = new Map<string, string>();
+  /** How many times the app asked who a token belongs to (GET /auth/v1/user). */
+  userLookups = 0;
   /** Stored objects by "bucket/name". */
   private objects = new Map<string, { type: string; bytes: Buffer }>();
   private server: Server | null = null;
@@ -41,6 +43,13 @@ export class FakeAuth {
     this.users.set(user.email, user);
     await this.onUserCreated(user);
     return user;
+  }
+
+  /** Ends every session of a user, as a sign-out on another device does: their tokens stop working. */
+  revokeSessions(email: string): void {
+    const target = email.toLowerCase();
+    for (const [token, owner] of this.tokens) if (owner === target) this.tokens.delete(token);
+    for (const [token, owner] of this.refresh) if (owner === target) this.refresh.delete(token);
   }
 
   private userJson(user: FakeUser) {
@@ -127,8 +136,12 @@ export class FakeAuth {
     }
     if (route === "POST /auth/v1/recover") return send(response, 200, {});
     if (route === "GET /auth/v1/user") {
+      this.userLookups += 1;
       const user = this.userFromRequest(request);
-      return user ? send(response, 200, this.userJson(user)) : send(response, 401, { code: 401, error_code: "bad_jwt", msg: "invalid JWT" });
+      // Supabase answers 403 session_not_found for a token whose session has ended.
+      return user
+        ? send(response, 200, this.userJson(user))
+        : send(response, 403, { code: 403, error_code: "session_not_found", msg: "Session from session_id claim in JWT does not exist" });
     }
     if (route === "PUT /auth/v1/user") {
       const user = this.userFromRequest(request);

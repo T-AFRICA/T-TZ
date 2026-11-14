@@ -21,7 +21,8 @@ interface TabItem {
  * Categories, Wishlist, Cart, Profile. Profile opens the sign-in page for
  * a visitor and the account for a signed-in customer; Wishlist and Cart
  * show this browser's item counts (features/cart), never invented numbers.
- * Hidden from md upward.
+ * Hidden from md upward. Slides away with the header while a phone
+ * scrolls down (header/SmartScroll.tsx, .bottom-nav in globals.css).
  */
 const TABS: readonly TabItem[] = [
   { href: "/", label: "Home", icon: HomeIcon, activePath: "/" },
@@ -41,7 +42,7 @@ export function BottomNav() {
   return (
     <nav
       aria-label="Primary"
-      className="fixed inset-x-0 bottom-0 z-40 border-t border-[var(--color-light-grey)] bg-white pb-[env(safe-area-inset-bottom)] md:hidden"
+      className="bottom-nav fixed inset-x-0 bottom-0 z-40 border-t border-[var(--color-light-grey)] bg-white pb-[env(safe-area-inset-bottom)] md:hidden"
     >
       <ul className="flex items-stretch">
         {tabs.map((tab) => {

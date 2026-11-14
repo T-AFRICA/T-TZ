@@ -69,7 +69,7 @@ describe("checkout page", () => {
   });
 
   it("validates the details, focuses the first error, and never claims an order", async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     cartStore.set([{ productId: panel.id, color: null, variant: null, quantity: 1 }]);
     render(<CheckoutView buyNowLine={null} />);
     await summary();
@@ -106,7 +106,7 @@ describe("checkout page", () => {
   });
 
   it("with orders connected: confirms only after the order is saved, and clears the cart", async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     cartStore.set([{ productId: panel.id, color: null, variant: null, quantity: 2 }]);
     let resolve: (value: unknown) => void = () => undefined;
     placeOrder.mockImplementationOnce(() => new Promise((r) => (resolve = r)));
@@ -134,7 +134,7 @@ describe("checkout page", () => {
   });
 
   it("a retry after a lost answer reuses the idempotency key; a price change shows the new total", async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     cartStore.set([{ productId: panel.id, color: null, variant: null, quantity: 1 }]);
     placeOrder
       .mockRejectedValueOnce(new Error("network"))
@@ -170,7 +170,7 @@ describe("track order page", () => {
   });
 
   it("checks the form, then posts it and shows the order found", async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     trackOrder.mockResolvedValueOnce({
       status: "found",
       order: { orderNumber: "TZ-261111-ABCD1234", status: "pending_payment", createdAt: "2026-11-11T10:00:00Z", totalMinor: 5_600_000, currency: "TZS", itemCount: 2 },
