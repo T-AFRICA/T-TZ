@@ -24,6 +24,8 @@ import { ANON, toSafeInteger, withAccess, type Db } from "./db";
  * catalogue (hundreds of products); move paging into SQL before it grows to
  * thousands. A short cache keeps listing pages from re-reading the catalogue
  * on every request; checkout never trusts it (place_cod_order reprices).
+ * The storefront may also pass its own `load`, a cache shared between
+ * server instances (frontend/src/features/data/source.ts).
  *
  * Product.id is the public product key (the slug); database uuids stay
  * inside the database layer.
@@ -64,11 +66,17 @@ export class DatabaseCatalogClient implements CatalogClient {
   /**
    * `cacheMs` 0 reads the database on every call: checkout uses that, so a
    * customer is always quoted the current price and stock.
+   * `load` replaces the read itself (default: loadPublicProducts on `db`);
+   * it must return the same public catalogue for the country.
    */
   constructor(
     private readonly db: Db,
-    private readonly options: { cacheMs?: number; now?: () => number } = {},
+    private readonly options: { cacheMs?: number; now?: () => number; load?: (country: CountryCode) => Promise<Product[]> } = {},
   ) {}
+
+  private read(country: CountryCode): Promise<Product[]> {
+    return this.options.load ? this.options.load(country) : loadPublicProducts(this.db, country);
+  }
 
   private now(): number {
     return (this.options.now ?? Date.now)();
@@ -77,10 +85,10 @@ export class DatabaseCatalogClient implements CatalogClient {
   /** The country's public catalogue, loaded as anon (RLS applies). */
   loadCountry(country: CountryCode): Promise<Product[]> {
     const cacheMs = this.options.cacheMs ?? CACHE_MS;
-    if (cacheMs <= 0) return loadPublicProducts(this.db, country);
+    if (cacheMs <= 0) return this.read(country);
     const hit = this.cache.get(country);
     if (hit && this.now() - hit.at < cacheMs) return hit.products;
-    const products = loadPublicProducts(this.db, country);
+    const products = this.read(country);
     this.cache.set(country, { at: this.now(), products });
     products.catch(() => this.cache.delete(country));
     return products;

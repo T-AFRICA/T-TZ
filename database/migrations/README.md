@@ -1,8 +1,8 @@
 # Migrations
 
 Forward-only, numbered SQL files. Destructive changes need explicit owner approval.
-None of these has been applied to the Supabase project; applying them needs
-owner approval.
+Applying them to the Supabase project is an owner action. As reported by the
+owner on 2026-11-14, 0001-0003 are applied there; 0004 and 0005 are not yet.
 
 | File | What it does |
 |---|---|
@@ -14,6 +14,34 @@ owner approval.
 
 Money columns (`*_minor`) are integers in the currency's ISO 4217 minor unit:
 TZS 28,000 is stored as 2800000.
+
+## Setting up a new Supabase project
+
+Each step is an owner action in the Supabase dashboard or the hosting
+settings. Nothing in this repository connects to the project by itself.
+
+1. **Tables and rules.** In the SQL editor, run `0001` to `0005` in order,
+   one file at a time. Each file is one transaction: a failure changes
+   nothing. `0005` (profile photos) does not depend on the others.
+2. **Products.** The storefront shows nothing until the catalogue tables
+   have rows. For the SAMPLE catalogue (the one mock mode shows):
+   - `pnpm --filter @tronic/database run setup:sql` writes
+     `database/out/sample-catalogue.sql` (not committed) and checks it
+     against a disposable database;
+   - run that file in the SQL editor. It stops, changing nothing, if
+     `0004` is missing or the catalogue already has products, categories
+     or brands.
+   - The prices and stock in it are placeholders. Once step 3 is done the
+     storefront takes real Cash on Delivery orders at those prices, so
+     replace them with the approved catalogue and price list first, or
+     keep the site private until then.
+3. **Connect the storefront.** In the hosting settings set `DATABASE_URL`
+   to the project's transaction pooler connection string (port 6543) and
+   `DATA_SOURCE=database`, then redeploy. Do this last: with
+   `DATA_SOURCE=database` and missing tables, catalogue, checkout and
+   account pages answer with a server error.
+4. **Check.** A category page lists products, a product page opens, and a
+   test order placed at checkout appears under Account, My orders.
 
 ## Tests (disposable database only)
 

@@ -3,6 +3,61 @@
 Meaningful implementation changes, newest first. Dates are work dates;
 nothing below is released.
 
+## 2026-11-14 — catalogue pages share one read of the database for a minute
+
+- Owner report: with the database connected the site loads slower than
+  before. Measured on tronic.live from an edge in Cape Town: pages served
+  from the build answered in 0.1 s; pages rendered by a server function
+  (in Washington, the hosting default) took 0.4 s to the first byte, a
+  category listing 0.9 to 1.8 s and a search 0.4 to 2.1 s, most of it
+  waiting for the database.
+- The public catalogue of a country is now kept in the framework's data
+  cache for CATALOG_CACHE_SECONDS (default 60; 0 turns it off), shared by
+  every server instance. Before, each instance kept its own copy for 15
+  seconds, which on serverless hosting is rarely reused. Only what the
+  anon role may read is cached, the same for every visitor.
+- A price or stock change shows on listing, product and search pages
+  within about a minute. Unchanged: the checkout quote and the order read
+  the current price and stock every time, and the order reprices in the
+  database.
+- Browser tests run with the cache off, so each test sees the test
+  database as it is; one full run with the cache on (60 s) also passed.
+- vercel.json: server functions run in Dublin (dub1). The owner's
+  Supabase project is in Ireland (eu-west-1), so a function and the
+  database are now in the same place instead of an ocean apart, and
+  Dublin is also closer to visitors in East Africa than Washington.
+- Not measured after deployment yet.
+
+## 2026-11-14 — sample catalogue script for a new Supabase project
+
+- Owner request: set up the database so the storefront can take orders.
+  The owner had set DATA_SOURCE=database on the deployed site before the
+  order tables and any products existed; catalogue, checkout and account
+  pages answered with a server error.
+- database/client/scripts/catalogue-sql.ts builds one SQL script from a
+  seeded test database: the SAMPLE catalogue (34 products, their
+  categories, images, prices and stock), ids included.
+  `pnpm --filter @tronic/database run setup:sql` writes it to
+  database/out/sample-catalogue.sql (ignored by Git) for the owner to run
+  in the Supabase SQL editor.
+- The script stops, changing nothing, if migration 0004 is missing or the
+  catalogue already has products, categories or brands; it runs in one
+  transaction and has no drop, delete, truncate or update.
+- Tested on disposable databases: a database with only the migrations
+  ends up with the same storefront catalogue, accepts a Cash on Delivery
+  order, and refuses a second run. Not run against Supabase from here.
+- turbo.json: the build task now declares the settings it depends on
+  (DATA_SOURCE, DATABASE_URL, DATABASE_POOL_MAX, SUPABASE_URL,
+  SUPABASE_ANON_KEY, WEB_ORIGIN, NEXT_PUBLIC_*, NEXT_DIST_DIR). Turborepo
+  runs tasks in strict environment mode, so a build started through it
+  saw none of them: with DATA_SOURCE=database on the host, the home page
+  and product pages were still prerendered from the mock catalogue while
+  the server routes used the database, and changing a setting did not
+  invalidate the cached build.
+- database/migrations/README.md: the order of steps for a new project.
+  The prices are placeholders; connecting the storefront makes them the
+  prices real orders are taken at.
+
 ## 2026-11-14 — a signed-in customer gets back to their account from the store
 
 - Owner report: after leaving the account for the store, coming back

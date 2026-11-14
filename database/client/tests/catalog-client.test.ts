@@ -1,7 +1,7 @@
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { MockCatalogClient } from "@tronic/api-client";
 import { ACTIVE_COUNTRY, formatMoney } from "@tronic/country-config";
-import { DatabaseCatalogClient, rowToProduct } from "../src/catalog";
+import { DatabaseCatalogClient, loadPublicProducts, rowToProduct } from "../src/catalog";
 import { createTestDatabase, type TestDatabase } from "../src/testing";
 
 /**
@@ -52,6 +52,26 @@ describe("database catalogue client", () => {
     const a = await live.searchProducts({ country: "TZ", text: "led" });
     const b = await mock.searchProducts({ country: "TZ", text: "led" });
     expect(a.items.map((p) => p.slug)).toEqual(b.items.map((p) => p.slug));
+  });
+
+  it("reads through a loader it is given, and still only once per cache window", async () => {
+    let clock = 1_000;
+    const load = vi.fn((country: "TZ" | "KE" | "UG") => loadPublicProducts(t.db, country));
+    const shared = new DatabaseCatalogClient(t.db, { load, now: () => clock });
+    const first = await shared.getProduct("sample-extension", "TZ");
+    expect(first).toEqual(await live.getProduct("sample-extension", "TZ"));
+    await shared.listProducts({ country: "TZ", category: "lighting" });
+    expect(load).toHaveBeenCalledTimes(1);
+    expect(load).toHaveBeenCalledWith("TZ");
+    clock += 15_001;
+    await shared.getProduct("sample-extension", "TZ");
+    expect(load).toHaveBeenCalledTimes(2);
+
+    // cacheMs 0 (checkout) asks the loader every time.
+    const fresh = new DatabaseCatalogClient(t.db, { load, cacheMs: 0 });
+    await fresh.getProduct("sample-extension", "TZ");
+    await fresh.getProduct("sample-extension", "TZ");
+    expect(load).toHaveBeenCalledTimes(4);
   });
 
   it("returns nothing for a country with no public catalogue", async () => {
