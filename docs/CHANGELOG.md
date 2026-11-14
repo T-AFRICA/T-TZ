@@ -3,6 +3,29 @@
 Meaningful implementation changes, newest first. Dates are work dates;
 nothing below is released.
 
+## 2026-11-14 — a refused sign-up is no longer shown as a wrong password
+
+- Owner report: Register answered "That email and password don't match an
+  account." The error mapping turned every Supabase Auth refusal it did not
+  list, with HTTP 400, into the sign-in message.
+- Only the provider's own invalid-credentials code gives that message now.
+  An address the provider will not accept says so ("We can't use this email
+  address..."); any other refusal says "We couldn't complete this right
+  now. Please try again later."; no answer at all stays a connection
+  message.
+- Refusals that are ours to fix (sign-ups or the email provider turned
+  off, CAPTCHA required without a token from the app, an email sender that
+  only delivers to authorised addresses, provider outages) write one line
+  to the server log: the provider's error code and HTTP status only, never
+  its message or anything the customer typed. This includes a password
+  reset request, whose page answer stays the same for every email.
+- Not changed: the app still sends no CAPTCHA token, so CAPTCHA protection
+  in Supabase Auth must stay off until that is built.
+- Browser tests: the "disconnected" test server now blanks the database and
+  Supabase Auth variables itself. A developer's frontend/.env.local with
+  real project settings had made it a connected server (four tests failed)
+  and would have pointed test traffic at that project.
+
 ## 2026-11-14 — customer portal under /account
 
 - Owner brief: a customer portal with a sidebar on desktop and a swipeable

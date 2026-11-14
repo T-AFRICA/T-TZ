@@ -8,9 +8,11 @@ export type AuthErrorCode =
   | "invalid_credentials"
   | "email_not_confirmed"
   | "email_taken"
+  | "email_invalid"
   | "weak_password"
   | "link_expired"
   | "rate_limited"
+  | "unavailable"
   | "network";
 
 /** Shown while Supabase Auth is not configured for this deployment. */
@@ -21,13 +23,24 @@ export const AUTH_ERROR_TEXT: Record<AuthErrorCode, string> = {
   invalid_credentials: "That email and password don't match an account.",
   email_not_confirmed: "Confirm your email first: open the link we sent you, then sign in.",
   email_taken: "An account with this email already exists. Try signing in.",
+  email_invalid: "We can't use this email address. Check it for typos or use another one.",
   weak_password: "Choose a stronger password.",
   link_expired: "This reset link has expired or was already used. Request a new one.",
   rate_limited: "Too many attempts. Wait a minute and try again.",
+  unavailable: "We couldn't complete this right now. Please try again later.",
   network: "We couldn't reach our servers. Check your connection and try again.",
 };
 
-/** Maps a Supabase Auth error code (AuthError.code) to ours. */
+/**
+ * Maps a Supabase Auth error (AuthError.code and HTTP status) to ours.
+ *
+ * Only a code that says so becomes "invalid_credentials". Anything the
+ * provider refuses for a reason not listed here is "unavailable": that
+ * covers account-service settings the customer cannot fix (sign-ups or the
+ * email provider turned off, CAPTCHA required, an email sender that only
+ * delivers to authorised addresses), so a refused sign-up is never
+ * reported as a wrong password.
+ */
 export function authErrorFromSupabase(code: string | undefined, status?: number): AuthErrorCode {
   switch (code) {
     case "invalid_credentials":
@@ -37,6 +50,8 @@ export function authErrorFromSupabase(code: string | undefined, status?: number)
     case "user_already_exists":
     case "email_exists":
       return "email_taken";
+    case "email_address_invalid":
+      return "email_invalid";
     case "weak_password":
     case "same_password":
       return "weak_password";
@@ -49,6 +64,14 @@ export function authErrorFromSupabase(code: string | undefined, status?: number)
     case "over_email_send_rate_limit":
       return "rate_limited";
     default:
-      return status === 429 ? "rate_limited" : status === 400 ? "invalid_credentials" : "network";
+      if (status === 429) return "rate_limited";
+      // No HTTP status: the request never got an answer.
+      if (status === undefined || status === 0) return "network";
+      return "unavailable";
   }
+}
+
+/** Codes that mean something is wrong on our side, worth a line in the server log. */
+export function isUnexpectedAuthError(code: AuthErrorCode): boolean {
+  return code === "unavailable" || code === "network";
 }

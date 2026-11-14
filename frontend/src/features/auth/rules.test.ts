@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { passwordChecks, passwordStrength, validateForgot, validateLogin, validateRegister, validateReset } from "./rules";
-import { AUTH_ERROR_TEXT, AUTH_NOT_CONNECTED_MESSAGE, authErrorFromSupabase } from "./service";
+import { AUTH_ERROR_TEXT, AUTH_NOT_CONNECTED_MESSAGE, authErrorFromSupabase, isUnexpectedAuthError } from "./service";
 
 const register = {
   fullName: "Amina Juma",
@@ -59,7 +59,24 @@ describe("auth errors", () => {
     expect(authErrorFromSupabase("otp_expired")).toBe("link_expired");
     expect(authErrorFromSupabase("over_request_rate_limit")).toBe("rate_limited");
     expect(authErrorFromSupabase(undefined, 429)).toBe("rate_limited");
-    expect(authErrorFromSupabase("something_new", 500)).toBe("network");
-    for (const text of Object.values(AUTH_ERROR_TEXT)) expect(text).not.toMatch(/supabase|gotrue|jwt|token/i);
+    expect(authErrorFromSupabase("email_address_invalid", 400)).toBe("email_invalid");
+    for (const text of Object.values(AUTH_ERROR_TEXT)) expect(text).not.toMatch(/supabase|gotrue|jwt|token|captcha/i);
+  });
+
+  it("never reports a refusal it does not recognise as a wrong password", () => {
+    // Account-service settings the customer cannot fix, all HTTP 400 or 422.
+    for (const code of ["captcha_failed", "email_provider_disabled", "email_address_not_authorized", "validation_failed"]) {
+      expect(authErrorFromSupabase(code, 400), code).toBe("unavailable");
+    }
+    expect(authErrorFromSupabase("signup_disabled", 422)).toBe("unavailable");
+    expect(authErrorFromSupabase(undefined, 400)).toBe("unavailable");
+    expect(authErrorFromSupabase("something_new", 500)).toBe("unavailable");
+    // No answer at all is a connection problem.
+    expect(authErrorFromSupabase(undefined)).toBe("network");
+    expect(authErrorFromSupabase(undefined, 0)).toBe("network");
+    expect(isUnexpectedAuthError("unavailable")).toBe(true);
+    expect(isUnexpectedAuthError("network")).toBe(true);
+    expect(isUnexpectedAuthError("invalid_credentials")).toBe(false);
+    expect(isUnexpectedAuthError("email_invalid")).toBe(false);
   });
 });

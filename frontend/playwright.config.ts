@@ -8,7 +8,10 @@ import { PORTS } from "./e2e/ports";
  *     database and the stand-in Supabase Auth of e2e/global-setup.ts;
  *   - disconnected: the mock catalogue with no auth and no orders.
  * The installed Google Chrome is used (channel "chrome"), so no browser
- * download is needed. Nothing here reaches Supabase or any shared system.
+ * download is needed. Nothing here reaches Supabase or any shared system:
+ * a developer's own .env.local may hold real project settings, and Next.js
+ * loads that file for these servers too, so each server sets (or blanks)
+ * every such variable itself. A variable set here wins over the file.
  */
 const common = {
   NEXT_DIST_DIR: ".next-e2e",
@@ -50,7 +53,7 @@ export default defineConfig({
       url: `http://localhost:${PORTS.disconnected}/login`,
       timeout: 120_000,
       reuseExistingServer: false,
-      env: { ...common, DATA_SOURCE: "mock" },
+      env: { ...common, DATA_SOURCE: "mock", DATABASE_URL: "", SUPABASE_URL: "", SUPABASE_ANON_KEY: "" },
     },
   ],
 });
