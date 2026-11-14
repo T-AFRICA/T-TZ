@@ -856,6 +856,74 @@ details.drawer-acc[open] > ul > li {
   }
 }
 
+/* Phone smart scroll (2026-11-14, header/SmartScroll.tsx): while
+   <html data-nav-hidden="true"> the header slides up and the bottom tab
+   bar slides down, together. Only a transform, so nothing in the page
+   moves; desktop widths are never affected. */
+@media (max-width: 47.999rem) {
+  .site-header,
+  .bottom-nav {
+    transition: transform 300ms cubic-bezier(0.22, 0.8, 0.26, 1);
+    will-change: transform;
+  }
+
+  html[data-nav-hidden="true"] .site-header {
+    transform: translateY(-100%);
+  }
+
+  html[data-nav-hidden="true"] .bottom-nav {
+    transform: translateY(100%);
+  }
+}
+
+/* Phone search panel (2026-11-14, header/MobileSearch.tsx): a bar across
+   the top of the page that drops in, with the results panel as wide as
+   the bar (it runs under the close button's column: gap plus button). */
+.mobile-search[open] .mobile-search-bar {
+  animation: mobile-search-in 240ms cubic-bezier(0.22, 0.8, 0.26, 1) both;
+}
+
+.mobile-search[open]::backdrop {
+  animation: mobile-search-fade 240ms ease-out both;
+}
+
+.mobile-search .search-panel {
+  right: -3rem;
+  max-height: var(--search-panel-max, calc(100dvh - 6rem - env(safe-area-inset-bottom)));
+}
+
+@keyframes mobile-search-in {
+  from {
+    opacity: 0;
+    transform: translateY(-0.75rem);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes mobile-search-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .site-header,
+  .bottom-nav {
+    transition: none;
+  }
+
+  .mobile-search[open] .mobile-search-bar,
+  .mobile-search[open]::backdrop {
+    animation: none;
+  }
+}
+
 /* Modal dialog entrance (quick-select and future modals). The mobile
    drawer keeps its own slide-in. */
 dialog:not(.mobile-drawer):not(.filter-sheet):not(.search-sheet)[open] {

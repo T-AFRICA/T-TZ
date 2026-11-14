@@ -12,6 +12,8 @@ import {
 import { METER_NAV_ITEM } from "@tronic/country-config";
 import { AccountButton } from "./AccountButton";
 import { MobileNav } from "./MobileNav";
+import { MobileSearch } from "./MobileSearch";
+import { SmartScroll } from "./SmartScroll";
 import { SearchBox } from "@/components/search/SearchBox";
 import { CartCountBadge, CartCountText, WishlistCountBadge, WishlistCountText } from "@/components/cart/CountBadge";
 import {
@@ -22,9 +24,12 @@ import {
 } from "@/config/site";
 
 /**
- * Sticky global header: the main row (logo, search, order/account actions)
- * and, on phones, the search row. Red logo on white per brand guide §9;
- * mobile collapses navigation into the drawer.
+ * Sticky global header: one row. Desktop: logo, search field, order and
+ * account actions. Phones (owner brief 2026-11-14): menu, centred logo,
+ * search button, notifications; the search button opens the search panel
+ * (MobileSearch) and the whole header slides away while scrolling down
+ * (SmartScroll). Red logo on white per brand guide §9; mobile collapses
+ * navigation into the drawer.
  *
  * The red category navbar is not in here: the root layout renders it right
  * after this header, outside the sticky element, so on desktop it scrolls
@@ -38,15 +43,18 @@ import {
  */
 export function Header() {
   return (
-    <header className="sticky top-0 z-40 bg-white shadow-sm max-md:bg-[var(--color-off-white)] max-md:shadow-none">
+    <header className="site-header sticky top-0 z-40 bg-white shadow-sm max-md:bg-[var(--color-off-white)] max-md:shadow-none">
+      <SmartScroll />
       {/* Main row */}
       <Container className="relative flex h-[var(--header-height)] items-center gap-3 lg:gap-8">
         <MobileNav />
         {/* Below md the logo sits dead-centre (burger left, actions right);
-            from md it returns to the flow next to the search field. */}
+            from md it returns to the flow next to the search field. On the
+            narrowest phones (under 344px) it is drawn a little smaller, so
+            it stays centred and clear of the search button. */}
         <Link
           href="/"
-          className="shrink-0 max-md:absolute max-md:left-1/2 max-md:top-1/2 max-md:-translate-x-1/2 max-md:-translate-y-1/2"
+          className="shrink-0 max-md:absolute max-md:left-1/2 max-md:top-1/2 max-md:-translate-x-1/2 max-md:-translate-y-1/2 max-[21.5rem]:scale-[0.84]"
           aria-label="TRONIC Tanzania home"
         >
           <BrandMark tone="light" />
@@ -79,8 +87,9 @@ export function Header() {
           </Link>
           <span aria-hidden="true" className="hidden h-6 w-px bg-[var(--color-light-grey)] lg:block" />
           {/* Below md the account/wishlist/cart actions live in the bottom
-              tab bar; the header keeps a single notifications chip instead
-              (approved mobile UI reference). */}
+              tab bar; the header keeps search and then notifications
+              (owner brief 2026-11-14: Menu, Logo, Search, Notification). */}
+          <MobileSearch />
           <Link
             href="/notifications"
             aria-label="Notifications"
@@ -112,13 +121,6 @@ export function Header() {
           <AccountButton />
         </div>
       </Container>
-
-      {/* Mobile search row — seamless on the off-white app background */}
-      <div className="md:hidden">
-        <Container className="pb-2.5 pt-0.5">
-          <SearchBox />
-        </Container>
-      </div>
     </header>
   );
 }

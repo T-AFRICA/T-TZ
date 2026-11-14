@@ -46,6 +46,12 @@ const POPULAR_CATEGORIES = CATEGORY_SECTIONS.slice(0, 6).map((section) => ({
 export interface SearchBoxProps {
   /** Injectable for tests; defaults to the storefront's GET /api/search. */
   client?: SearchClient;
+  /** Focus the field and open the panel as soon as the box appears (the phone search panel). */
+  autoFocus?: boolean;
+  /** The customer pressed the panel's own Close on a phone. */
+  onClose?: () => void;
+  /** The customer chose something that leaves the search: a product, a category or the results page. */
+  onNavigate?: () => void;
 }
 
 function normalise(value: string): string {
@@ -94,7 +100,7 @@ function SkeletonRows() {
  * - The browser only receives the slim hits from /api/search, never the
  *   catalogue. Search text is rendered as text, never as HTML.
  */
-export function SearchBox({ client }: SearchBoxProps) {
+export function SearchBox({ client, autoFocus = false, onClose, onNavigate }: SearchBoxProps) {
   const searchClient = useMemo(() => client ?? createSearchClient("http"), [client]);
   const router = useRouter();
   const baseId = useId();
@@ -263,6 +269,18 @@ export function SearchBox({ client }: SearchBoxProps) {
     setActiveIndex(-1);
   }
 
+  /** Closes the panel because the customer is leaving the search for another page. */
+  function leave() {
+    close();
+    onNavigate?.();
+  }
+
+  useEffect(() => {
+    if (!autoFocus) return;
+    inputRef.current?.focus();
+    setIsOpen(true);
+  }, [autoFocus]);
+
   function clearQuery() {
     setQuery("");
     setIsOpen(true);
@@ -270,7 +288,7 @@ export function SearchBox({ client }: SearchBoxProps) {
   }
 
   function go(href: string) {
-    close();
+    leave();
     inputRef.current?.blur();
     router.push(href);
   }
@@ -430,6 +448,7 @@ export function SearchBox({ client }: SearchBoxProps) {
             onClick={() => {
               close();
               inputRef.current?.blur();
+              onClose?.();
             }}
             className="rounded-full px-3 py-1 text-[13px] font-semibold text-[var(--color-action-red)]"
           >
@@ -450,7 +469,7 @@ export function SearchBox({ client }: SearchBoxProps) {
                     <Link
                       href={category.href}
                       className="flex items-center gap-3 px-4 py-2.5 text-sm transition-colors hover:bg-[var(--surface-card)]"
-                      onClick={close}
+                      onClick={leave}
                     >
                       <TrendingUpIcon size={16} className="shrink-0 text-[var(--text-muted)]" />
                       {category.name}
@@ -496,7 +515,7 @@ export function SearchBox({ client }: SearchBoxProps) {
                         setSheetHit(hit);
                         return;
                       }
-                      close();
+                      leave();
                     }}
                     onMouseEnter={() => hoverOption(index)}
                     onMouseLeave={cancelHover}
@@ -518,7 +537,7 @@ export function SearchBox({ client }: SearchBoxProps) {
                 <Link
                   href={searchUrl(trimmed)}
                   tabIndex={-1}
-                  onClick={close}
+                  onClick={leave}
                   onMouseEnter={() => hoverOption(results.length)}
                   onMouseLeave={cancelHover}
                   className={`flex items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-[13px] font-semibold text-[var(--color-action-red)] transition-colors ${
@@ -540,13 +559,13 @@ export function SearchBox({ client }: SearchBoxProps) {
             screens, where rows already carry the essentials. */}
         {previewHit ? (
           <aside aria-label="Quick view" className="search-preview">
-            <SearchQuickView hits={results} active={previewHit} onNavigate={close} />
+            <SearchQuickView hits={results} active={previewHit} onNavigate={leave} />
           </aside>
         ) : null}
         </div>
       </div>
 
-      <SearchQuickSheet hit={sheetHit} onClosed={onSheetClosed} onNavigate={close} />
+      <SearchQuickSheet hit={sheetHit} onClosed={onSheetClosed} onNavigate={leave} />
     </form>
   );
 }

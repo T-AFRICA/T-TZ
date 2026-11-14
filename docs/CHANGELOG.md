@@ -3,6 +3,36 @@
 Meaningful implementation changes, newest first. Dates are work dates;
 nothing below is released.
 
+## 2026-11-14 — phone header in one row, search panel, smart scroll
+
+- Owner brief: the phone header is one row, Menu, TRONIC logo, Search,
+  Notification. The second row with the search field is gone; a search
+  button sits immediately before Notifications.
+- Tapping it opens a full-width panel across the top of the page with the
+  same SearchBox as the desktop header: product name, SKU and model
+  search, suggestions and the quick-view sheet work as before, and no
+  search or API code is duplicated. The box is mounted only while the
+  panel is open. It closes with its own close button, the panel's Close,
+  Escape, a tap on the dimmed page, or by choosing a product, category
+  or "View all results"; focus returns to the search button.
+- SearchBox gained three optional props (autoFocus, onClose, onNavigate)
+  so a caller can place it; how it searches is unchanged.
+- Smart scroll on phones: scrolling down slides the header up and the
+  bottom tab bar down together, scrolling up brings both back, and they
+  return half a second after scrolling stops. They stay while a dialog is
+  open (menu, search panel, quick view), while keyboard focus is inside
+  them, near the top of the page and on desktop widths. It is a CSS
+  transform, so nothing in the page moves; reduced motion skips the slide.
+  The brief describes this as existing behaviour; it was not in the code
+  and is built here.
+- On phones narrower than 344px the logo is drawn 16% smaller so it stays
+  centred and clear of the search button.
+- Not changed: the desktop header, the homepage sections, the search API.
+- Tests: unit tests for the row, the panel and the scroll rules; browser
+  tests at 320, 375, 390 and 430px for order, spacing, centring, touch
+  size and sideways overflow, for searching by name and SKU, the quick
+  view and every way of closing, and for the bars hiding and returning.
+
 ## 2026-11-14 — the cookie of an ended session is removed instead of asked about forever
 
 - Owner report: the Supabase log showed a run of "GET /auth/v1/user 403"
