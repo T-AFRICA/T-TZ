@@ -21,7 +21,7 @@ const actions = vi.hoisted(() => {
   };
 });
 vi.mock("@/features/auth/actions", () => actions);
-vi.mock("@/features/auth/server", () => ({ authEnabledForRequest: async () => false, authConfigured: () => false }));
+vi.mock("@/features/auth/server", () => ({ authEnabledForRequest: async () => false, authConfigured: () => false, currentUser: async () => null }));
 
 import { ForgotPasswordForm, RegisterForm, ResetPasswordForm } from "./AuthForms";
 import { LoginForm, LoginScreen } from "./LoginScreen";
@@ -114,6 +114,25 @@ describe("login form", () => {
     expect(screen.getByRole("button", { name: "Hide password" })).toHaveAttribute("aria-pressed", "true");
   });
 
+  it("after a registration it opens with the confirm-by-email note, which the form's own answer replaces", async () => {
+    const user = userEvent.setup();
+    const { unmount } = render(<LoginForm enabled />);
+    expect(screen.queryByRole("status")).toBeNull();
+    unmount();
+
+    actions.signInAction.mockResolvedValueOnce({ status: "error", code: "email_not_confirmed" });
+    const { container } = render(<LoginForm enabled registered />);
+    expect(screen.getByRole("status")).toHaveTextContent("Check your email: we sent a link to confirm your account. Then sign in.");
+    expect(container.textContent).not.toMatch(SUCCESS);
+    expect(screen.getByLabelText(/Email address/)).toHaveValue("");
+
+    await user.type(screen.getByLabelText(/Email address/), "amina@example.com");
+    await user.type(screen.getByLabelText(/^Password/), "secret-pass-1");
+    await user.click(screen.getByRole("button", { name: "Sign in" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("Confirm your email first");
+    expect(screen.queryByRole("status")).toBeNull();
+  });
+
   it("links to forgot password", () => {
     render(<LoginForm enabled />);
     expect(screen.getByRole("link", { name: "Forgot password?" })).toHaveAttribute("href", "/forgot-password");
@@ -157,10 +176,6 @@ describe("login screen", () => {
 describe("register form", () => {
   it("checks phone, password rules, matching and terms before posting", async () => {
     const user = userEvent.setup();
-    actions.signUpAction.mockResolvedValueOnce({
-      status: "sent",
-      text: "Check your email: we sent a link to confirm your account. Then sign in.",
-    });
     render(<RegisterForm enabled />);
     await user.type(screen.getByLabelText(/Full name/), "Amina Juma");
     await user.type(screen.getByLabelText(/Email address/), "amina@example.com");
@@ -193,7 +208,6 @@ describe("register form", () => {
       phone: "0712 345 678",
       acceptTerms: "on",
     });
-    expect(await screen.findByRole("status")).toHaveTextContent("Check your email");
   });
 });
 

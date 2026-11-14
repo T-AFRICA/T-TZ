@@ -32,7 +32,7 @@ vi.mock("next/navigation", () => ({
   },
 }));
 
-import { requestPasswordResetAction, signInAction, signUpAction, updatePasswordAction } from "./actions";
+import { requestPasswordResetAction, signInAction, signOutAction, signUpAction, updatePasswordAction } from "./actions";
 import { safeNextPath } from "./server";
 import { IDLE } from "./state";
 
@@ -107,10 +107,10 @@ describe("sign up", () => {
     acceptTerms: "on",
   };
 
-  it("creates the account with a normalised phone and asks the customer to confirm by email", async () => {
+  it("creates the account with a normalised phone and goes to sign-in, where the customer is asked to confirm by email", async () => {
     supabase.auth.signUp.mockResolvedValueOnce({ data: { user: { id: "u" }, session: null }, error: null });
-    const result = await signUpAction(IDLE, form(valid));
-    expect(result).toEqual({ status: "sent", text: expect.stringContaining("Check your email") });
+    // The address is fixed: nothing the customer typed, no query string.
+    await expect(signUpAction(IDLE, form(valid))).rejects.toThrow(/^REDIRECT \/login\/registered$/);
     expect(supabase.auth.signUp).toHaveBeenCalledWith({
       email: "amina@example.com",
       password: "Tronic-2026",
@@ -119,6 +119,11 @@ describe("sign up", () => {
         data: { full_name: "Amina Juma", phone: "+255712345678" },
       },
     });
+  });
+
+  it("goes straight to the account when the provider has already signed the customer in", async () => {
+    supabase.auth.signUp.mockResolvedValueOnce({ data: { user: { id: "u" }, session: { user: { id: "u" } } }, error: null });
+    await expect(signUpAction(IDLE, form(valid))).rejects.toThrow(/^REDIRECT \/account$/);
   });
 
   it("refuses without accepted terms or with a non-Tanzanian number", async () => {
@@ -146,6 +151,23 @@ describe("sign up", () => {
     });
     expect(await signUpAction(IDLE, form(valid))).toEqual({ status: "error", code: "email_invalid" });
     expect(serverLog).not.toHaveBeenCalled();
+  });
+});
+
+describe("sign out", () => {
+  it("ends the session and goes to sign-in", async () => {
+    supabase.auth.signOut.mockResolvedValueOnce({ error: null });
+    await expect(signOutAction()).rejects.toThrow(/^REDIRECT \/login$/);
+    expect(supabase.auth.signOut).toHaveBeenCalledTimes(1);
+    expect(supabase.auth.signOut).toHaveBeenCalledWith();
+  });
+
+  it("still ends the session on this device when the provider cannot", async () => {
+    supabase.auth.signOut.mockResolvedValueOnce({ error: { code: "unexpected_failure", status: 500, message: "upstream" } });
+    supabase.auth.signOut.mockResolvedValueOnce({ error: null });
+    await expect(signOutAction()).rejects.toThrow(/^REDIRECT \/login$/);
+    expect(supabase.auth.signOut).toHaveBeenNthCalledWith(2, { scope: "local" });
+    expect(serverLog).toHaveBeenCalledWith("auth: sign-out refused by the provider", { code: "unexpected_failure", status: 500 });
   });
 });
 

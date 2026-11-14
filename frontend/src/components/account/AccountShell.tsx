@@ -1,19 +1,24 @@
+import Image from "next/image";
 import { LogOut } from "lucide-react";
 import { Container } from "@tronic/ui";
 import { signOutAction } from "@/features/auth/actions";
 import type { SessionUser } from "@/features/auth/server";
+import { avatarUrl } from "@/features/account/avatar";
 import { initials } from "@/features/account/session";
 import { AccountNav } from "./AccountNav";
 
+/** The customer's photo when they have one; their initials otherwise (and behind a photo that fails to load). */
 function Avatar({ user, size }: { user: SessionUser; size: "md" | "lg" }) {
+  const photo = avatarUrl(user.avatarVersion);
   return (
     <span
       aria-hidden="true"
-      className={`grid shrink-0 place-items-center rounded-full bg-[linear-gradient(135deg,#d71920,#9e1118)] font-bold text-white ${
+      className={`relative grid shrink-0 place-items-center overflow-hidden rounded-full bg-[linear-gradient(135deg,#d71920,#9e1118)] font-bold text-white ${
         size === "lg" ? "h-12 w-12 text-base" : "h-11 w-11 text-sm"
       }`}
     >
       {initials(user)}
+      {photo ? <Image src={photo} alt="" fill sizes="48px" unoptimized className="object-cover" /> : null}
     </span>
   );
 }

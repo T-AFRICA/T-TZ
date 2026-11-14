@@ -1448,9 +1448,6 @@ body:has([data-auth-screen]) {
 }
 
 @media (max-width: 63.999rem) and (max-height: 600px) {
-  .login-kicker {
-    display: none;
-  }
   .login-panel-wrap {
     margin-top: 0.75rem;
   }
@@ -1561,14 +1558,8 @@ body:has([data-auth-screen]) {
   }
 }
 
-@media (max-width: 63.999rem) and (max-height: 860px) {
-  .login-stage:has([data-long]) .login-kicker {
-    display: none;
-  }
-}
-
-/* Long forms, laptops with short screens: the subtitle, then the kicker step
-   aside and the card padding tightens. */
+/* Long forms, laptops with short screens: the subtitle steps aside and the
+   card padding tightens. */
 @media (min-width: 64rem) and (max-height: 800px) {
   .login-stage:has([data-long]) .login-sub {
     display: none;
@@ -1579,9 +1570,6 @@ body:has([data-auth-screen]) {
 }
 
 @media (min-width: 64rem) and (max-height: 700px) {
-  .login-stage:has([data-long]) .login-kicker {
-    display: none;
-  }
   .login-stage:has([data-long]) .login-panel-body {
     padding-top: 1.25rem;
     padding-bottom: 1.5rem;

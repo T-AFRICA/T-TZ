@@ -14,6 +14,7 @@ module is not connected.
 | --- | --- | --- |
 | Supabase Auth | `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `WEB_ORIGIN` | Every `/account` page redirects to `/login`; the sign-in form is disabled |
 | Order database | `DATA_SOURCE=database`, `DATABASE_URL`, migrations 0001–0004 applied | Orders, tracking and payments show "Not connected yet" |
+| Profile photo storage | Supabase Storage with migration `0005_customer_avatars.sql` applied (no new variable) | Uploading answers "We could not save your photo"; the rest of the profile works |
 
 As of 2026-11-14 neither is configured on this machine or on the deployed
 site (the live sign-in page still shows "Authentication will be available
@@ -31,7 +32,7 @@ project and setting the variables are owner actions.
 | `/account/tracking` | Orders in progress with a compact timeline | same |
 | `/account/wishlist` | Wishlist | The storefront's browser store (`features/cart/store`) |
 | `/account/payments` | Payment method, amount and status per order | `orders.payment_method`, `payment_status`, `total_minor` |
-| `/account/profile` | Name and phone (editable), email (read-only), country | Supabase Auth user metadata |
+| `/account/profile` | Name and phone (editable), email (read-only), optional profile photo, country | Supabase Auth user metadata; private Storage bucket `avatars` |
 | `/account/security` | Password reset link, email verification state, sign out | Supabase Auth |
 | `/account/addresses` | Saved addresses | **Not connected** |
 | `/account/invoices` | Invoices and receipts | **Not connected** |
@@ -61,6 +62,24 @@ unknown number.
   invoices or notifications.
 - **No client-side order changes.** Cancellation and returns are not
   offered; the API roles cannot update `orders` at all.
+- **Profile photo: optional, private, checked on the server.**
+  - One object per customer, `<user id>/avatar`, in the private bucket
+    `avatars`. The path always comes from the session; Storage policies
+    (migration 0005) refuse any other path and any other customer.
+  - The server action checks the size (2 MB) and the real file type from
+    the first bytes (JPEG, PNG or WebP), whatever the name or the browser
+    says. With JavaScript the browser first redraws the photo as a square
+    of at most 512 pixels, which also drops camera metadata such as
+    location; without JavaScript the file is stored as sent.
+  - There is no public URL. `/account/photo/<version>` returns the
+    signed-in customer's own photo and an empty 404 for anything else. The
+    response is `private, no-cache`.
+  - The auth profile holds only a version number (`avatar_version`), used
+    to tell that a photo exists and to change its address when replaced.
+    A customer can edit their own metadata, so it is never trusted for
+    where a photo is or whose it is.
+  - The photo is shown to its owner only (sidebar and profile). It is not
+    shown to other customers or on public pages.
 - **Motion** is a page entrance (fade and rise) and a one-time reveal of the
   timeline steps; neither suggests order progress, and both are off under
   reduced motion.
@@ -137,6 +156,9 @@ Also proposed:
   communication preferences have screens but no backend.
 - Changing the email address, cancelling an order and requesting a return.
 - Wishlist sync between devices.
+- The profile photo on a real Supabase project: migration 0005 has not
+  been applied by this repository, and uploads were tested only against
+  the stand-in Storage endpoints of the browser tests.
 - Verification against a real Supabase project: the portal is tested with
   the disposable test database and the stand-in auth server (`pnpm --filter
   @tronic/storefront run e2e`).

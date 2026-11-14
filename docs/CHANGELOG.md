@@ -3,6 +3,66 @@
 Meaningful implementation changes, newest first. Dates are work dates;
 nothing below is released.
 
+## 2026-11-14 — a signed-in customer gets back to their account from the store
+
+- Owner report: after leaving the account for the store, coming back
+  showed the sign-in form again although the customer was still signed in.
+  The header button, the mobile drawer button and the bottom bar's Profile
+  tab always linked to /login, and /login always showed the form.
+- The header and drawer now say "Account" and link to /account while this
+  browser has a customer session; the Profile tab links there too. A
+  visitor still sees "Login". The label follows a hint read from the
+  session cookie (features/auth/sessionHint.ts) and decides nothing: the
+  account pages verify the session on the server as before.
+- /login, /login/registered and /register send a signed-in customer to
+  /account instead of showing a form.
+- Sign out always ends the session on this device: if the provider cannot
+  end it (not reachable, for example), the session cookies are still
+  cleared, and the refusal is logged with its code and status only.
+- Not changed: the checkout still says "Online ordering is not connected
+  yet" while DATA_SOURCE is "mock". Placing orders needs the order
+  database (DATA_SOURCE=database, DATABASE_URL, migrations 0001-0004 and
+  a catalogue in that database), which is an owner decision.
+
+## 2026-11-14 — optional profile photo; "TRONIC account" label removed
+
+- Owner request: remove the small red "TRONIC account" label above the
+  heading on the sign-in, register, forgot-password and reset-password
+  cards and on the customer dashboard. Removed, with its CSS rules.
+- Owner request: an optional customer photo. Account, Profile has a
+  "Profile photo" panel: choose, upload, replace or remove. Nothing else
+  depends on it; without a photo the initials are shown as before.
+- Storage (owner's choice): Supabase Storage. Migration
+  0005_customer_avatars.sql creates the private bucket "avatars" (2 MB;
+  JPEG, PNG, WebP) and policies so a signed-in customer can create, read,
+  replace and delete only "<their user id>/avatar". Not applied by this
+  repository: the owner runs it in the Supabase SQL editor.
+- Server checks on every upload: session, size, and the real file type
+  from the first bytes. The object path comes from the session only. The
+  photo is served to its owner alone, through /account/photo/<version>
+  (private, no-cache); there is no public URL.
+- next.config.ts: server actions accept up to 3 MB (was the 1 MB default)
+  so a 2 MB photo can be posted when the browser could not shrink it.
+- Tests: database tests for the Storage policies on a stand-in for the
+  Storage tables; unit tests for the file checks and the action; a browser
+  test for upload, owner-only access and removal against stand-in Storage
+  endpoints. Not tested on a real Supabase project.
+
+## 2026-11-14 — a registration ends on the sign-in page
+
+- Owner request: after creating an account the customer should land on
+  the sign-in page. The register form used to stay where it was and show
+  "Check your email..." under the filled-in form.
+- The sign-up action now redirects to /login/registered: the sign-in
+  screen with an empty form and the note "Check your email: we sent a link
+  to confirm your account. Then sign in." The form's own answer (an error,
+  for example) replaces the note.
+- A path of its own instead of a ?flag, so the rule the browser tests
+  enforce still holds: no account page has a query string.
+- Unchanged: with email confirmation turned off in Supabase Auth the
+  provider signs the customer in at once and they go to /account. The
+  answer is the same for a new and an existing email.
+
 ## 2026-11-14 — a refused sign-up is no longer shown as a wrong password
 
 - Owner report: Register answered "That email and password don't match an

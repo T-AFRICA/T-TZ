@@ -2,18 +2,20 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { BellRing, ShieldCheck } from "lucide-react";
 import { ArrowRightIcon } from "@tronic/ui";
+import { PhotoForm } from "@/components/account/PhotoForm";
 import { ProfileForm } from "@/components/account/ProfileForm";
 import { Field, NotConnected, PageHeading, Panel, PortalPage } from "@/components/account/ui";
 import { createAccountService } from "@/features/account/service";
-import { requireCustomer } from "@/features/account/session";
+import { initials, requireCustomer } from "@/features/account/session";
 
 export const metadata: Metadata = { title: "Profile" };
 
 /**
  * /account/profile — the signed-in customer's own details from Supabase
  * Auth. Name and phone can be edited (saved to the customer's own auth
- * profile); the email is the sign-in and is read-only here. Only customer
- * fields are shown: nothing about roles or administration.
+ * profile); the email is the sign-in and is read-only here. A profile
+ * photo is optional and private to the customer. Only customer fields are
+ * shown: nothing about roles or administration.
  */
 export default async function AccountProfilePage() {
   const user = await requireCustomer();
@@ -25,6 +27,10 @@ export default async function AccountProfilePage() {
 
       <Panel title="Your details" labelledBy="profile-details">
         <ProfileForm fullName={profile.fullName ?? ""} phone={profile.phone ?? ""} email={profile.email ?? ""} />
+      </Panel>
+
+      <Panel title="Profile photo" labelledBy="profile-photo">
+        <PhotoForm photoUrl={profile.photoUrl} initials={initials(user)} />
       </Panel>
 
       <Panel title="Shopping region" labelledBy="profile-region">

@@ -6,8 +6,10 @@ import { randomBytes, randomUUID } from "node:crypto";
  * tests, because no Supabase project exists for this repository yet. It
  * implements just the endpoints supabase-js calls from the storefront's
  * server actions (password sign-in, sign-up, recovery, user, update,
- * refresh, logout) with in-memory users. It is never used by the app
- * outside the e2e run and proves nothing about Supabase itself.
+ * refresh, logout) with in-memory users, plus the three Supabase Storage
+ * calls behind the profile photo (upload, download, remove) with the same
+ * owner rule as migration 0005. It is never used by the app outside the
+ * e2e run and proves nothing about Supabase itself.
  */
 export interface FakeUser {
   id: string;
@@ -28,6 +30,8 @@ export class FakeAuth {
   readonly users = new Map<string, FakeUser>();
   private tokens = new Map<string, string>();
   private refresh = new Map<string, string>();
+  /** Stored objects by "bucket/name". */
+  private objects = new Map<string, { type: string; bytes: Buffer }>();
   private server: Server | null = null;
 
   constructor(private readonly onUserCreated: (user: FakeUser) => Promise<void>) {}
@@ -94,7 +98,9 @@ export class FakeAuth {
 
   private async handle(request: IncomingMessage, response: ServerResponse) {
     const url = new URL(request.url ?? "/", "http://127.0.0.1");
-    const body = await readJson(request);
+    const raw = await readBody(request);
+    if (url.pathname.startsWith("/storage/v1/object/")) return this.handleStorage(request, response, url, raw);
+    const body = parseJson(raw);
     const route = `${request.method} ${url.pathname}`;
 
     if (route === "POST /auth/v1/token" && url.searchParams.get("grant_type") === "password") {
@@ -140,16 +146,55 @@ export class FakeAuth {
     }
     return send(response, 404, { code: 404, error_code: "not_found", msg: "not found" });
   }
+
+  /**
+   * Storage for the "avatars" bucket only, with migration 0005's rule: a
+   * signed-in user may touch "<their id>/avatar" and nothing else.
+   */
+  private handleStorage(request: IncomingMessage, response: ServerResponse, url: URL, raw: Buffer) {
+    const denied = () => send(response, 400, { statusCode: "403", error: "Unauthorized", message: "new row violates row-level security policy" });
+    const user = this.userFromRequest(request);
+    const [bucket, ...rest] = decodeURIComponent(url.pathname.slice("/storage/v1/object/".length)).split("/");
+    const name = rest.join("/");
+    const own = user ? `${user.id}/avatar` : null;
+    if (bucket !== "avatars") return send(response, 400, { statusCode: "404", error: "Bucket not found", message: "Bucket not found" });
+
+    if (request.method === "POST" || request.method === "PUT") {
+      if (!own || name !== own) return denied();
+      if (raw.byteLength > 2 * 1024 * 1024) return send(response, 400, { statusCode: "413", error: "Payload too large", message: "The object exceeded the maximum allowed size" });
+      this.objects.set(`avatars/${name}`, { type: String(request.headers["content-type"] ?? "application/octet-stream"), bytes: raw });
+      return send(response, 200, { Id: randomUUID(), Key: `avatars/${name}` });
+    }
+    if (request.method === "GET") {
+      const object = own && name === own ? this.objects.get(`avatars/${name}`) : undefined;
+      if (!object) return send(response, 400, { statusCode: "404", error: "not_found", message: "Object not found" });
+      response.writeHead(200, { "content-type": object.type, "content-length": String(object.bytes.byteLength) }).end(object.bytes);
+      return;
+    }
+    if (request.method === "DELETE") {
+      const prefixes = parseJson(raw).prefixes;
+      const removed: { name: string }[] = [];
+      for (const prefix of Array.isArray(prefixes) ? prefixes.map(String) : []) {
+        if (own && prefix === own && this.objects.delete(`avatars/${prefix}`)) removed.push({ name: prefix });
+      }
+      return send(response, 200, removed);
+    }
+    return send(response, 404, { statusCode: "404", error: "not_found", message: "not found" });
+  }
 }
 
 function send(response: ServerResponse, status: number, body: unknown) {
   response.writeHead(status, API_VERSION).end(JSON.stringify(body));
 }
 
-async function readJson(request: IncomingMessage): Promise<Record<string, unknown>> {
+async function readBody(request: IncomingMessage): Promise<Buffer> {
   const chunks: Buffer[] = [];
   for await (const chunk of request) chunks.push(chunk as Buffer);
-  const text = Buffer.concat(chunks).toString("utf8");
+  return Buffer.concat(chunks);
+}
+
+function parseJson(raw: Buffer): Record<string, unknown> {
+  const text = raw.toString("utf8");
   if (!text) return {};
   try {
     return JSON.parse(text) as Record<string, unknown>;

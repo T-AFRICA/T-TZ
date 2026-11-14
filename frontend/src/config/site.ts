@@ -95,5 +95,7 @@ export const TRACK_ORDER_LINK = { href: "/track-order", label: "Track Order" } a
 export const CHECK_WARRANTY_LINK = { href: "/check-warranty", label: "Check Warranty" } as const;
 /** Customer sign-in (login and register UI built 2026-11-10; auth connects later). */
 export const ACCOUNT_LINK = { href: "/login", label: "Login" } as const;
+/** The same button once this browser has a customer session (features/auth/sessionHint.ts). */
+export const SIGNED_IN_ACCOUNT_LINK = { href: "/account", label: "Account" } as const;
 export const WISHLIST_LINK = { href: "/wishlist", label: "Wishlist" } as const;
 export const CART_LINK = { href: "/cart", label: "Cart" } as const;
