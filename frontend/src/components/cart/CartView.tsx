@@ -154,7 +154,7 @@ export function CartView() {
       {itemCount > 0 ? (
         <div
           data-sticky-purchase
-          className="fixed inset-x-0 bottom-[calc(3.5rem+env(safe-area-inset-bottom))] z-30 border-t border-[var(--color-light-grey)] bg-white/95 px-4 py-2.5 backdrop-blur md:hidden"
+          className="fixed inset-x-0 bottom-0 z-30 border-t border-[var(--color-light-grey)] bg-white/95 px-4 pt-2.5 backdrop-blur md:hidden"
         >
           <div className="flex items-center gap-3">
             <div className="min-w-0">

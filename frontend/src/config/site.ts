@@ -98,4 +98,6 @@ export const ACCOUNT_LINK = { href: "/login", label: "Login" } as const;
 /** The same button once this browser has a customer session (features/auth/sessionHint.ts). */
 export const SIGNED_IN_ACCOUNT_LINK = { href: "/account", label: "Account" } as const;
 export const WISHLIST_LINK = { href: "/wishlist", label: "Wishlist" } as const;
+/** Every product of the active country, in one list (app/products/page.tsx). */
+export const PRODUCTS_LINK = { href: "/products", label: "Products" } as const;
 export const CART_LINK = { href: "/cart", label: "Cart" } as const;
