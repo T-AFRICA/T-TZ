@@ -3,6 +3,41 @@
 Meaningful implementation changes, newest first. Dates are work dates;
 nothing below is released.
 
+## 2026-11-16 — rounded floating tab bar on phones; Products tab and page
+
+- Owner request: the phone tab bar is a rounded bar that floats above the
+  bottom edge (12px from the sides, 8px from the bottom plus the device
+  safe area), with a soft shadow. The current tab is a tinted capsule in
+  the brand red instead of a short line on the top border. The strip
+  beside and under the bar lets taps through to the page.
+- The Categories tab is replaced by Products. Categories pointed at a spot
+  near the top of the homepage, so on the homepage a tap did nothing a
+  customer could see. Products opens /products and stays current on
+  product and category pages.
+- /products is new: every product of the active country, newest first,
+  twelve to a page, with "In stock only", the listing's sort control and
+  pagination, all in the URL. A row of category links at the top leads to
+  the category listings, where brand and price filters live; brand and
+  price parameters are ignored on /products because nothing on that page
+  could undo them. Same catalogue adapter, ProductCard and Pagination as
+  the category listings; no new query code. Before this change /products
+  showed the "This page is on the way" placeholder.
+- Scrolling is as built on 2026-11-14: the bar slides away while the page
+  scrolls down and returns when scrolling stops or the page scrolls up.
+  It now moves by its own height plus its shadow, so nothing of the
+  floating bar is left on screen.
+- The sticky panels above the bar (product purchase bar, cart subtotal,
+  checkout total) reach the bottom edge on phones and the bar floats over
+  their lower part. When the bar slides away they sink into its place, so
+  no strip of the page shows under their buttons, which it did before.
+- One measure for the bar's footprint, --bottom-nav-space (4.25rem plus
+  the safe area), replaces the 3.5rem written in six places: the page's
+  bottom padding, the three sticky panels, the toast offset and the
+  WhatsApp button.
+- Tests: unit tests for the tabs, the current-tab rule and the /products
+  query; browser tests at 320, 375, 390 and 430px for the floating bar,
+  the Products page, the scroll behaviour and the product purchase panel.
+
 ## 2026-11-14 — form tests no longer sit near the CI time limit
 
 - CI failed on the phone header pull request: two checkout form tests

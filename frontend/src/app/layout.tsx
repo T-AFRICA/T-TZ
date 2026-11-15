@@ -59,7 +59,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       {/* max-md bottom padding keeps content clear of the fixed mobile tab
           bar, including the device safe-area inset the bar itself absorbs */}
       <body
-        className={`flex min-h-screen flex-col max-md:pb-[calc(3.5rem+env(safe-area-inset-bottom))]`}
+        className="flex min-h-screen flex-col max-md:pb-[var(--bottom-nav-space)]"
       >
         <a
           href="#main-content"

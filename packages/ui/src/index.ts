@@ -34,6 +34,7 @@ export {
   MapPinIcon,
   MeterIcon,
   NewspaperIcon,
+  PackageIcon,
   PhoneIcon,
   SearchIcon,
   ShieldCheckIcon,

@@ -116,6 +116,27 @@ export function toProductQuery(
   };
 }
 
+/**
+ * The all-products listing (/products) offers stock, sort and page only:
+ * brand and price belong to a category's filter panel, so they are dropped
+ * here instead of narrowing the list with nothing on screen to undo them.
+ */
+export function parseAllProductsFilters(searchParams: SearchParams): ListingFilters {
+  const { inStockOnly, sort, page } = parseListingFilters(searchParams);
+  return { brands: [], inStockOnly, sort, page };
+}
+
+/** Query for /products: every product of the active country, no category scope. */
+export function toAllProductsQuery(filters: ListingFilters): ProductQuery {
+  return {
+    country: ACTIVE_COUNTRY.code,
+    inStockOnly: filters.inStockOnly,
+    sort: filters.sort,
+    page: filters.page,
+    pageSize: DEFAULT_PAGE_SIZE,
+  };
+}
+
 /** Path of a listing: department, group inside it, or subcategory inside the group. */
 export function listingBasePath(
   section: CategorySection,

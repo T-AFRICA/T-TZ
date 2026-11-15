@@ -210,12 +210,13 @@ export function PurchasePanel({ product }: { product: SampleProduct }) {
         </p>
       ) : null}
 
-      {/* Sticky mobile purchase bar, above the bottom tab bar (which is
-          3.5rem plus the device safe-area inset tall). The data attribute lets
-          the page reserve this bar's height, so it never covers the footer. */}
+      {/* Sticky mobile purchase bar. The panel reaches the bottom edge and the
+          rounded tab bar floats over its lower part; the data attribute gives
+          it that padding and lets the page reserve its height, so it never
+          covers the footer (globals.css, [data-sticky-purchase]). */}
       <div
         data-sticky-purchase
-        className="fixed inset-x-0 bottom-[calc(3.5rem+env(safe-area-inset-bottom))] z-30 border-t border-[var(--color-light-grey)] bg-white/95 px-4 py-2 backdrop-blur md:hidden"
+        className="fixed inset-x-0 bottom-0 z-30 border-t border-[var(--color-light-grey)] bg-white/95 px-4 pt-2 backdrop-blur md:hidden"
       >
         <div className="flex items-center gap-2">
           {/* Price only — the name is on screen already (no duplication). Below

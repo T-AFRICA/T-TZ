@@ -545,11 +545,13 @@ export function CheckoutView({ buyNowLine, ordersEnabled = false }: { buyNowLine
         </div>
       </Container>
 
-      {/* Phones and tablets: sticky total + Place order, above the tab bar */}
+      {/* Phones and tablets: sticky total + Place order. On phones the panel reaches
+          the bottom edge and the tab bar floats over its lower part
+          (globals.css, [data-sticky-purchase]). */}
       <div
         data-sticky-purchase
         data-sticky-checkout
-        className="fixed inset-x-0 bottom-[calc(3.5rem+env(safe-area-inset-bottom))] z-30 border-t border-[var(--color-light-grey)] bg-white/95 px-4 py-2.5 backdrop-blur md:bottom-0 md:pb-[calc(0.625rem+env(safe-area-inset-bottom))] lg:hidden">
+        className="fixed inset-x-0 bottom-0 z-30 border-t border-[var(--color-light-grey)] bg-white/95 px-4 pt-2.5 backdrop-blur md:pb-[calc(0.625rem+env(safe-area-inset-bottom))] lg:hidden">
         <div className="mx-auto flex max-w-3xl items-center gap-3">
           <div className="min-w-0">
             <p className="text-[11px] text-[var(--text-muted)]">{quote.totalIsPartial ? "Total so far" : "Total"}</p>

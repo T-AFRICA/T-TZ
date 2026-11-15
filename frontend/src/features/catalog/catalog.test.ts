@@ -2,7 +2,14 @@ import { describe, expect, it } from "vitest";
 import type { Product } from "@tronic/types";
 import { ALL_SAMPLE_PRODUCTS, DEFAULT_PAGE_SIZE, MockCatalogClient } from "@tronic/api-client";
 import { CATEGORY_SECTIONS, getCategorySection } from "@tronic/country-config";
-import { activeFilterCount, listingHref, parseListingFilters, toProductQuery } from "./catalog";
+import {
+  activeFilterCount,
+  listingHref,
+  parseAllProductsFilters,
+  parseListingFilters,
+  toAllProductsQuery,
+  toProductQuery,
+} from "./catalog";
 import { listingMetadata } from "./metadata";
 
 /** Synthetic fixture: 30 lighting products across two groups and brands, plus
@@ -233,6 +240,38 @@ describe("parseListingFilters", () => {
     const filters = parseListingFilters({ max: "999999999999999" });
     const query = toProductQuery(filters, getCategorySection("lighting")!);
     expect(Number.isSafeInteger(query.maxPriceMinor)).toBe(true);
+  });
+});
+
+describe("all products (/products)", () => {
+  it("lists the whole country catalogue, newest first, without a category scope", async () => {
+    const query = toAllProductsQuery(parseAllProductsFilters({}));
+    expect(query).toEqual({ country: "TZ", inStockOnly: false, sort: "newest", page: 1, pageSize: DEFAULT_PAGE_SIZE });
+    const page = await client.listProducts(query);
+    // The 30 Tanzania products; never the Kenya-only or the retired one.
+    expect(page.total).toBe(30);
+    expect(page.items[0]!.id).toBe("p-30");
+    expect(page.items.map((p) => p.id)).not.toEqual(expect.arrayContaining(["ke-only", "retired"]));
+  });
+
+  it("keeps stock, sort and page from the URL and drops brand and price", async () => {
+    const filters = parseAllProductsFilters({ brand: "Alpha", min: "5", max: "9", stock: "1", sort: "price-asc", page: "2" });
+    expect(filters).toEqual({ brands: [], inStockOnly: true, sort: "price-asc", page: 2 });
+    expect(activeFilterCount(filters)).toBe(1);
+    expect(listingHref("/products", filters)).toBe("/products?stock=1&sort=price-asc&page=2");
+    const page = await client.listProducts(toAllProductsQuery(filters));
+    expect(page.total).toBe(24); // 30 less the six that are out of stock
+    expect(page.page).toBe(2);
+    expect(page.items.every((p) => p.inStock)).toBe(true);
+  });
+
+  it("falls back to the first page of the newest products for hostile input", () => {
+    expect(parseAllProductsFilters({ sort: "drop table", page: "-4", stock: "yes" })).toEqual({
+      brands: [],
+      inStockOnly: false,
+      sort: "newest",
+      page: 1,
+    });
   });
 });
 

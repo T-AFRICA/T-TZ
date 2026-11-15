@@ -20,6 +20,7 @@ import {
   LayoutGrid,
   MapPin,
   Newspaper,
+  Package,
   Phone,
   Search,
   ShieldCheck,
@@ -67,6 +68,7 @@ export const InfoIcon = wrap(Info);
 export const MapPinIcon = wrap(MapPin);
 export const NewspaperIcon = wrap(Newspaper);
 export const StoreIcon = wrap(Store);
+export const PackageIcon = wrap(Package);
 /**
  * Social brand glyphs. This lucide-react version has dropped its deprecated
  * brand icons (and never had TikTok), so these are drawn locally with the
