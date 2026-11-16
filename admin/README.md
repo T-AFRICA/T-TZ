@@ -65,19 +65,23 @@ private key in the admin deployment only, and gives each country the public
 key:
 
 ```bash
-openssl ecparam -name prime256v1 -genkey -noout | openssl pkcs8 -topk8 -nocrypt -out central-admin-signing.pem
+pnpm --filter @tronic/admin run signing-key
 ```
 
-```bash
-openssl ec -in central-admin-signing.pem -pubout -out central-admin-verify.pem
-```
+(`pnpm.cmd` in Windows PowerShell.) It writes three files to
+`tronic-central-admin-keys` in the user's home folder, outside the
+repository, and prints where they are, never what is in them:
+`COUNTRY_API_SIGNING_KEY.pem` (private), `CENTRAL_ADMIN_VERIFY_KEY.pem`
+(public) and `WHERE-THESE-GO.txt`. Each file is named after the variable
+its content goes into. It refuses to write over an existing key or into
+the repository; a folder can be given as an argument.
 
 Each country's deployment gets the public key as `CENTRAL_ADMIN_VERIFY_KEY`
 and the key's name as `CENTRAL_ADMIN_VERIFY_KEY_ID` (the same value as
 `COUNTRY_API_SIGNING_KEY_ID`). Without them a country has no admin API.
 
-Neither file belongs in this repository (`*.pem` is ignored and refused by
-the hygiene check).
+Neither key file belongs in this repository (`*.pem` is ignored and refused
+by the hygiene check).
 
 ## Setting up the Central Admin Supabase project (owner)
 
