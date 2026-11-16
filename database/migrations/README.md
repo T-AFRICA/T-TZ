@@ -10,6 +10,7 @@ owner on 2026-11-14, 0001-0003 are applied there; 0004 and 0005 are not yet.
 | `0002_product_search.sql` | Trigram indexes and `search_products()`. |
 | `0003_catalog_security.sql` | Row Level Security and explicit grants (anon/authenticated read the published catalogue only, nobody but the owner writes), security-invoker storefront view limited to active countries, `currencies` with each ISO 4217 exponent, price-currency check. |
 | `0004_orders.sql` | Private `stock_levels`, `customer_profiles`, `orders`, `order_lines` with RLS (customers read only their own orders), `place_cod_order()` (reprice, stock check and reservation, idempotency key, one transaction) and `track_order()` (number plus email or phone). |
+| `0006_order_admin.sql` | Order administration for the Central Admin: `order_status_events` and `order_notes` (private), and four functions executable by `service_role` only: list, detail, status change (one step forward at a time, cancel until dispatched with the stock put back, Cash on Delivery paid at delivery, the same request applied once) and internal notes. Customers and visitors get nothing new. Requires 0004. |
 | `0005_customer_avatars.sql` | Private Storage bucket `avatars` (2 MB; JPEG, PNG, WebP) and policies on `storage.objects`: a signed-in customer can create, read, replace and delete only `<their user id>/avatar`. Independent of 0001-0004. |
 
 Money columns (`*_minor`) are integers in the currency's ISO 4217 minor unit:

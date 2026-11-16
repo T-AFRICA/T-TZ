@@ -32,8 +32,17 @@ export function migrationsDir(): string {
   }
 }
 
-export function migrationFiles(): string[] {
-  return readdirSync(migrationsDir())
+/**
+ * database/admin-migrations (the Central Admin database, a different
+ * database from a country's), next to database/migrations, or
+ * TRONIC_ADMIN_MIGRATIONS_DIR.
+ */
+export function adminMigrationsDir(): string {
+  return process.env.TRONIC_ADMIN_MIGRATIONS_DIR || join(dirname(migrationsDir()), "admin-migrations");
+}
+
+export function migrationFiles(dir: string = migrationsDir()): string[] {
+  return readdirSync(dir)
     .filter((name) => /^\d{4}_.+\.sql$/.test(name))
     .sort();
 }
@@ -75,6 +84,32 @@ export async function createTestDatabase(options: { seed?: boolean | SeedOptions
     await seedCatalog(db, typeof options.seed === "object" ? options.seed : {});
   }
   return { pg, db };
+}
+
+/**
+ * A fresh Central Admin database: the Supabase shim and every file of
+ * database/admin-migrations, as the owner role. It has no country data and
+ * no administrators; tests provision the first Master Super Admin the way
+ * an owner does.
+ */
+export async function createAdminTestDatabase(options: { dataDir?: string } = {}): Promise<TestDatabase> {
+  const pg = await PGlite.create({ dataDir: options.dataDir, extensions: { pgcrypto } });
+  await pg.exec(SUPABASE_SHIM_SQL);
+  const dir = adminMigrationsDir();
+  for (const file of migrationFiles(dir)) {
+    await pg.exec(readFileSync(join(dir, file), "utf8"));
+  }
+  return { pg, db: pgliteDb(pg) };
+}
+
+/** Creates a Supabase-style auth user for the admin tests; `confirmed` sets email_confirmed_at. */
+export async function createAdminAuthUser(db: Db, email: string, confirmed = true): Promise<string> {
+  const [row] = await db.query<{ id: string }>(
+    `insert into auth.users (id, email, email_confirmed_at) values (gen_random_uuid(), $1, case when $2::boolean then now() end) returning id`,
+    [email.toLowerCase(), confirmed],
+  );
+  if (!row) throw new Error("createAdminAuthUser failed");
+  return row.id;
 }
 
 /** Creates a Supabase-style auth user for tests and returns its id. */

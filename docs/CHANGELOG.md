@@ -3,6 +3,131 @@
 Meaningful implementation changes, newest first. Dates are work dates;
 nothing below is released.
 
+## 2026-11-16 — Central Admin on its own Supabase project: first real sign-in; fewer round trips
+
+- Owner decision: the Central Admin gets its own Supabase project, not a
+  schema in Tanzania's. (The admin migrations cannot run in a country
+  project as they are: both define `countries`, and the admin's grants
+  would take the storefront's away.)
+- The owner created the project, ran `0001_admin_core.sql` and
+  `0002_country_actions.sql`, provisioned the first Master Super Admin and
+  signed in from a local dev server: password, authenticator set-up, code,
+  overview and country pages. First run of the admin against real Supabase.
+- Pages took 5 to 7 seconds from this machine, which is far from the
+  database. `withAdminAccess` now hands the role, the claims and the
+  queries to the connection together instead of waiting for each answer,
+  and the session record and the country list are read in one transaction
+  (`loadAdminSession`). Access rules are unchanged: a statement that fails
+  aborts the transaction for everything sent after it.
+- The admin dev server and the local preview listen on this machine only
+  (`-H 127.0.0.1`). The preview keeps its made-up password between starts
+  in `admin/.preview/sign-in.txt` (ignored by Git).
+- Checked: 40 admin database tests and 20 admin browser tests after the
+  change. Not measured: the new page times against the real project.
+
+## 2026-11-16 — orders connected: country admin API in the storefront, Orders in the Central Admin
+
+Owner request: connect the Central Admin to orders. Rules agreed with the
+owner: a status moves one step forward at a time; an order can be cancelled
+until it is dispatched and its stock comes back; Cash on Delivery is paid
+when delivered. Nothing was deployed or applied to a Supabase project.
+
+- `database/migrations/0006_order_admin.sql` (new, country database, not
+  applied anywhere): private `order_status_events` and `order_notes`, and
+  four functions for `service_role` only: list (status counts, search as
+  typed), detail, status change, internal note. The same request is applied
+  once. Customers and visitors get nothing new.
+- `@tronic/database/country-admin` (new export): `handleCountryAdminRequest`,
+  the country side of the API as one function: finds the endpoint, verifies
+  the signed token for that endpoint's permission, this country and the
+  exact request, validates the input, runs the database function with the
+  deployment's own country and the administrator from the token.
+- Storefront: `/api/admin/v1/[...path]` serves that function. Server to
+  server only, no CORS, no-store, rate limited, 16 KB body limit. It answers
+  404 for everything until `CENTRAL_ADMIN_VERIFY_KEY` and
+  `CENTRAL_ADMIN_VERIFY_KEY_ID` are set. No page of the storefront changed.
+- `@tronic/api-contracts`: order endpoints, zod schemas for every answer,
+  adapter methods. A business refusal is a 200 with `ok: false`.
+- `database/admin-migrations/0002_country_actions.sql` (new):
+  `admin_country_endpoint()` so a request of someone without settings.read
+  (an Order Manager) can be routed, and `record_country_action()` for the
+  audit entry of a change made in a country.
+- Admin: Orders list (status chips with counts, search, pagination, amounts
+  in the country's currency from its minor units) and order page (customer,
+  delivery, items, history with who made each change, next-step buttons
+  with a confirmation, internal notes). An unreachable or unregistered
+  country is stated with its reason; nothing is cached or invented.
+- Fixed while testing: a confirmation dialog whose action removed its own
+  button (a status that moved on, a role that was removed) closed without
+  the success message. The result is now announced from the dialog's own
+  submit, through the toast region that stays on the page.
+- Sign-in limit per client address raised from 20 to 60 in ten minutes (an
+  office shares one address); 8 per email address is unchanged.
+- Tests: 11 order administration tests and 3 more admin database tests
+  (database package: 101 in total), 3 storefront browser tests on the real
+  route (41 in total), 7 admin browser tests for orders against a stand-in
+  for Tanzania's backend over HTTPS (20 in total).
+  New dev dependency: `selfsigned` (a throwaway TLS certificate for that
+  stand-in; nothing is written into the repository).
+- Limits: run on this machine only, not between two deployments; switching
+  to `service_role` from the storefront's connection is untried on a real
+  Supabase project; a token is accepted once per server instance only.
+
+## 2026-11-16 — Central Admin foundation: database, roles, signed country requests, console
+
+Owner brief "Enterprise Centralized Admin Management System". Analysis,
+design, status of each phase and what is not built:
+docs/architecture/CENTRAL-ADMIN-PLAN.md. Nothing was deployed and no
+Supabase project, Vercel project or domain was created or changed.
+
+- `packages/permissions` (new package): 22 country permissions, 5 global
+  ones, nine roles, and the decisions (`can`, `grantRefusal`,
+  `canSuspend`, ...). A permission is always checked with a country; only
+  Master Super Admin is global, and it is never granted in the application.
+- `database/admin-migrations/0001_admin_core.sql` (new, not applied
+  anywhere): the Central Admin database. Country roster with Congo
+  unconfirmed (no code, currency or time zone, and it cannot be made
+  active without them), service registry, administrators, role
+  assignments, invitations, append-only audit log, security events, health
+  checks. Row Level Security on every table, no direct writes, ten
+  functions that check the caller and audit in the same transaction, and
+  an owner-only provisioning function for the Master Super Admin. A
+  suspended account, or a super admin whose session has not passed the
+  second factor, counts as nobody on the next statement.
+- `@tronic/database/admin` (new export): the server-only query layer of
+  that database; every call runs as the `authenticated` role with the
+  administrator's id and assurance level.
+- `apis` becomes `@tronic/api-contracts`: signed server-to-server
+  requests (ES256, 60 seconds, bound to country, administrator, permission
+  and the exact request; `jose`), and the country admin API version 1 with
+  its typed adapter (HTTPS only, time limit, no redirects, typed
+  "unavailable" reasons). One endpoint so far, the health check. The
+  country side is not built: no storefront serves it.
+- `admin` (new application, port 3300): sign-in without registration,
+  authenticator set-up and challenge for both super admin roles, a session
+  gate checked by every page and action, console shell (collapsible
+  sidebar, drawer on small screens, country switcher, light, dark and
+  device themes), overview, country roster and configuration, service
+  registry and a signed connection check, administrators and country
+  staff (give a role by email, remove a role, withdraw an invitation,
+  suspend, reinstate), audit log, refused attempts. Product, inventory,
+  order, customer, content, promotion and report pages state that the
+  module is not connected; no sample data or placeholder numbers.
+- Shared files touched: 18 icons added to `@tronic/ui`; the test-only
+  Supabase stand-in gains `auth.users.email_confirmed_at` and
+  `auth.jwt()`; `turbo.json` and `.env.example` list the admin's
+  variables (all blank). New dependencies: `jose`, `zod`, `server-only`,
+  `tsx` (dev, for the local preview). The storefront's code is unchanged.
+- Tests: 21 permission tests, 37 admin database tests, 16 contract and
+  signing tests, 16 admin unit tests, 13 admin browser tests (sign-in,
+  second factor, country isolation by address, role changes, suspension
+  mid-session, country configuration, unreachable service, sign-in
+  limit, 375px to 1920px, dark theme, client bundle scan).
+- Limits: Supabase Auth (password, TOTP, the `aal` claim) is exercised
+  only through a test stand-in, not a real project; the sign-in limiter is
+  in memory per server instance; a refused page answers 200 with the
+  "nothing here" page because pages are streamed.
+
 ## 2026-11-16 — rounded floating tab bar on phones; Products tab and page
 
 - Owner request: the phone tab bar is a rounded bar that floats above the

@@ -24,6 +24,13 @@ What lives where in the `T-AFRICA/T-TZ` monorepo (pnpm + Turborepo).
   - `src/test/setup.ts` — Vitest/RTL setup (jest-dom, cleanup).
   - `public/brand/` — official logo artwork.
 
+- `admin` — the Central Admin (Next.js App Router), one console for every
+  country, deployed as its own Vercel project against its own Supabase
+  project. `src/server` (session, guards, database pool, country API
+  adapter), `src/features` (gate, navigation, validation, server actions),
+  `src/app/(auth)` and `src/app/(console)`. See `admin/README.md` and
+  `docs/architecture/CENTRAL-ADMIN-PLAN.md`.
+
 ## Shared packages (TypeScript source, transpiled by the app)
 
 - `packages/ui` — design tokens (`src/tokens.css`, the single source of
@@ -32,6 +39,14 @@ What lives where in the `T-AFRICA/T-TZ` monorepo (pnpm + Turborepo).
 - `packages/country-config` — country roster and the Tanzania category
   taxonomy (8 sections + Meter nav item). Countries are isolated
   deployments; `origin` stays null until a country site is live.
+- `packages/permissions` — the Central Admin's roles, permissions and
+  authorization decisions; mirrored in `database/admin-migrations`.
+- `apis` (`@tronic/api-contracts`) — signed server-to-server requests and
+  the country admin API contract with its typed adapter.
+- `database/client` (`@tronic/database`) — server-only query layers: the
+  country database (catalogue, orders) and, under `/admin`, the Central
+  Admin database. `database/migrations` are a country's,
+  `database/admin-migrations` the Central Admin's.
 - `packages/api-client` — typed `SearchClient` boundary with the mock
   adapter (SAMPLE-labelled results). Live adapters land W09+ behind the
   same types. `packages/validators` is planned alongside real forms.

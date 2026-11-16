@@ -53,6 +53,7 @@ const nextConfig: NextConfig = {
     "@tronic/ui",
     "@tronic/types",
     "@tronic/api-client",
+    "@tronic/api-contracts",
     "@tronic/country-config",
     "@tronic/database",
   ],

@@ -31,6 +31,25 @@ import {
   Truck,
   User,
   X,
+  // Central Admin console
+  Boxes,
+  ChartColumn,
+  ClipboardList,
+  ContactRound,
+  FileText,
+  LayoutDashboard,
+  LogOut,
+  Megaphone,
+  Menu,
+  Moon,
+  PanelLeft,
+  Settings,
+  ShieldAlert,
+  ShoppingBag,
+  Sun,
+  Tags,
+  UserCog,
+  Users,
   type LucideIcon,
 } from "lucide-react";
 
@@ -69,6 +88,25 @@ export const MapPinIcon = wrap(MapPin);
 export const NewspaperIcon = wrap(Newspaper);
 export const StoreIcon = wrap(Store);
 export const PackageIcon = wrap(Package);
+// Central Admin console (admin/): navigation, shell and status icons.
+export const BoxesIcon = wrap(Boxes);
+export const ChartIcon = wrap(ChartColumn);
+export const ClipboardListIcon = wrap(ClipboardList);
+export const ContactIcon = wrap(ContactRound);
+export const FileTextIcon = wrap(FileText);
+export const DashboardIcon = wrap(LayoutDashboard);
+export const LogOutIcon = wrap(LogOut);
+export const MegaphoneIcon = wrap(Megaphone);
+export const MenuIcon = wrap(Menu);
+export const MoonIcon = wrap(Moon);
+export const PanelLeftIcon = wrap(PanelLeft);
+export const SettingsIcon = wrap(Settings);
+export const ShieldAlertIcon = wrap(ShieldAlert);
+export const ShoppingBagIcon = wrap(ShoppingBag);
+export const SunIcon = wrap(Sun);
+export const TagsIcon = wrap(Tags);
+export const UserCogIcon = wrap(UserCog);
+export const UsersIcon = wrap(Users);
 /**
  * Social brand glyphs. This lucide-react version has dropped its deprecated
  * brand icons (and never had TikTok), so these are drawn locally with the

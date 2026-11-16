@@ -1,3 +1,4 @@
+import { generateKeyPairSync } from "node:crypto";
 import { defineConfig } from "@playwright/test";
 import { PORTS } from "./e2e/ports";
 
@@ -13,6 +14,21 @@ import { PORTS } from "./e2e/ports";
  * loads that file for these servers too, so each server sets (or blanks)
  * every such variable itself. A variable set here wins over the file.
  */
+/**
+ * The admin API tests (e2e/admin-api.spec.ts) sign requests the way the
+ * Central Admin does. The key pair is made up for the run and kept in this
+ * process's environment, which the test workers inherit: the connected
+ * server gets the public half, the tests sign with the private half. No
+ * real deployment holds either.
+ */
+if (!process.env.E2E_CENTRAL_ADMIN_PRIVATE || !process.env.E2E_CENTRAL_ADMIN_PUBLIC) {
+  const pair = generateKeyPairSync("ec", { namedCurve: "P-256" });
+  process.env.E2E_CENTRAL_ADMIN_PRIVATE = pair.privateKey.export({ type: "pkcs8", format: "pem" }).toString();
+  process.env.E2E_CENTRAL_ADMIN_PUBLIC = pair.publicKey.export({ type: "spki", format: "pem" }).toString();
+}
+
+const verifyPem = process.env.E2E_CENTRAL_ADMIN_PUBLIC;
+
 const common = {
   NEXT_DIST_DIR: ".next-e2e",
   NEXT_TELEMETRY_DISABLED: "1",
@@ -49,6 +65,8 @@ export default defineConfig({
         SUPABASE_URL: `http://127.0.0.1:${PORTS.auth}`,
         SUPABASE_ANON_KEY: "e2e-anon-key-not-a-secret",
         WEB_ORIGIN: `http://localhost:${PORTS.connected}`,
+        CENTRAL_ADMIN_VERIFY_KEY: verifyPem,
+        CENTRAL_ADMIN_VERIFY_KEY_ID: "e2e",
       },
     },
     {
@@ -56,7 +74,15 @@ export default defineConfig({
       url: `http://localhost:${PORTS.disconnected}/login`,
       timeout: 120_000,
       reuseExistingServer: false,
-      env: { ...common, DATA_SOURCE: "mock", DATABASE_URL: "", SUPABASE_URL: "", SUPABASE_ANON_KEY: "" },
+      env: {
+        ...common,
+        DATA_SOURCE: "mock",
+        DATABASE_URL: "",
+        SUPABASE_URL: "",
+        SUPABASE_ANON_KEY: "",
+        CENTRAL_ADMIN_VERIFY_KEY: "",
+        CENTRAL_ADMIN_VERIFY_KEY_ID: "",
+      },
     },
   ],
 });

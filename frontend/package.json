@@ -15,6 +15,7 @@
     "@supabase/ssr": "^0.12.7",
     "@supabase/supabase-js": "^2.119.0",
     "@tronic/api-client": "workspace:*",
+    "@tronic/api-contracts": "workspace:*",
     "@tronic/country-config": "workspace:*",
     "@tronic/database": "workspace:*",
     "@tronic/types": "workspace:*",
