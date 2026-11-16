@@ -6,8 +6,9 @@
  *
  * It reproduces the parts that matter for access control:
  *   - the anon, authenticated and service_role roles;
- *   - auth.users and auth.uid(), which reads the JWT "sub" claim the way
- *     Supabase does (request.jwt.claims set per request/transaction);
+ *   - auth.users (with email_confirmed_at), auth.uid() and auth.jwt(),
+ *     which read the JWT claims the way Supabase does (request.jwt.claims
+ *     set per request/transaction);
  *   - storage.buckets and storage.objects with Row Level Security on and
  *     no policy, as in Supabase Storage: only the columns our policies and
  *     tests use;
@@ -24,8 +25,9 @@ create schema auth;
 grant usage on schema auth to anon, authenticated, service_role;
 
 create table auth.users (
-  id     uuid primary key,
-  email  text unique
+  id                  uuid primary key,
+  email               text unique,
+  email_confirmed_at  timestamptz
 );
 
 create function auth.uid() returns uuid
@@ -49,7 +51,16 @@ as $$
   )
 $$;
 
-grant execute on function auth.uid(), auth.role() to anon, authenticated, service_role;
+create function auth.jwt() returns jsonb
+language sql stable
+as $$
+  select coalesce(
+    nullif(current_setting('request.jwt.claim', true), ''),
+    nullif(current_setting('request.jwt.claims', true), '')
+  )::jsonb
+$$;
+
+grant execute on function auth.uid(), auth.role(), auth.jwt() to anon, authenticated, service_role;
 
 create schema storage;
 grant usage on schema storage to anon, authenticated, service_role;

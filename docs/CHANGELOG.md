@@ -3,6 +3,61 @@
 Meaningful implementation changes, newest first. Dates are work dates;
 nothing below is released.
 
+## 2026-11-16 — Central Admin foundation: database, roles, signed country requests, console
+
+Owner brief "Enterprise Centralized Admin Management System". Analysis,
+design, status of each phase and what is not built:
+docs/architecture/CENTRAL-ADMIN-PLAN.md. Nothing was deployed and no
+Supabase project, Vercel project or domain was created or changed.
+
+- `packages/permissions` (new package): 22 country permissions, 5 global
+  ones, nine roles, and the decisions (`can`, `grantRefusal`,
+  `canSuspend`, ...). A permission is always checked with a country; only
+  Master Super Admin is global, and it is never granted in the application.
+- `database/admin-migrations/0001_admin_core.sql` (new, not applied
+  anywhere): the Central Admin database. Country roster with Congo
+  unconfirmed (no code, currency or time zone, and it cannot be made
+  active without them), service registry, administrators, role
+  assignments, invitations, append-only audit log, security events, health
+  checks. Row Level Security on every table, no direct writes, ten
+  functions that check the caller and audit in the same transaction, and
+  an owner-only provisioning function for the Master Super Admin. A
+  suspended account, or a super admin whose session has not passed the
+  second factor, counts as nobody on the next statement.
+- `@tronic/database/admin` (new export): the server-only query layer of
+  that database; every call runs as the `authenticated` role with the
+  administrator's id and assurance level.
+- `apis` becomes `@tronic/api-contracts`: signed server-to-server
+  requests (ES256, 60 seconds, bound to country, administrator, permission
+  and the exact request; `jose`), and the country admin API version 1 with
+  its typed adapter (HTTPS only, time limit, no redirects, typed
+  "unavailable" reasons). One endpoint so far, the health check. The
+  country side is not built: no storefront serves it.
+- `admin` (new application, port 3300): sign-in without registration,
+  authenticator set-up and challenge for both super admin roles, a session
+  gate checked by every page and action, console shell (collapsible
+  sidebar, drawer on small screens, country switcher, light, dark and
+  device themes), overview, country roster and configuration, service
+  registry and a signed connection check, administrators and country
+  staff (give a role by email, remove a role, withdraw an invitation,
+  suspend, reinstate), audit log, refused attempts. Product, inventory,
+  order, customer, content, promotion and report pages state that the
+  module is not connected; no sample data or placeholder numbers.
+- Shared files touched: 18 icons added to `@tronic/ui`; the test-only
+  Supabase stand-in gains `auth.users.email_confirmed_at` and
+  `auth.jwt()`; `turbo.json` and `.env.example` list the admin's
+  variables (all blank). New dependencies: `jose`, `zod`, `server-only`,
+  `tsx` (dev, for the local preview). The storefront's code is unchanged.
+- Tests: 21 permission tests, 37 admin database tests, 16 contract and
+  signing tests, 16 admin unit tests, 13 admin browser tests (sign-in,
+  second factor, country isolation by address, role changes, suspension
+  mid-session, country configuration, unreachable service, sign-in
+  limit, 375px to 1920px, dark theme, client bundle scan).
+- Limits: Supabase Auth (password, TOTP, the `aal` claim) is exercised
+  only through a test stand-in, not a real project; the sign-in limiter is
+  in memory per server instance; a refused page answers 200 with the
+  "nothing here" page because pages are streamed.
+
 ## 2026-11-16 — rounded floating tab bar on phones; Products tab and page
 
 - Owner request: the phone tab bar is a rounded bar that floats above the

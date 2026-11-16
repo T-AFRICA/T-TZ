@@ -1,0 +1,200 @@
+@import "tailwindcss";
+@import "@tronic/ui/tokens.css";
+
+/* Tailwind only auto-scans this app; include the shared UI package sources. */
+@source "../../../packages/ui/src";
+
+/*
+ * Central Admin surfaces. The brand values (reds, type stacks, focus ring)
+ * come from @tronic/ui tokens.css; these are the console's own surface
+ * tokens, each with a light and a dark value. The sidebar is premium black
+ * in both themes, with the red wordmark on it.
+ */
+:root {
+  color-scheme: light;
+  --a-canvas: #f3f4f6;
+  --a-surface: #ffffff;
+  --a-raised: #f7f8fa;
+  --a-line: #e2e5ea;
+  --a-line-strong: #c9ced6;
+  --a-ink: #111111;
+  --a-muted: #5a606a;
+  --a-accent: #d71920;
+  --a-accent-hover: #b3141a;
+  --a-accent-soft: #fdecec;
+  --a-accent-ink: #b3141a;
+  --a-ok: #15703a;
+  --a-ok-soft: #e6f4ea;
+  --a-warn: #8a5a00;
+  --a-warn-soft: #fcf1d9;
+  --a-danger: #b3141a;
+  --a-danger-soft: #fdecec;
+  --a-info: #1d4ed8;
+  --a-info-soft: #e8effd;
+  --a-shadow: 0 1px 2px rgba(17, 17, 17, 0.04), 0 10px 28px -18px rgba(17, 17, 17, 0.22);
+  --a-sidebar: #111111;
+  --a-sidebar-ink: #f3f4f6;
+  --a-sidebar-muted: #a4a9b2;
+  --a-sidebar-line: #26292f;
+  --a-sidebar-hover: #1b1d22;
+  --a-sidebar-active: #23262c;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --a-canvas: #0c0d10;
+  --a-surface: #15171c;
+  --a-raised: #1b1e24;
+  --a-line: #282c34;
+  --a-line-strong: #3a3f49;
+  --a-ink: #f1f2f4;
+  --a-muted: #a3a9b3;
+  --a-accent: #d71920;
+  --a-accent-hover: #ef1c26;
+  --a-accent-soft: #3a1417;
+  --a-accent-ink: #ff6b72;
+  --a-ok: #5fd08a;
+  --a-ok-soft: #12301f;
+  --a-warn: #f2c261;
+  --a-warn-soft: #33270d;
+  --a-danger: #ff6b72;
+  --a-danger-soft: #3a1417;
+  --a-info: #8ab4ff;
+  --a-info-soft: #14233f;
+  --a-shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 12px 30px -18px rgba(0, 0, 0, 0.8);
+  --a-sidebar: #0a0b0d;
+  --a-sidebar-line: #20232a;
+  --focus-ring: 2px solid #ff6b72;
+}
+
+/* "System" (no stored choice): follow the device. Same values as the block above. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    color-scheme: dark;
+    --a-canvas: #0c0d10;
+    --a-surface: #15171c;
+    --a-raised: #1b1e24;
+    --a-line: #282c34;
+    --a-line-strong: #3a3f49;
+    --a-ink: #f1f2f4;
+    --a-muted: #a3a9b3;
+    --a-accent: #d71920;
+    --a-accent-hover: #ef1c26;
+    --a-accent-soft: #3a1417;
+    --a-accent-ink: #ff6b72;
+    --a-ok: #5fd08a;
+    --a-ok-soft: #12301f;
+    --a-warn: #f2c261;
+    --a-warn-soft: #33270d;
+    --a-danger: #ff6b72;
+    --a-danger-soft: #3a1417;
+    --a-info: #8ab4ff;
+    --a-info-soft: #14233f;
+    --a-shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 12px 30px -18px rgba(0, 0, 0, 0.8);
+    --a-sidebar: #0a0b0d;
+    --a-sidebar-line: #20232a;
+    --focus-ring: 2px solid #ff6b72;
+  }
+}
+
+/* Utility names for the tokens: bg-surface, text-ink, border-line, ... */
+@theme inline {
+  --color-canvas: var(--a-canvas);
+  --color-surface: var(--a-surface);
+  --color-raised: var(--a-raised);
+  --color-line: var(--a-line);
+  --color-line-strong: var(--a-line-strong);
+  --color-ink: var(--a-ink);
+  --color-muted: var(--a-muted);
+  --color-accent: var(--a-accent);
+  --color-accent-hover: var(--a-accent-hover);
+  --color-accent-soft: var(--a-accent-soft);
+  --color-accent-ink: var(--a-accent-ink);
+  --color-ok: var(--a-ok);
+  --color-ok-soft: var(--a-ok-soft);
+  --color-warn: var(--a-warn);
+  --color-warn-soft: var(--a-warn-soft);
+  --color-danger: var(--a-danger);
+  --color-danger-soft: var(--a-danger-soft);
+  --color-info: var(--a-info);
+  --color-info-soft: var(--a-info-soft);
+  --color-sidebar: var(--a-sidebar);
+  --color-sidebar-ink: var(--a-sidebar-ink);
+  --color-sidebar-muted: var(--a-sidebar-muted);
+  --color-sidebar-line: var(--a-sidebar-line);
+  --color-sidebar-hover: var(--a-sidebar-hover);
+  --color-sidebar-active: var(--a-sidebar-active);
+  --shadow-panel: var(--a-shadow);
+}
+
+html {
+  background: var(--a-canvas);
+}
+
+body {
+  background: var(--a-canvas);
+  color: var(--a-ink);
+  font-family: var(--font-primary);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-heading, var(--font-fallback-heading));
+}
+
+/* Arial Black, for the few prominent display headings only (brand rule). */
+.font-display {
+  font-family: var(--font-display);
+  font-weight: 900;
+  letter-spacing: -0.01em;
+}
+
+/* One focus indicator everywhere (WCAG 2.2 AA target). */
+:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}
+
+/* Native dialogs: the console's surface, a dimmed page behind. */
+dialog.console-dialog {
+  background: var(--a-surface);
+  color: var(--a-ink);
+  border: 1px solid var(--a-line);
+  border-radius: 0.875rem;
+  box-shadow: 0 24px 60px -20px rgba(0, 0, 0, 0.55);
+  padding: 0;
+  width: min(28rem, calc(100vw - 2rem));
+  margin: auto;
+}
+dialog.console-dialog::backdrop {
+  background: rgba(8, 9, 11, 0.55);
+}
+
+/* Tables scroll sideways inside their panel on narrow screens; the page never does. */
+.table-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+@keyframes ticker-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.5rem);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
