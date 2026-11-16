@@ -10,7 +10,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "e2e": "node e2e/run.mjs",
-    "preview:local": "tsx e2e/local-preview.ts"
+    "preview:local": "tsx e2e/local-preview.ts",
+    "signing-key": "node scripts/make-signing-key.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",

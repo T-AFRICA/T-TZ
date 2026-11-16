@@ -3,6 +3,22 @@
 Meaningful implementation changes, newest first. Dates are work dates;
 nothing below is released.
 
+## 2026-11-16 — one command for the Central Admin's signing key pair
+
+- `pnpm --filter @tronic/admin run signing-key` makes the key pair that
+  signs country requests and writes it outside the repository (default:
+  `tronic-central-admin-keys` in the user's home folder), each file named
+  after the variable its content goes into, with a note saying which
+  deployment gets which. It prints paths, never key content, and refuses to
+  write over an existing key or inside the repository. It replaces the
+  `openssl` commands in `admin/README.md`, which Windows PowerShell does not
+  have.
+- Checked with a throwaway folder: the files are written, a second run and
+  a folder inside the repository are refused, and a token signed with the
+  private file verifies with the public file. The trial keys were deleted.
+- Owner report (2026-11-16): the admin is deployed on Vercel from this
+  repository (Root Directory `admin`) and sign-in works there.
+
 ## 2026-11-16 — Central Admin on its own Supabase project: first real sign-in; fewer round trips
 
 - Owner decision: the Central Admin gets its own Supabase project, not a
