@@ -2,14 +2,7 @@ import "server-only";
 import { cache } from "react";
 import { notFound, redirect } from "next/navigation";
 import { connection } from "next/server";
-import {
-  acceptAdminInvitations,
-  getAdminSession,
-  listAdminCountries,
-  recordSecurityEvent,
-  type AdminAccess,
-  type AdminCountry,
-} from "@tronic/database/admin";
+import { acceptAdminInvitations, loadAdminSession, recordSecurityEvent, type AdminAccess, type AdminCountry } from "@tronic/database/admin";
 import { can, canAccessCountry, isMaster, type Actor, type CountryPermission, type GlobalPermission } from "@tronic/permissions";
 import { GATE_PATHS, decideGate, gatePath, type Gate, type NoAccessReason, type VerifiedIdentity } from "@/features/auth/gate";
 import { adminConfigured } from "./config";
@@ -65,11 +58,12 @@ export const getSessionState = cache(async (): Promise<SessionState> => {
 
   const db = getAdminDb();
   const access: AdminAccess = { userId: identity.userId, aal: identity.aal };
-  let record = await getAdminSession(db, access);
+  // The record and the country list come in one transaction (one trip to the database).
+  let { record, countries } = await loadAdminSession(db, access);
   if (!record.known && identity.emailConfirmed) {
     // First sign-in of an invited person: their invitations become roles.
     const accepted = await acceptAdminInvitations(db, access);
-    if (accepted.ok && accepted.accepted > 0) record = await getAdminSession(db, access);
+    if (accepted.ok && accepted.accepted > 0) ({ record, countries } = await loadAdminSession(db, access));
   }
 
   const gate: Gate = decideGate(identity, record);
@@ -79,7 +73,6 @@ export const getSessionState = cache(async (): Promise<SessionState> => {
   }
   if (gate.state !== "ok") return { state: gate.state, email: identity.email, identity };
 
-  const countries = await listAdminCountries(db, access);
   return {
     state: "ok",
     admin: {

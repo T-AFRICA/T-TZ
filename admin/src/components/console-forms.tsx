@@ -11,8 +11,9 @@ import {
   type MfaSetupState,
 } from "@/features/auth/actions";
 import { IDLE } from "@/features/form-state";
+import { addOrderNoteAction } from "@/features/orders/actions";
 import { ActionForm, FormMessage, SelectField, SubmitButton, TextField } from "./forms";
-import { buttonClass } from "./ui";
+import { buttonClass, inputClass } from "./ui";
 
 // --------------------------------------------------------------- sign-in --
 
@@ -271,6 +272,45 @@ export function CheckServiceForm({ countryId }: { countryId: string }) {
             </SubmitButton>
           </div>
           <FormMessage state={state} />
+        </>
+      )}
+    </ActionForm>
+  );
+}
+
+// ----------------------------------------------------------------- orders --
+
+export function OrderNoteForm({ countryId, orderNumber }: { countryId: string; orderNumber: string }) {
+  return (
+    <ActionForm action={addOrderNoteAction} resetOnSuccess className="flex flex-col gap-3">
+      {(state, pending) => (
+        <>
+          <input type="hidden" name="countryId" value={countryId} />
+          <input type="hidden" name="orderNumber" value={orderNumber} />
+          <div className="flex flex-col gap-1.5">
+            <label htmlFor="order-note" className="text-sm font-medium text-ink">
+              Add an internal note
+            </label>
+            <textarea
+              id="order-note"
+              name="body"
+              rows={3}
+              maxLength={1000}
+              required
+              aria-invalid={state.fieldErrors?.body ? true : undefined}
+              aria-describedby="order-note-hint"
+              className={inputClass}
+            />
+            <p id="order-note-hint" className={state.fieldErrors?.body ? "text-xs font-medium text-danger" : "text-xs text-muted"}>
+              {state.fieldErrors?.body ?? "Seen by administrators only. The customer never sees it."}
+            </p>
+          </div>
+          <FormMessage state={state} />
+          <div>
+            <SubmitButton pending={pending} variant="secondary" pendingLabel="Saving…">
+              Add note
+            </SubmitButton>
+          </div>
         </>
       )}
     </ActionForm>

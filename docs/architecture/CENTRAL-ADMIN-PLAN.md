@@ -20,7 +20,7 @@ changed.
 | Country model | One deployment and one database per country. The storefront takes its country from deployment configuration (`ACTIVE_COUNTRY`), never from the request. `packages/country-config` knows TZ (active), KE and UG | The admin keeps its own country roster in its own database (five countries, Congo unconfirmed). `country-config` is not changed: it describes what a storefront serves |
 | Country database | `database/migrations` 0001-0005: catalogue, search, RLS and grants, `stock_levels`, `customer_profiles`, `orders`, `order_lines`, `place_cod_order()`, `track_order()`, avatar storage. Reads run as `anon`/`authenticated` through `withAccess` so RLS applies | The order state model already exists (`pending_payment` → … → `delivered`, `cancelled`). The admin must use it, not define a second one. There is no admin write path in a country database yet: nobody but the owner can change a product, price, stock level or order status |
 | Auth | Supabase Auth through `@supabase/ssr`, server-only (the browser never talks to Supabase), sessions in httpOnly cookies, `proxy.ts` refreshes them. Customers only | The same pattern is reused for administrators, against a different Supabase project, with no sign-up call |
-| APIs | `frontend/src/app/api/search/route.ts` only. Everything else is Server Actions. No admin endpoint exists | "Country API" endpoints have to be built in the storefront as their own workstream (§6, phase 7) |
+| APIs | At the audit: `frontend/src/app/api/search/route.ts` only, everything else Server Actions, no admin endpoint | The country admin API was then added at `frontend/src/app/api/admin/v1/[...path]` (§6); it answers 404 until the Central Admin's public key is configured |
 | Tests | Vitest (storefront, database on PGlite with a Supabase shim), Playwright (storefront, own build folder, fake Auth) | The admin follows the same three layers |
 | CI and rules | `ci.yml` (lint, typecheck, test, build), `security.yml` (hygiene, Gitleaks), `protect-main` ruleset. E2E is not in CI | New packages join CI automatically through Turborepo. The admin's browser tests are run by hand, like the storefront's |
 | Supabase (owner-reported, 2026-11-14) | One project, Ireland, used by Tanzania: auth on, migrations 0001-0004 and the SAMPLE catalogue applied | That project is Tanzania's country project. The Central Admin needs a **separate** project |
@@ -157,12 +157,25 @@ browser → admin server (session, role, country checked)
   never follows a redirect and never retries. Every failure is a typed
   "unavailable" reason; a country that is not registered, switched off or
   unconfirmed gets an adapter that sends nothing.
-- Version 1 has one endpoint, `GET /api/admin/v1/health` (`settings.read`).
-  Each module adds its endpoints to this contract together with the
+- Version 1: health (`settings.read`); orders list and detail
+  (`orders.read`); order status change and internal note (`orders.update`).
+  Each further module adds its endpoints to this contract together with the
   country-side handler and the admin screen.
-
-**Not built:** the country side. No storefront serves `/api/admin/v1/*`, so
-no country can be connected yet, and the admin says so.
+- The country side is one function, `handleCountryAdminRequest`
+  (`@tronic/database/country-admin`), served by the storefront at
+  `/api/admin/v1/[...path]`. It runs the functions of country migration
+  0006 as `service_role` with the deployment's own country code and the
+  administrator from the token. The token id is the request id, so one
+  signed request can change an order once.
+- Order rules live in the country database: one step forward at a time
+  (`pending_payment → confirmed → processing → packed → dispatched →
+  in_transit → delivered`), cancellation until dispatch with the reserved
+  stock put back, Cash on Delivery paid at delivery. The customer's
+  tracking reads the same `orders.status`, so it follows without a second
+  system.
+- After a change the admin writes its own audit entry
+  (`record_country_action`, admin migration 0002); the country keeps who
+  did what in `order_status_events`.
 
 ## 7. Implementation sequence and status
 
@@ -170,12 +183,12 @@ no country can be connected yet, and the admin says so.
 | --- | --- | --- |
 | 1 Audit | This document | built |
 | 2 Admin database | `0001_admin_core.sql`, query layer, 37 database tests | built, not applied to any project |
-| 3 Authentication and RBAC | Sign-in, second factor, session gate, guards, permissions package | built; proven against a stand-in for Supabase Auth only |
+| 3 Authentication and RBAC | Sign-in, second factor, session gate, guards, permissions package | built; run once against the real Central Admin project (2026-11-16, see §9) |
 | 4 Console interface | Shell, themes, responsive tables, states | built |
 | 5 Master Super Admin | Overview, countries, administrators, audit log, security events, country configuration and service registry | built |
 | 6 Country Super Admin | Country dashboard, staff, invitations, country-scoped access | built |
-| 7 Country API | Contract, signing, adapter, health check from the admin | admin side built; **country side not built** |
-| 8 Products, categories, inventory, orders, customers, CMS | — | not built: pages state that the module is not connected |
+| 7 Country API | Contract, signing, adapter, country-side handler, storefront route | built for health and orders; proven on this machine only (storefront test build, stand-in country for the admin) |
+| 8 Products, categories, inventory, orders, customers, CMS | Orders: list, search, detail, status changes, cancellation, internal notes | orders built; returns/refunds, products, categories, inventory, customers and CMS not built: their pages say so |
 | 9 Reports and monitoring | Audit log and health checks only | mostly not built |
 | 10 Deployment | — | not done; owner actions below |
 
@@ -185,13 +198,13 @@ no country can be connected yet, and the admin says so.
 | --- | --- | --- |
 | 1 | Master reaches every country dashboard | browser test |
 | 2 | Tanzania Super Admin reaches Tanzania only | browser, database and unit tests |
-| 3 | Kenya Super Admin cannot read Tanzania customers | permission and database tests for roles, staff, audit and settings; **customer records are not reachable by anyone yet** (phase 8) |
+| 3 | Kenya Super Admin cannot read Tanzania customers | permission and database tests; browser test: Tanzania's orders (which carry customer contact details) are refused to Kenya's Super Admin, and a token signed for another country is refused by the country itself. A customer directory does not exist yet |
 | 4 | Country administrators cannot create or promote Master Super Admins | unit, database and browser tests |
 | 5 | Changing the country id does not bypass authorization | browser test (address), database tests (function arguments), token tests (country API) |
 | 6 | Admin actions are in the audit log | database and browser tests |
-| 7 | Product changes land in the right country database | not testable: phase 8 |
-| 8 | Storefront shows published changes after revalidation | not testable: phase 8 |
-| 9 | Authentication and sessions | browser tests against the stand-in; **not yet against a real Supabase project** |
+| 7 | Product changes land in the right country database | products not built. For orders: browser tests check the change in the country's own database |
+| 8 | Storefront shows published changes after revalidation | publishing not built. For orders: the storefront's tracking page shows the new status (storefront browser test) |
+| 9 | Authentication and sessions | browser tests against the stand-in; on the real project the owner signed in, set up an authenticator and opened the console (2026-11-16). Invitations, suspension and session expiry have not been tried there |
 | 10 | Suspended accounts stop at once | database and browser tests (same session, no new sign-in) |
 | 11 | Missing country connection shows an unavailable state | browser test |
 | 12 | No database credential in browser bundles | browser test scans the built client files |
@@ -217,6 +230,9 @@ no country can be connected yet, and the admin says so.
    `admin/README.md`.
 4. **Generate the signing key pair** for country requests and store the
    private key in the admin deployment only (command in `admin/README.md`).
+   Each country's storefront deployment gets the public key
+   (`CENTRAL_ADMIN_VERIFY_KEY`, `CENTRAL_ADMIN_VERIFY_KEY_ID`), and each
+   country database gets `database/migrations/0006_order_admin.sql`.
 5. **How do invited people get their Auth account?** Today an owner adds
    them in the admin project's Auth (or uses Supabase's own invite); the
    console then gives the role on first sign-in. Sending the invitation
@@ -227,10 +243,20 @@ no country can be connected yet, and the admin says so.
 
 ## 9. Known limits
 
-- Supabase Auth behaviour (password sign-in, TOTP enrolment and challenge,
-  the `aal` claim, session refresh) is exercised only through a test
-  stand-in. It has to be verified on the real project before anyone relies
-  on it.
+- Real project, 2026-11-16: the owner created the Central Admin Supabase
+  project, ran both admin migrations and the provisioning step, and from a
+  local dev server signed in with a password, set up an authenticator,
+  passed the code and opened the overview and country pages. That covers
+  password sign-in, TOTP enrolment and verification, the `aal2` claim, the
+  `authenticated` role switch and the session functions on real Supabase.
+  Not yet tried there: a second administrator through an invitation, the
+  authenticator challenge on a later sign-in, suspension, session refresh
+  over time, and anything on a deployed admin.
+- Each call to the admin database costs three network round trips (begin,
+  the statements together, commit), and a page makes a few such calls plus
+  two to the account service. From a machine far from the database a page
+  took 5 to 7 seconds before the statements were sent together; deploy the
+  admin in the region of its database.
 - The sign-in rate limiter is in memory per server instance; Supabase's own
   limits sit behind it. A shared limiter is a release-gate item.
 - A refused console page answers 200 with a "nothing here" page, not 404,
@@ -238,5 +264,15 @@ no country can be connected yet, and the admin says so.
 - Session revocation at the provider is not triggered by suspension. The
   console does not need it (the account is refused on every request), but
   the Auth session itself lives until it expires.
+- The orders connection has run only on this machine: the storefront's
+  route against a disposable database, and the admin against a stand-in
+  that serves the same handler. It has not run between two deployments,
+  and `set role service_role` from the storefront's connection has not been
+  tried on a real Supabase project.
+- A country accepts a token once per server instance (memory); across
+  instances, changes are protected by the database (the same request is
+  applied once), reads are not.
+- Returns and refunds, delivery fees and payment providers are not part of
+  the order administration.
 - POS, SAP, Rwanda/Congo ERP and Redis/BullMQ: no code, no interface, no
   status shown, as the brief asks for this phase.

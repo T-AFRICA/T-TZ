@@ -3,18 +3,15 @@
 import { revalidatePath } from "next/cache";
 import {
   inviteAdmin,
-  listCountryServices,
   recordCountryHealthCheck,
-  recordSecurityEvent,
   revokeAdminInvitation,
   revokeAdminRole,
   setAdminStatus,
   updateCountry,
   updateCountryService,
-  type AdminErrorCode,
 } from "@tronic/database/admin";
 import { can, grantRefusal, isRoleKey } from "@tronic/permissions";
-import { ADMIN_ERROR_TEXT, SERVICE_UNAVAILABLE_TEXT, roleName } from "@/features/labels";
+import { SERVICE_UNAVAILABLE_TEXT, roleName } from "@/features/labels";
 import {
   adminStatusSchema,
   countrySchema,
@@ -25,9 +22,10 @@ import {
   inviteSchema,
   type FormState,
 } from "@/features/rules";
+import { denied, done, refused } from "@/server/action-results";
 import { countryApiFor } from "@/server/country-api";
 import { getAdminDb } from "@/server/db";
-import { requireAdmin, type AdminContext } from "@/server/session";
+import { requireAdmin } from "@/server/session";
 
 /**
  * Server actions of the console. Each one, in this order:
@@ -39,24 +37,6 @@ import { requireAdmin, type AdminContext } from "@/server/session";
  *      and writes the audit log in the same transaction.
  * A refusal returns a plain sentence, never a database message.
  */
-
-function refused(code: AdminErrorCode): FormState {
-  return { status: "error", message: ADMIN_ERROR_TEXT[code] };
-}
-
-async function denied(admin: AdminContext, countryId: string | null, what: string): Promise<FormState> {
-  await recordSecurityEvent(getAdminDb(), admin.access, {
-    kind: countryId && !admin.countries.some((country) => country.id === countryId) ? "country_denied" : "permission_denied",
-    countryId: countryId?.slice(0, 24) ?? null,
-    detail: { what },
-  });
-  return refused("not_allowed");
-}
-
-function done(message: string): FormState {
-  revalidatePath("/", "layout");
-  return { status: "ok", message };
-}
 
 // ------------------------------------------------------- roles and accounts --
 
@@ -164,8 +144,7 @@ export async function checkCountryServiceAction(_previous: FormState, form: Form
   if (!country || !can(admin.actor, "settings.read", country.id)) return denied(admin, countryId, "check_country_service");
 
   const db = getAdminDb();
-  const service = (await listCountryServices(db, admin.access)).find((candidate) => candidate.countryId === country.id) ?? null;
-  const api = await countryApiFor(country, service);
+  const api = await countryApiFor(admin, country);
   const result = await api.health(admin.actor.userId);
 
   // "Not asked" outcomes (nothing registered, switched off, no key) are not health checks.

@@ -8,6 +8,7 @@ project is an owner action; nothing in this repository connects to one.
 | File | What it does |
 | --- | --- |
 | `0001_admin_core.sql` | Country roster and service registry, roles and permissions (mirroring `packages/permissions`), administrators, role assignments, invitations, append-only audit log, security events, country health checks. Row Level Security on every table, no direct writes, ten functions that check the caller and write the audit log, and the owner-only provisioning of the Master Super Admin. |
+| `0002_country_actions.sql` | `admin_country_endpoint()`: a country's service address for any administrator with a role there (routing an Order Manager's request needs it). `record_country_action()`: the audit entry for a change made in a country through the console; the permission each action needs is decided in the function. |
 
 Rules for every later file:
 

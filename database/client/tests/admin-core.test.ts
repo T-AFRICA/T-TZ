@@ -3,6 +3,8 @@ import { COUNTRY_PERMISSIONS, GLOBAL_PERMISSIONS, ROLES, ROLE_KEYS } from "@tron
 import {
   acceptAdminInvitations,
   getAdminCountry,
+  getCountryEndpoint,
+  recordCountryAction,
   getAdminOverview,
   getAdminSession,
   inviteAdmin,
@@ -155,8 +157,10 @@ describe("grants and exposure", () => {
       "app_private.has_permission",
       "app_private.is_master",
       "public.accept_admin_invitations",
+      "public.admin_country_endpoint",
       "public.admin_session",
       "public.invite_admin",
+      "public.record_country_action",
       "public.record_country_health_check",
       "public.record_security_event",
       "public.revoke_admin_invitation",
@@ -549,5 +553,41 @@ describe("security events and overview", () => {
     expect(tz.countries).toBe(1);
     expect(tz.administrators).toBeLessThan(all.administrators);
     expect(await getAdminOverview(t.db, password("stranger"))).toMatchObject({ countries: 0, administrators: 0, pendingInvitations: 0 });
+  });
+});
+
+describe("reaching a country and auditing what was done there (0002)", () => {
+  it("gives a country's service address to anyone with a role there, and to nobody else", async () => {
+    expect(await getCountryEndpoint(t.db, password("tz-orders"), "tz")).toMatchObject({ countryId: "tz", isoCode: "TZ", apiBaseUrl: "https://tz.example.test/internal", enabled: false });
+    expect(await getCountryEndpoint(t.db, mfa("master"), "congo")).toMatchObject({ countryId: "congo", isoCode: null, apiBaseUrl: null, enabled: false });
+    expect(await getCountryEndpoint(t.db, mfa("ke-super"), "tz")).toBeNull();
+    expect(await getCountryEndpoint(t.db, password("stranger"), "tz")).toBeNull();
+    // A super admin who has not passed the second factor counts as nobody.
+    expect(await getCountryEndpoint(t.db, password("tz-super"), "tz")).toBeNull();
+  });
+
+  it("records an order change for someone who may change orders in that country, and refuses everyone else", async () => {
+    const entry = { action: "order.status_change" as const, targetId: "TZ-261116-ABCDEF12", summary: { from: "confirmed", to: "processing" } };
+    expect(await recordCountryAction(t.db, password("tz-orders"), { countryId: "tz", ...entry })).toEqual({ ok: true });
+    // Customer Support reads orders but may not change them.
+    expect(await recordCountryAction(t.db, password("ke-support"), { countryId: "ke", ...entry })).toEqual({ ok: false, code: "not_allowed" });
+    // An Order Manager of Tanzania has no say in Kenya.
+    expect(await recordCountryAction(t.db, password("tz-orders"), { countryId: "ke", ...entry })).toEqual({ ok: false, code: "not_allowed" });
+    expect(await recordCountryAction(t.db, password("stranger"), { countryId: "tz", ...entry })).toEqual({ ok: false, code: "not_allowed" });
+
+    const [logged] = (await listAuditLog(t.db, mfa("master"), { countryId: "tz" })).entries;
+    expect(logged).toMatchObject({ action: "order.status_change", actorEmail: "tz-orders@example.test", countryId: "tz", targetType: "order", targetId: "TZ-261116-ABCDEF12" });
+    expect(logged!.summary).toEqual({ from: "confirmed", to: "processing" });
+    const refused = await listSecurityEvents(t.db, mfa("master"));
+    expect(refused.some((event) => event.kind === "permission_denied" && event.actorId === users["tz-orders"] && event.countryId === "ke")).toBe(true);
+  });
+
+  it("accepts only the actions it knows, with a bounded target and summary", async () => {
+    const base = { countryId: "tz", targetId: "TZ-261116-ABCDEF12", summary: {} };
+    // @ts-expect-error an action this console cannot carry out
+    expect(await recordCountryAction(t.db, mfa("master"), { ...base, action: "order.delete" })).toEqual({ ok: false, code: "invalid_request" });
+    expect(await recordCountryAction(t.db, mfa("master"), { ...base, action: "order.note_add", targetId: "" })).toEqual({ ok: false, code: "invalid_request" });
+    expect(await recordCountryAction(t.db, mfa("master"), { ...base, action: "order.note_add", summary: { blob: "x".repeat(4000) } })).toEqual({ ok: false, code: "invalid_request" });
+    expect(await recordCountryAction(t.db, mfa("master"), { ...base, action: "order.note_add" })).toEqual({ ok: true });
   });
 });

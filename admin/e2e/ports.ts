@@ -5,6 +5,8 @@ export const PORTS = {
   database: 54339,
   auth: 54340,
   control: 54341,
+  /** The stand-in country service (Tanzania), over HTTPS. */
+  country: 54342,
 } as const;
 
 /** The local preview (pnpm --filter @tronic/admin run preview:local) uses its own set, so both can run at once. */
@@ -13,4 +15,5 @@ export const PREVIEW_PORTS = {
   database: 54349,
   auth: 54350,
   control: 54351,
+  country: 54352,
 } as const;

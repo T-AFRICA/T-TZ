@@ -8,6 +8,8 @@ dist/
 build/
 coverage/
 .turbo/
+# Sign-in details of the admin's local preview (synthetic accounts only).
+.preview/
 .cache/
 *.tsbuildinfo
 

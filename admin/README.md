@@ -19,23 +19,30 @@ Design, role model, API contract and what is and is not built:
 - Administrators and country staff: give a role by email address, remove a
   role, withdraw an invitation, suspend and reinstate (Master Super Admin).
 - Audit log and refused attempts.
-- Products, categories, inventory, orders, customers, website content,
-  promotions and reports have a page that says the module is not connected.
-  They show no data, because no country serves the admin API yet.
+- Orders of a connected country, read live from that country's own backend:
+  list with status counts and search, order detail, status changes one step
+  at a time, cancellation until dispatch, internal notes. Each change is
+  made and recorded by the country and audited here.
+- Products, categories, inventory, customers, website content, promotions
+  and reports have a page that says the module is not available yet. They
+  show no data: that part of the country API has not been built.
 
 ## Commands (from the repository root)
 
 - `pnpm --filter @tronic/admin run dev` — dev server on port 3300. Without
   the variables below it shows "not connected" and nobody can sign in.
 - `pnpm --filter @tronic/admin run preview:local` — the dev server on port
-  3300 with a disposable in-process database, a stand-in for Supabase Auth
-  and synthetic administrators. The sign-in details are made up at start
-  and printed in the terminal. Nothing is kept after it stops and nothing
-  outside this machine is contacted. For looking at the console only.
+  3300 with a disposable in-process database, a stand-in for Supabase Auth,
+  a stand-in for Tanzania's backend (already connected, with a few synthetic
+  orders) and synthetic administrators. The sign-in details are printed in
+  the terminal and written to `admin/.preview/sign-in.txt` (ignored by Git);
+  the password is made up on the first start and stays the same after that.
+  The data is gone when it stops and nothing outside this machine is
+  contacted. For looking at the console only.
 - `pnpm --filter @tronic/admin run test` — unit tests.
 - `pnpm --filter @tronic/admin run e2e` — Playwright browser tests against a
-  production build in `admin/.next-e2e`, the same disposable database and
-  stand-in. Uses the installed Google Chrome. Not run in CI.
+  production build in `admin/.next-e2e`, the same disposable databases and
+  stand-ins. Uses the installed Google Chrome. Not run in CI.
 
 Do not run `next build` for the admin while its dev server is running: they
 share `admin/.next`. The browser tests build into their own folder.
@@ -65,6 +72,10 @@ openssl ecparam -name prime256v1 -genkey -noout | openssl pkcs8 -topk8 -nocrypt 
 openssl ec -in central-admin-signing.pem -pubout -out central-admin-verify.pem
 ```
 
+Each country's deployment gets the public key as `CENTRAL_ADMIN_VERIFY_KEY`
+and the key's name as `CENTRAL_ADMIN_VERIFY_KEY_ID` (the same value as
+`COUNTRY_API_SIGNING_KEY_ID`). Without them a country has no admin API.
+
 Neither file belongs in this repository (`*.pem` is ignored and refused by
 the hygiene check).
 
@@ -82,6 +93,16 @@ the hygiene check).
 6. That person signs in, sets up their authenticator, and gives the Country
    Super Admin roles from Administrators. Each invited person needs an
    account in this project's Auth with the same confirmed email address.
+
+## Connecting a country's orders (owner)
+
+1. Run `database/migrations/0006_order_admin.sql` in that country's Supabase
+   SQL editor (after 0004).
+2. Set `CENTRAL_ADMIN_VERIFY_KEY` and `CENTRAL_ADMIN_VERIFY_KEY_ID` in the
+   country's storefront deployment and redeploy.
+3. In the console, as Master Super Admin: country → Settings → enter the
+   storefront's address, allow calls, save, then "Check connection".
+4. Orders opens for everyone holding `orders.read` in that country.
 
 ## Security notes
 

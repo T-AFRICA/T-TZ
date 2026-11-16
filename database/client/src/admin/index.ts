@@ -22,15 +22,31 @@ export interface AdminAccess {
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-/** Runs `fn` in one transaction as the given administrator. `set local` ends with the transaction. */
+/**
+ * Runs `fn` in one transaction as the given administrator. `set local`
+ * ends with the transaction.
+ *
+ * The role, the claims and the queries of `fn` are handed to the connection
+ * one after the other without waiting for each answer, so they travel
+ * together: the database is often far from the server, and every wait is a
+ * round trip. The order on the connection is the order here, and a
+ * statement that fails aborts the transaction for everything after it, so
+ * no query can run before the role is set or after it failed to be.
+ */
 export async function withAdminAccess<T>(db: Db, access: AdminAccess, fn: (tx: Db) => Promise<T>): Promise<T> {
   if (!UUID.test(access.userId)) throw new Error("withAdminAccess: a user id (uuid) is required");
   if (access.aal !== "aal1" && access.aal !== "aal2") throw new Error("withAdminAccess: unknown assurance level");
   return db.transaction(async (tx) => {
-    await tx.query("set local role authenticated");
     const claims = { sub: access.userId, role: "authenticated", aal: access.aal };
-    await tx.query("select set_config('request.jwt.claims', $1, true)", [JSON.stringify(claims)]);
-    return fn(tx);
+    const role = tx.query("set local role authenticated");
+    const config = tx.query("select set_config('request.jwt.claims', $1, true)", [JSON.stringify(claims)]);
+    const work = fn(tx);
+    // Wait for all three; report the first failure in the order they were sent.
+    const [roleResult, configResult, workResult] = await Promise.allSettled([role, config, work]);
+    if (roleResult.status === "rejected") throw roleResult.reason;
+    if (configResult.status === "rejected") throw configResult.reason;
+    if (workResult.status === "rejected") throw workResult.reason;
+    return workResult.value;
   });
 }
 
@@ -109,9 +125,7 @@ export interface AdminSessionRecord {
   mfaRequired: boolean;
 }
 
-/** The caller's own profile and active roles. Answers before the second factor; never about anyone else. */
-export async function getAdminSession(db: Db, access: AdminAccess): Promise<AdminSessionRecord> {
-  const result = await callFunction(db, access, `select admin_session() as result`, []);
+function toSessionRecord(result: Json): AdminSessionRecord {
   if (result.known !== true) {
     return { known: false, userId: null, email: null, fullName: null, status: null, assignments: [], mfaRequired: false };
   }
@@ -125,6 +139,26 @@ export async function getAdminSession(db: Db, access: AdminAccess): Promise<Admi
     assignments: assignments.map((a) => ({ role: text(a.role), countryId: nullableText(a.country_id) })),
     mfaRequired: result.mfa_required === true,
   };
+}
+
+/** The caller's own profile and active roles. Answers before the second factor; never about anyone else. */
+export async function getAdminSession(db: Db, access: AdminAccess): Promise<AdminSessionRecord> {
+  return toSessionRecord(await callFunction(db, access, `select admin_session() as result`, []));
+}
+
+/**
+ * What every console request needs first, read together in one
+ * transaction: the caller's own record and the countries they may see
+ * (none while the caller does not count as an administrator).
+ */
+export async function loadAdminSession(db: Db, access: AdminAccess): Promise<{ record: AdminSessionRecord; countries: AdminCountry[] }> {
+  const [sessionRows, countryRows] = await withAdminAccess(db, access, (tx) =>
+    Promise.all([
+      tx.query<{ result: unknown }>(`select admin_session() as result`),
+      tx.query(`select ${COUNTRY_COLUMNS} from countries c order by c.sort_order, c.name`),
+    ]),
+  );
+  return { record: toSessionRecord(parseJson(sessionRows[0]?.result)), countries: countryRows.map(rowToCountry) };
 }
 
 /** Turns pending invitations for the caller's confirmed email into roles. */
@@ -564,4 +598,44 @@ export async function getAdminOverview(db: Db, access: AdminAccess): Promise<Adm
     pendingInvitations: int(row.pending_invitations),
     connectedServices: int(row.connected_services),
   };
+}
+
+// ------------------------------------------------- reaching a country (0002) --
+
+export interface CountryEndpoint {
+  countryId: string;
+  isoCode: string | null;
+  apiBaseUrl: string | null;
+  enabled: boolean;
+}
+
+/** Where a country's service is, for an administrator with any role in that country; null for anyone else. */
+export async function getCountryEndpoint(db: Db, access: AdminAccess, countryId: string): Promise<CountryEndpoint | null> {
+  const [row] = await withAdminAccess(db, access, (tx) => tx.query<{ result: unknown }>(`select admin_country_endpoint($1) as result`, [countryId]));
+  const raw: unknown = typeof row?.result === "string" ? JSON.parse(row.result) : row?.result;
+  if (!raw || typeof raw !== "object") return null;
+  const result = raw as Json;
+  return {
+    countryId: text(result.country_id),
+    isoCode: nullableText(result.iso_code)?.trim() ?? null,
+    apiBaseUrl: nullableText(result.api_base_url),
+    enabled: result.enabled === true,
+  };
+}
+
+export type CountryAction = "order.status_change" | "order.note_add";
+
+/** The audit entry for a change made in a country's own system through this console. */
+export async function recordCountryAction(
+  db: Db,
+  access: AdminAccess,
+  entry: { countryId: string; action: CountryAction; targetId: string; summary: Record<string, string | number | boolean | null> },
+): Promise<AdminResult> {
+  const result = await callFunction(db, access, `select record_country_action($1, $2, $3, $4::text::jsonb) as result`, [
+    entry.countryId,
+    entry.action,
+    entry.targetId,
+    JSON.stringify(entry.summary),
+  ]);
+  return result.ok === true ? { ok: true } : failure(result);
 }

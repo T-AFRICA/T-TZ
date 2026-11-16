@@ -40,7 +40,7 @@ export async function signInAction(_previous: FormState, form: FormData): Promis
   if (!parsed.success) return { status: "error", fieldErrors: fieldErrors(parsed.error) };
 
   const client = clientKey(await headers());
-  if (!allowAttempt(`sign-in:${client}`, 20, 10 * 60_000) || !allowAttempt(`sign-in:${parsed.data.email}`, 8, 10 * 60_000)) return TOO_MANY;
+  if (!allowAttempt(`sign-in:${client}`, 60, 10 * 60_000) || !allowAttempt(`sign-in:${parsed.data.email}`, 8, 10 * 60_000)) return TOO_MANY;
 
   const supabase = await supabaseServer();
   const { error } = await supabase.auth.signInWithPassword(parsed.data);

@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useId, useRef, useState, type ReactNode } from "react";
+import { useActionState, useEffect, useId, useRef, useState, useTransition, type ReactNode } from "react";
 import { useToast } from "@tronic/ui";
 import { IDLE, type FormState } from "@/features/form-state";
 import { buttonClass, inputClass } from "./ui";
@@ -181,11 +181,12 @@ export function ConfirmAction({
   /** Adds an optional text field (e.g. a reason for a suspension). */
   reasonField?: { name: string; label: string };
 }) {
-  const [state, formAction, pending] = useActionState(action, IDLE);
+  const [state, setState] = useState<FormState>(IDLE);
+  const [pending, startTransition] = useTransition();
   const [open, setOpen] = useState(false);
   const dialog = useRef<HTMLDialogElement>(null);
   const titleId = useId();
-  useResultToast(state);
+  const { showToast } = useToast();
 
   useEffect(() => {
     const element = dialog.current;
@@ -194,9 +195,20 @@ export function ConfirmAction({
     if (!open && element.open) element.close();
   }, [open]);
 
-  useEffect(() => {
-    if (state.status === "ok") setOpen(false);
-  }, [state]);
+  // The action often removes this very button (a role that is gone, an order
+  // that moved on). So the result is announced from here, through the toast
+  // region that outlives the button, and not from an effect of a component
+  // that may no longer exist when the page comes back.
+  function formAction(form: FormData) {
+    startTransition(async () => {
+      const result = await action(IDLE, form);
+      if (result.status === "ok") {
+        if (result.message) showToast(result.message, "success");
+        setOpen(false);
+      }
+      setState(result);
+    });
+  }
 
   return (
     <>

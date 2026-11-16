@@ -2,6 +2,8 @@ import "server-only";
 
 /**
  * Best-effort fixed-window limiter for sign-in and second-factor attempts.
+ * One email address gets 8 sign-in attempts in ten minutes; one client
+ * address 60, because an office shares one address.
  * In memory, so each server instance counts on its own: it slows one client
  * hammering one instance and is not a global quota. Supabase Auth applies
  * its own limits behind it. A shared limiter is a release-gate item.
