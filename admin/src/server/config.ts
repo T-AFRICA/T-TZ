@@ -48,7 +48,7 @@ export function databaseUrl(): string {
 
 /** The signing key for country API requests, or null while none is configured. */
 export function countryApiSigningKey(): { privateKeyPem: string; keyId: string } | null {
-  const privateKeyPem = process.env.COUNTRY_API_SIGNING_KEY?.replace(/\\n/g, "\n").trim();
+  const privateKeyPem = process.env.COUNTRY_API_SIGNING_KEY?.trim();
   const keyId = process.env.COUNTRY_API_SIGNING_KEY_ID?.trim();
   return privateKeyPem && keyId ? { privateKeyPem, keyId } : null;
 }

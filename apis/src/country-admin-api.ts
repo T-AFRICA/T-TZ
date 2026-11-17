@@ -171,6 +171,8 @@ export type CountryUnavailableReason =
   | "disabled" // registered but switched off
   | "no_iso_code" // the country itself is not confirmed yet
   | "signing_not_configured" // the Central Admin has no signing key
+  | "signing_key_invalid" // the Central Admin's signing key cannot be read
+  | "country_key_invalid" // the country's copy of the public key cannot be read
   | "unreachable" // no connection
   | "timeout"
   | "rejected" // the country refused the request (401/403)
@@ -264,7 +266,16 @@ export function createCountryAdminApi(options: CountryAdminApiOptions): CountryA
       return { available: false, reason: timedOut ? "timeout" : "unreachable", statusCode: null, latencyMs: elapsed() };
     }
     if (response.status !== 200) {
-      return { available: false, reason: statusReason(response.status), statusCode: response.status, latencyMs: elapsed() };
+      // A country that cannot read its copy of the public key says so (503).
+      let reason = statusReason(response.status);
+      if (response.status === 503) {
+        const code = await response
+          .json()
+          .then((answer: unknown) => (answer as { code?: unknown } | null)?.code)
+          .catch(() => undefined);
+        if (typeof code === "string" && code.startsWith("verify_key_")) reason = "country_key_invalid";
+      }
+      return { available: false, reason, statusCode: response.status, latencyMs: elapsed() };
     }
     let json: unknown;
     try {
