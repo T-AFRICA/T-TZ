@@ -353,7 +353,8 @@ describe("a country database that is not set up for the admin", () => {
     } finally {
       await bare.pg.close();
     }
-  });
+    // Builds a database of its own, like the other tests that do (CI took over 5 s).
+  }, 60_000);
 });
 
 describe("health and the sample catalogue", () => {
