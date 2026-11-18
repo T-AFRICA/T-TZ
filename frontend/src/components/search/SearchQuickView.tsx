@@ -192,7 +192,11 @@ function QuickViewDetails({
   const needsColor = (hit.colors?.length ?? 0) > 0 && color === null;
   const needsVariant = (hit.variants?.length ?? 0) > 0 && variant === null;
   const selection = selectionLabel(color, variant);
-  const canBuy = hit.inStock && !needsColor && !needsVariant && status === "idle";
+  // While "Added" shows, Add to Cart stays off so a second press in the same
+  // moment cannot add the product twice. Buy Now is not held back by it:
+  // it used to do nothing for 1.8 seconds after Add to Cart.
+  const canBuy = hit.inStock && !needsColor && !needsVariant && status !== "leaving";
+  const canAdd = canBuy && status === "idle";
   const longDescription = (hit.description?.length ?? 0) > DESCRIPTION_TOGGLE_CHARS;
 
   const missing = [needsColor ? "a colour" : null, needsVariant ? `a ${variantLabel.toLowerCase()}` : null]
@@ -205,10 +209,11 @@ function QuickViewDetails({
       : null;
 
   function addToCart() {
-    if (!canBuy) return;
+    if (!canAdd) return;
     purchase.addToCart({ productId: hit.id, name: hit.name, quantity, color, variant });
     setStatus("added");
-    timer.current = setTimeout(() => setStatus("idle"), ADDED_FEEDBACK_MS);
+    if (timer.current) clearTimeout(timer.current);
+    timer.current = setTimeout(() => setStatus((current) => (current === "added" ? "idle" : current)), ADDED_FEEDBACK_MS);
   }
 
   function buyNow() {
@@ -369,7 +374,7 @@ function QuickViewDetails({
           <button
             type="button"
             onClick={addToCart}
-            disabled={!canBuy}
+            disabled={!canAdd}
             aria-describedby={hint ? `${hit.id}-purchase-hint` : undefined}
             className={`inline-flex min-w-0 flex-1 items-center justify-center gap-1.5 rounded-full bg-[var(--color-action-red)] px-3 text-[13px] ${sheet ? "h-11" : "h-10"} font-semibold text-white transition-[background-color,transform] hover:bg-[var(--color-action-red-dark)] active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-[var(--color-light-grey)] disabled:text-[var(--text-muted)] disabled:active:scale-100`}
           >

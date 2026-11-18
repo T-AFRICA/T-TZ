@@ -262,6 +262,8 @@ describe("SearchBox", () => {
     expect(await screen.findByText("Added 3 × Extension Socket (Black · 4-way) to your cart")).toBeInTheDocument();
     expect(cartStore.get()).toEqual([{ productId: "sample-extension", color: "Black", variant: "4-way", quantity: 3 }]);
     expect(within(quick).getByRole("button", { name: /Added/ })).toBeDisabled();
+    // Buy Now is not held back while "Added" shows.
+    expect(buy).toBeEnabled();
     // Still open, nothing navigated.
     expect(screen.getByRole("combobox", { name: "Search products" })).toHaveAttribute("aria-expanded", "true");
     expect(push).not.toHaveBeenCalled();

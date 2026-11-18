@@ -227,7 +227,7 @@ function CartLineRow({
         </p>
         <Link
           href={href}
-          className="mt-0.5 line-clamp-2 text-sm font-semibold leading-snug hover:text-[var(--color-action-red)]"
+          className="mt-0.5 line-clamp-2 min-h-6 text-sm font-semibold leading-snug hover:text-[var(--color-action-red)]"
         >
           {product.name}
         </Link>

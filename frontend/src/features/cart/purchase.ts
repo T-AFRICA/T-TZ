@@ -3,6 +3,7 @@
 import { useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@tronic/ui";
+import { startNavigationProgress } from "@/components/nav/NavigationProgress";
 import { buyNowHref } from "@/features/checkout/links";
 import { useCart } from "./hooks";
 import { MAX_LINE_QUANTITY } from "./store";
@@ -51,6 +52,7 @@ export function usePurchaseActions() {
 
   const buyNow = useCallback(
     ({ productId, quantity, color, variant }: PurchaseLine) => {
+      startNavigationProgress();
       router.push(buyNowHref({ productId, color, variant, quantity }));
     },
     [router],

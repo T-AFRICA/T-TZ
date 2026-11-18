@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import type { ProductSort } from "@tronic/types";
 import { PRODUCT_SORTS } from "@tronic/api-client";
 import { ChevronDownIcon } from "@tronic/ui";
+import { startNavigationProgress } from "@/components/nav/NavigationProgress";
 import { listingHref, SORT_LABELS, type ListingFilters } from "@/features/catalog/catalog";
 
 /**
@@ -22,6 +23,7 @@ export function SortSelect({ basePath, filters }: { basePath: string; filters: L
           value={filters.sort}
           onChange={(event) => {
             const sort = event.target.value as ProductSort;
+            startNavigationProgress();
             router.push(listingHref(basePath, { ...filters, sort, page: 1 }));
           }}
           className="h-9 appearance-none rounded-md border border-[var(--color-light-grey)] bg-white pl-3 pr-8 text-[13px] font-medium text-[var(--text-primary)] transition-colors duration-150 hover:border-[var(--color-premium-black)] focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[var(--color-action-red)]"

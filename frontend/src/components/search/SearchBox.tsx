@@ -7,6 +7,7 @@ import type { ProductSearchHit, SearchResponse, SearchState } from "@tronic/type
 import { ArrowRightIcon, SearchIcon, SlidersIcon, TrendingUpIcon, XIcon } from "@tronic/ui";
 import { CATEGORY_SECTIONS } from "@tronic/country-config";
 import { createSearchClient, SEARCH_MAX_QUERY_LENGTH, type SearchClient } from "@tronic/api-client";
+import { startNavigationProgress } from "@/components/nav/NavigationProgress";
 import { SearchQuickSheet } from "./SearchQuickSheet";
 import { SearchQuickView } from "./SearchQuickView";
 import { productHref, SearchResultItem } from "./SearchResultItem";
@@ -290,6 +291,7 @@ export function SearchBox({ client, autoFocus = false, onClose, onNavigate }: Se
   function go(href: string) {
     leave();
     inputRef.current?.blur();
+    startNavigationProgress();
     router.push(href);
   }
 

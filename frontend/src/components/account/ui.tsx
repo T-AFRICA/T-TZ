@@ -100,7 +100,7 @@ export function StatusBadge({ tone, children }: { tone: StatusTone; children: Re
 
 export function TextLink({ href, children }: { href: string; children: React.ReactNode }) {
   return (
-    <Link href={href} className="inline-flex items-center gap-1 text-sm font-semibold text-[var(--color-action-red)] hover:underline">
+    <Link href={href} className="-my-2.5 inline-flex items-center gap-1 py-2.5 text-sm font-semibold text-[var(--color-action-red)] hover:underline">
       {children}
       <ArrowRightIcon size={14} />
     </Link>

@@ -45,7 +45,7 @@ export default async function OrderDetailsPage({ params }: { params: Promise<{ o
   return (
     <PortalPage>
       <div>
-        <Link href="/account/orders" className="inline-flex items-center gap-1 text-sm font-semibold text-[var(--text-secondary)] hover:text-[var(--color-action-red)]">
+        <Link href="/account/orders" className="-my-2.5 inline-flex items-center gap-1 py-2.5 text-sm font-semibold text-[var(--text-secondary)] hover:text-[var(--color-action-red)]">
           <ChevronLeft size={16} aria-hidden="true" />
           My orders
         </Link>
@@ -86,7 +86,7 @@ export default async function OrderDetailsPage({ params }: { params: Promise<{ o
                   </div>
                   <div className="flex shrink-0 flex-col items-end justify-between">
                     <p className="text-sm font-bold tabular-nums">{money(line.lineTotalMinor, order.currency)}</p>
-                    <Link href={`/products/${line.productSlug}`} className="text-xs font-semibold text-[var(--color-action-red)] hover:underline">
+                    <Link href={`/products/${line.productSlug}`} className="-my-2 inline-block py-2 text-xs font-semibold text-[var(--color-action-red)] hover:underline">
                       Buy again
                     </Link>
                   </div>

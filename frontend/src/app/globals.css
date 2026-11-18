@@ -1064,6 +1064,50 @@ body:has(.search-sheet[open]) {
    Phone product pages hide it: their sticky purchase bar already holds the
    actions and the button would cover the quantity stepper (owner decision
    2026-11-10). */
+/* Navigation progress (components/nav/NavigationProgress.tsx): starts the
+   moment a link is pressed. It moves by transform only, so it costs no
+   layout, and it never takes a click. */
+.nav-progress {
+  opacity: 0;
+  transition: opacity 200ms ease-out 100ms;
+}
+.nav-progress-bar {
+  transform: scaleX(0);
+}
+.nav-progress[data-nav-progress="running"] {
+  opacity: 1;
+  transition: none;
+}
+.nav-progress[data-nav-progress="running"] .nav-progress-bar {
+  /* Quick to a third, then ever slower: it never claims to be finished. */
+  animation: nav-progress-run 8s cubic-bezier(0.1, 0.6, 0.2, 1) forwards;
+}
+.nav-progress[data-nav-progress="done"] .nav-progress-bar {
+  transform: scaleX(1);
+  transition: transform 150ms ease-out;
+}
+@keyframes nav-progress-run {
+  0% {
+    transform: scaleX(0);
+  }
+  8% {
+    transform: scaleX(0.35);
+  }
+  100% {
+    transform: scaleX(0.9);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  /* No movement: a still bar while the page is on its way. */
+  .nav-progress[data-nav-progress="running"] .nav-progress-bar {
+    animation: none;
+    transform: scaleX(1);
+  }
+  .nav-progress[data-nav-progress="done"] .nav-progress-bar {
+    transition: none;
+  }
+}
+
 .wa-float {
   --wa-green: #25d366;
   --wa-green-dark: #1ebe5a;

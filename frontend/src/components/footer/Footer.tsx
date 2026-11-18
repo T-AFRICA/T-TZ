@@ -46,7 +46,7 @@ export function Footer() {
           <p className="mt-4 text-sm">
             <a
               href={SUPPORT_PHONE.href}
-              className="inline-flex items-center gap-2 text-white/80 transition-colors hover:text-white"
+              className="-my-2.5 inline-flex items-center gap-2 py-2.5 text-white/80 transition-colors hover:text-white"
             >
               <PhoneIcon size={15} className="text-white/60" />
               {SUPPORT_PHONE.label}
