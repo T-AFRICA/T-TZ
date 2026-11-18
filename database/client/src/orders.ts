@@ -130,6 +130,26 @@ export async function trackOrder(db: Db, orderNumber: string, contact: string): 
   };
 }
 
+/**
+ * The customer's delivery code while their order is on its way (migration
+ * 0008): for the signed-in owner of the order, or a guest with the checkout
+ * email or phone. Null otherwise, and null while the database does not have
+ * deliveries yet, so pages keep working before the migration is applied.
+ */
+export async function getDeliveryCode(db: Db, access: Access, orderNumber: string, contact: string | null): Promise<string | null> {
+  try {
+    const [row] = await withAccess(db, access, (tx) =>
+      tx.query<{ result: unknown }>(`select customer_delivery_code($1, $2) as result`, [orderNumber, contact]),
+    );
+    const raw: unknown = typeof row?.result === "string" ? JSON.parse(row.result) : row?.result;
+    const code = raw && typeof raw === "object" ? (raw as { code?: unknown }).code : null;
+    return typeof code === "string" && /^[0-9]{6}$/.test(code) ? code : null;
+  } catch (error) {
+    if ((error as { code?: unknown } | null)?.code === "42883") return null;
+    throw error;
+  }
+}
+
 export interface CustomerOrder {
   orderNumber: string;
   status: string;

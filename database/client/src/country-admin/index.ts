@@ -1,6 +1,10 @@
 import {
   COUNTRY_ADMIN_API_PREFIX,
   COUNTRY_ADMIN_ENDPOINTS,
+  DELIVERY_ACTIONS,
+  DELIVERY_PROOF_KINDS,
+  deliveryAssignBodySchema,
+  deliveryUpdateBodySchema,
   ORDER_NUMBER_PATTERN,
   ORDER_PAGE_SIZE,
   orderListQuerySchema,
@@ -15,6 +19,7 @@ import {
   type ServiceTokenVerifier,
 } from "@tronic/api-contracts";
 import type { Db, Row } from "../db";
+import { deliveryFunctions } from "./deliveries";
 
 /**
  * The country side of the country admin API (apis/src/country-admin-api.ts):
@@ -41,6 +46,8 @@ export async function withServiceAccess<T>(db: Db, fn: (tx: Db) => Promise<T>): 
     return fn(tx);
   });
 }
+
+const deliveries = deliveryFunctions(withServiceAccess);
 
 type Json = Record<string, unknown>;
 
@@ -314,8 +321,25 @@ export async function handleCountryAdminRequest(service: CountryAdminService, re
     // Everything below works on orders, which exist only in the database.
     if (!db) return refuse(503, "orders_not_connected");
     const orderNumber = (matched.params.orderNumber ?? "").toUpperCase();
-    if (matched.endpoint !== "listOrders" && !ORDER_NUMBER_PATTERN.test(orderNumber)) {
+    if (matched.endpoint !== "listOrders" && matched.endpoint !== "listMyDeliveries" && !ORDER_NUMBER_PATTERN.test(orderNumber)) {
       return { status: 200, body: { ok: false, code: "not_found" } };
+    }
+
+    // Deliveries (migration 0008). A rider endpoint works on the deliveries
+    // of the administrator who signed the request, and only those.
+    if (matched.endpoint === "listMyDeliveries") {
+      return { status: 200, body: await deliveries.listForRider(db, countryCode, verified.actorId) };
+    }
+    if (matched.endpoint === "getMyDelivery") {
+      return { status: 200, body: await deliveries.getForRider(db, countryCode, orderNumber, verified.actorId) };
+    }
+    if (matched.endpoint === "getDelivery") {
+      return { status: 200, body: await deliveries.info(db, countryCode, orderNumber) };
+    }
+    if (matched.endpoint === "getDeliveryProof") {
+      const kind = DELIVERY_PROOF_KINDS.find((candidate) => candidate === matched.params.kind);
+      if (!kind) return { status: 200, body: { ok: false, code: "not_found" } };
+      return { status: 200, body: await deliveries.proof(db, countryCode, orderNumber, kind) };
     }
 
     if (matched.endpoint === "listOrders") {
@@ -345,6 +369,21 @@ export async function handleCountryAdminRequest(service: CountryAdminService, re
       });
       return { status: 200, body };
     }
+    if (matched.endpoint === "assignDelivery") {
+      const rider = deliveryAssignBodySchema.safeParse(json);
+      if (!rider.success) return { status: 200, body: { ok: false, code: "invalid_request" } };
+      return { status: 200, body: await deliveries.assign(db, countryCode, orderNumber, rider.data, verified.actorId) };
+    }
+    if (matched.endpoint === "updateMyDelivery") {
+      const action = DELIVERY_ACTIONS.find((candidate) => candidate === matched.params.action);
+      const update = deliveryUpdateBodySchema.safeParse(json);
+      if (!action || !update.success) return { status: 200, body: { ok: false, code: "invalid_request" } };
+      return {
+        status: 200,
+        // The token id is the request id: the same signed request changes a delivery once.
+        body: await deliveries.updateForRider(db, countryCode, orderNumber, verified.actorId, action, update.data, verified.tokenId),
+      };
+    }
     const note = orderNoteBodySchema.safeParse(json);
     if (!note.success) return { status: 200, body: { ok: false, code: "invalid_request" } };
     const body = await addOrderNoteForAdmin(db, countryCode, orderNumber, { body: note.data.body, actorId: verified.actorId, requestId: verified.tokenId });
@@ -354,7 +393,10 @@ export async function handleCountryAdminRequest(service: CountryAdminService, re
     // functions are not installed (migration 0006), or the database refused
     // the role they run as. The answer carries the code, never the message.
     const code = typeof (error as { code?: unknown } | null)?.code === "string" ? (error as { code: string }).code : "";
-    if (code === "42883" || code === "42P01") return refuse(503, "order_admin_missing");
+    if (code === "42883" || code === "42P01") {
+      const deliveryEndpoint = COUNTRY_ADMIN_ENDPOINTS[matched.endpoint].permission.startsWith("deliveries.");
+      return refuse(503, deliveryEndpoint ? "delivery_admin_missing" : "order_admin_missing");
+    }
     if (code === "42501") return refuse(503, "database_permission");
     console.error("country admin API: request failed", { endpoint: matched.endpoint, error: error instanceof Error ? error.name : "unknown", code });
     return refuse(500, "server_error");

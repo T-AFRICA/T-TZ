@@ -103,6 +103,8 @@ export const SERVICE_UNAVAILABLE_TEXT: Record<CountryUnavailableReason, string> 
     "The country's database does not have the order administration yet. An owner has to run database/migrations/0006_order_admin.sql in that country's Supabase SQL editor.",
   country_database_denied:
     "The country's database refused the role the admin requests run as (service_role). The country's DATABASE_URL must be the project's own pooler connection string.",
+  country_deliveries_missing:
+    "The country's database does not have deliveries yet. An owner has to run database/migrations/0008_deliveries.sql in that country's Supabase SQL editor.",
   unreachable: "The country service could not be reached.",
   timeout: "The country service did not answer in time.",
   rejected: "The country service refused the request.",

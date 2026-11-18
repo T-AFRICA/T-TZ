@@ -23,6 +23,13 @@ Design, role model, API contract and what is and is not built:
   list with status counts and search, order detail, status changes one step
   at a time, cancellation until dispatch, internal notes. Each change is
   made and recorded by the country and audited here.
+- Deliveries by TRONIC's own riders (Rider role): an Order Manager gives a
+  confirmed, processing or packed order to a rider; the rider, on a phone,
+  sees only their own deliveries (address, phone, items, cash to collect),
+  marks picked up and on the way, records failed attempts, and hands over
+  with the customer's 6-digit code, a photo and the customer's signature,
+  confirming the Cash on Delivery amount. Managers see the proofs, the
+  cash collected and the attempts on the order. No location or map yet.
 - Products, categories, inventory, customers, website content, promotions
   and reports have a page that says the module is not available yet. They
   show no data: that part of the country API has not been built.
@@ -117,6 +124,16 @@ by the hygiene check).
 3. In the console, as Master Super Admin: country → Settings → enter the
    storefront's address, allow calls, save, then "Check connection".
 4. Orders opens for everyone holding `orders.read` in that country.
+
+## Turning on deliveries (owner)
+
+1. Central Admin project, SQL editor: `database/admin-migrations/0003_riders.sql`.
+2. The country's project, SQL editor: `database/migrations/0008_deliveries.sql`
+   (after 0006).
+3. Deploy both apps. Each rider needs an account in the Central Admin
+   project's Auth (confirmed email), then the Rider role from Staff.
+4. Until step 2 is done, the delivery pages say the country's database
+   does not have deliveries yet; orders keep working.
 
 ## Security notes
 

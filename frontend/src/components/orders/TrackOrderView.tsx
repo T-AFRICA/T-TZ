@@ -5,6 +5,7 @@ import { Input } from "@tronic/ui";
 import { ACTIVE_COUNTRY, formatMoney } from "@tronic/country-config";
 import { trackOrderAction, type TrackOrderState } from "@/features/orders/actions";
 import { ORDER_NUMBER_PATTERN, ORDER_STATUS_LABELS } from "@/features/orders/status";
+import { DeliveryCode } from "./DeliveryCode";
 
 /** Customer-facing order statuses, in order (owner brief 2026-11-10). */
 export const ORDER_STATUSES = [
@@ -102,6 +103,11 @@ export function TrackOrderView({ enabled }: { enabled: boolean }) {
                 {formatMoney(state.order.totalMinor, ACTIVE_COUNTRY, state.order.currency)} · placed{" "}
                 {new Date(state.order.createdAt).toLocaleDateString(ACTIVE_COUNTRY.locale, { dateStyle: "medium" })}
               </p>
+              {state.deliveryCode ? (
+                <div className="mt-3">
+                  <DeliveryCode code={state.deliveryCode} />
+                </div>
+              ) : null}
             </div>
           ) : null}
         </div>

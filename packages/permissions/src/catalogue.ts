@@ -21,6 +21,8 @@ export const COUNTRY_PERMISSIONS = {
   "inventory.adjust": "Adjust stock",
   "orders.read": "See orders",
   "orders.update": "Move orders through their lifecycle and add notes",
+  "deliveries.assign": "Assign orders to riders and follow their deliveries",
+  "deliveries.perform": "Carry out the deliveries assigned to them",
   "customers.read": "See customer profiles and order history",
   "customers.support": "Record customer support activity",
   "content.read": "See website content",
@@ -116,7 +118,7 @@ export const ROLES = {
     scope: "country",
     grantableBy: "country_super_admin",
     requiresMfa: false,
-    permissions: ["orders.read", "orders.update", "customers.read", "inventory.read", "products.read"],
+    permissions: ["orders.read", "orders.update", "deliveries.assign", "customers.read", "inventory.read", "products.read"],
   },
   content_manager: {
     name: "Content Manager",
@@ -145,6 +147,15 @@ export const ROLES = {
     grantableBy: "country_super_admin",
     requiresMfa: false,
     permissions: ["customers.read", "customers.support", "orders.read"],
+  },
+  // TRONIC's own delivery riders (owner decision 2026-11-18). A rider sees
+  // and changes only the orders assigned to them; the country checks that.
+  rider: {
+    name: "Rider",
+    scope: "country",
+    grantableBy: "country_super_admin",
+    requiresMfa: false,
+    permissions: ["deliveries.perform"],
   },
 } as const satisfies Record<string, RoleDefinition>;
 

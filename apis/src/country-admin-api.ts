@@ -24,6 +24,13 @@ export const COUNTRY_ADMIN_ENDPOINTS = {
   getOrder: { method: "GET", path: "/orders/:orderNumber", permission: "orders.read" },
   updateOrderStatus: { method: "POST", path: "/orders/:orderNumber/status", permission: "orders.update" },
   addOrderNote: { method: "POST", path: "/orders/:orderNumber/notes", permission: "orders.update" },
+  // Deliveries by TRONIC's riders (migration 0008).
+  assignDelivery: { method: "POST", path: "/orders/:orderNumber/delivery", permission: "deliveries.assign" },
+  getDelivery: { method: "GET", path: "/orders/:orderNumber/delivery", permission: "deliveries.assign" },
+  getDeliveryProof: { method: "GET", path: "/orders/:orderNumber/delivery/proofs/:kind", permission: "deliveries.assign" },
+  listMyDeliveries: { method: "GET", path: "/deliveries", permission: "deliveries.perform" },
+  getMyDelivery: { method: "GET", path: "/deliveries/:orderNumber", permission: "deliveries.perform" },
+  updateMyDelivery: { method: "POST", path: "/deliveries/:orderNumber/:action", permission: "deliveries.perform" },
 } as const;
 
 export type CountryAdminEndpoint = keyof typeof COUNTRY_ADMIN_ENDPOINTS;
@@ -169,6 +176,135 @@ export type OrderStatusChange = z.infer<typeof orderStatusChangeResponseSchema>;
 export type OrderNoteResult = z.infer<typeof orderNoteResponseSchema>;
 export type OrderListQuery = { status?: OrderStatus; q?: string; page?: number };
 
+// -------------------------------------------------------------- deliveries --
+
+export const DELIVERY_ACTIONS = ["pickup", "start", "deliver", "fail"] as const;
+export type DeliveryAction = (typeof DELIVERY_ACTIONS)[number];
+export const DELIVERY_FAILURE_REASONS = ["customer_unreachable", "customer_absent", "address_not_found", "customer_refused", "other"] as const;
+export type DeliveryFailureReason = (typeof DELIVERY_FAILURE_REASONS)[number];
+export const DELIVERY_PROOF_KINDS = ["photo", "signature"] as const;
+export type DeliveryProofKind = (typeof DELIVERY_PROOF_KINDS)[number];
+/** Largest proof image accepted, in bytes (the database allows 1 MB). */
+export const DELIVERY_PROOF_MAX_BYTES = 1_048_576;
+export const DELIVERY_NOTE_MAX = 300;
+
+const proofImage = z.object({
+  contentType: z.enum(["image/jpeg", "image/png", "image/webp"]),
+  /** Base64 of the image; at most DELIVERY_PROOF_MAX_BYTES once decoded. */
+  data: z.string().regex(/^[A-Za-z0-9+/]+={0,2}$/).max(Math.ceil(DELIVERY_PROOF_MAX_BYTES / 3) * 4),
+});
+
+export const deliveryAssignBodySchema = z.object({ riderId: z.string().uuid(), riderName: z.string().trim().min(1).max(80) });
+export const deliveryUpdateBodySchema = z.object({
+  code: z.string().regex(/^[0-9]{6}$/).optional(),
+  cashCollectedMinor: minor.optional(),
+  photo: proofImage.optional(),
+  signature: proofImage.optional(),
+  reason: z.enum(DELIVERY_FAILURE_REASONS).optional(),
+  note: z.string().trim().max(DELIVERY_NOTE_MAX).optional(),
+});
+
+const deliveryAttempt = z.object({ reason: z.enum(DELIVERY_FAILURE_REASONS), note: z.string().nullable(), createdAt: z.string().datetime() });
+
+export const deliveryAssignResponseSchema = z.discriminatedUnion("ok", [
+  z.object({ ok: z.literal(true), riderId: z.string().uuid(), riderName: z.string() }),
+  z.object({ ok: z.literal(false), code: z.enum(["not_found", "invalid_request", "not_assignable"]), status: orderStatus.optional() }),
+]);
+
+/** An order's delivery as administrators see it: never the customer's code. */
+export const deliveryInfoSchema = z.object({
+  riderId: z.string().uuid(),
+  riderName: z.string(),
+  assignedAt: z.string().datetime(),
+  deliveredAt: z.string().datetime().nullable(),
+  cashCollectedMinor: minor.nullable(),
+  codeLocked: z.boolean(),
+  proofs: z.array(z.enum(DELIVERY_PROOF_KINDS)),
+  attempts: z.array(deliveryAttempt.extend({ actorId: z.string().uuid() })),
+});
+
+export const deliveryInfoResponseSchema = z.discriminatedUnion("ok", [
+  /** delivery is null while the order has no rider. */
+  z.object({ ok: z.literal(true), delivery: deliveryInfoSchema.nullable() }),
+  z.object({ ok: z.literal(false), code: z.literal("not_found") }),
+]);
+
+export const deliveryProofResponseSchema = z.discriminatedUnion("ok", [
+  z.object({ ok: z.literal(true), proof: proofImage.extend({ createdAt: z.string().datetime() }) }),
+  z.object({ ok: z.literal(false), code: z.literal("not_found") }),
+]);
+
+export const riderDeliverySummarySchema = z.object({
+  orderNumber: z.string().regex(ORDER_NUMBER_PATTERN),
+  status: orderStatus,
+  contactName: z.string(),
+  region: z.string().nullable(),
+  district: z.string().nullable(),
+  ward: z.string().nullable(),
+  street: z.string().nullable(),
+  paymentMethod: z.string(),
+  paymentStatus: z.string(),
+  totalMinor: minor,
+  ...money,
+  itemCount: z.number().int().nonnegative(),
+  assignedAt: z.string().datetime(),
+});
+
+export const riderDeliveryListResponseSchema = z.object({ ok: z.literal(true), deliveries: z.array(riderDeliverySummarySchema) });
+
+export const riderDeliverySchema = z.object({
+  orderNumber: z.string().regex(ORDER_NUMBER_PATTERN),
+  status: orderStatus,
+  contact: z.object({ name: z.string(), phone: z.string() }),
+  delivery: z.object({
+    region: z.string().nullable(),
+    district: z.string().nullable(),
+    ward: z.string().nullable(),
+    street: z.string().nullable(),
+    extra: z.string().nullable(),
+    notes: z.string().nullable(),
+  }),
+  paymentMethod: z.string(),
+  paymentStatus: z.string(),
+  totalMinor: minor,
+  ...money,
+  /** Cash the rider must collect: the total for an unpaid Cash on Delivery order, otherwise 0. */
+  cashToCollectMinor: minor,
+  lines: z.array(z.object({ name: z.string(), sku: z.string(), color: z.string().nullable(), variant: z.string().nullable(), quantity: z.number().int().positive() })),
+  assignedAt: z.string().datetime(),
+  deliveredAt: z.string().datetime().nullable(),
+  /** Set while too many wrong codes lock the order. */
+  codeLockedUntil: z.string().datetime().nullable(),
+  attempts: z.array(deliveryAttempt),
+});
+
+export const riderDeliveryResponseSchema = z.discriminatedUnion("ok", [
+  z.object({ ok: z.literal(true), delivery: riderDeliverySchema }),
+  z.object({ ok: z.literal(false), code: z.literal("not_found") }),
+]);
+
+export const riderDeliveryUpdateResponseSchema = z.discriminatedUnion("ok", [
+  z.object({ ok: z.literal(true), replayed: z.boolean(), status: orderStatus, paymentStatus: z.string() }),
+  z.object({
+    ok: z.literal(false),
+    code: z.enum(["not_found", "invalid_request", "wrong_step", "wrong_code", "code_locked", "proof_missing", "cash_mismatch"]),
+    status: orderStatus.optional(),
+    attemptsLeft: z.number().int().nonnegative().optional(),
+    lockedUntil: z.string().datetime().optional(),
+  }),
+]);
+
+export type DeliveryAssignResult = z.infer<typeof deliveryAssignResponseSchema>;
+export type DeliveryInfo = z.infer<typeof deliveryInfoSchema>;
+export type DeliveryInfoResponse = z.infer<typeof deliveryInfoResponseSchema>;
+export type DeliveryProofResponse = z.infer<typeof deliveryProofResponseSchema>;
+export type RiderDeliverySummary = z.infer<typeof riderDeliverySummarySchema>;
+export type RiderDeliveryList = z.infer<typeof riderDeliveryListResponseSchema>;
+export type RiderDelivery = z.infer<typeof riderDeliverySchema>;
+export type RiderDeliveryResponse = z.infer<typeof riderDeliveryResponseSchema>;
+export type RiderDeliveryUpdate = z.infer<typeof deliveryUpdateBodySchema>;
+export type RiderDeliveryUpdateResult = z.infer<typeof riderDeliveryUpdateResponseSchema>;
+
 // ----------------------------------------------------------------- adapter --
 
 /** Why a country could not be asked, or did not give a usable answer. */
@@ -181,6 +317,7 @@ export type CountryUnavailableReason =
   | "country_key_invalid" // the country's copy of the public key cannot be read
   | "country_orders_missing" // the country's database lacks the order administration (migration 0006)
   | "country_database_denied" // the country's database refused the admin role (service_role)
+  | "country_deliveries_missing" // the country's database lacks deliveries (migration 0008)
   | "unreachable" // no connection
   | "timeout"
   | "rejected" // the country refused the request (401/403)
@@ -199,12 +336,31 @@ export interface CountryAdminApi {
   getOrder(actorId: string, orderNumber: string): Promise<CountryApiResult<OrderDetailResponse>>;
   updateOrderStatus(actorId: string, orderNumber: string, change: { status: OrderStatus; note?: string }): Promise<CountryApiResult<OrderStatusChange>>;
   addOrderNote(actorId: string, orderNumber: string, body: string): Promise<CountryApiResult<OrderNoteResult>>;
+  assignDelivery(actorId: string, orderNumber: string, rider: { riderId: string; riderName: string }): Promise<CountryApiResult<DeliveryAssignResult>>;
+  getDelivery(actorId: string, orderNumber: string): Promise<CountryApiResult<DeliveryInfoResponse>>;
+  getDeliveryProof(actorId: string, orderNumber: string, kind: DeliveryProofKind): Promise<CountryApiResult<DeliveryProofResponse>>;
+  /** The deliveries of the rider making the call (actorId). */
+  listMyDeliveries(actorId: string): Promise<CountryApiResult<RiderDeliveryList>>;
+  getMyDelivery(actorId: string, orderNumber: string): Promise<CountryApiResult<RiderDeliveryResponse>>;
+  updateMyDelivery(actorId: string, orderNumber: string, action: DeliveryAction, update: RiderDeliveryUpdate): Promise<CountryApiResult<RiderDeliveryUpdateResult>>;
 }
 
 /** A country whose service cannot be called. Every request answers with the reason; nothing is sent anywhere. */
 export function unavailableCountryApi(reason: CountryUnavailableReason): CountryAdminApi {
   const answer = async () => ({ available: false as const, reason, statusCode: null, latencyMs: null });
-  return { health: answer, listOrders: answer, getOrder: answer, updateOrderStatus: answer, addOrderNote: answer };
+  return {
+    health: answer,
+    listOrders: answer,
+    getOrder: answer,
+    updateOrderStatus: answer,
+    addOrderNote: answer,
+    assignDelivery: answer,
+    getDelivery: answer,
+    getDeliveryProof: answer,
+    listMyDeliveries: answer,
+    getMyDelivery: answer,
+    updateMyDelivery: answer,
+  };
 }
 
 export interface CountryAdminApiOptions {
@@ -284,6 +440,7 @@ export function createCountryAdminApi(options: CountryAdminApiOptions): CountryA
         if (typeof code === "string" && code.startsWith("verify_key_")) reason = "country_key_invalid";
         else if (code === "order_admin_missing") reason = "country_orders_missing";
         else if (code === "database_permission") reason = "country_database_denied";
+        else if (code === "delivery_admin_missing") reason = "country_deliveries_missing";
       }
       return { available: false, reason, statusCode: response.status, latencyMs: elapsed() };
     }
@@ -323,6 +480,24 @@ export function createCountryAdminApi(options: CountryAdminApiOptions): CountryA
     },
     addOrderNote(actorId, orderNumber, body) {
       return call("addOrderNote", orderNoteResponseSchema, actorId, { params: { orderNumber }, body: { body } });
+    },
+    assignDelivery(actorId, orderNumber, rider) {
+      return call("assignDelivery", deliveryAssignResponseSchema, actorId, { params: { orderNumber }, body: rider });
+    },
+    getDelivery(actorId, orderNumber) {
+      return call("getDelivery", deliveryInfoResponseSchema, actorId, { params: { orderNumber } });
+    },
+    getDeliveryProof(actorId, orderNumber, kind) {
+      return call("getDeliveryProof", deliveryProofResponseSchema, actorId, { params: { orderNumber, kind } });
+    },
+    listMyDeliveries(actorId) {
+      return call("listMyDeliveries", riderDeliveryListResponseSchema, actorId);
+    },
+    getMyDelivery(actorId, orderNumber) {
+      return call("getMyDelivery", riderDeliveryResponseSchema, actorId, { params: { orderNumber } });
+    },
+    updateMyDelivery(actorId, orderNumber, action, update) {
+      return call("updateMyDelivery", riderDeliveryUpdateResponseSchema, actorId, { params: { orderNumber, action }, body: update });
     },
   };
 }

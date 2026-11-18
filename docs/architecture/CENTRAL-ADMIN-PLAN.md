@@ -189,6 +189,7 @@ browser → admin server (session, role, country checked)
 | 6 Country Super Admin | Country dashboard, staff, invitations, country-scoped access | built |
 | 7 Country API | Contract, signing, adapter, country-side handler, storefront route | built for health and orders; proven on this machine only (storefront test build, stand-in country for the admin) |
 | 8 Products, categories, inventory, orders, customers, CMS | Orders: list, search, detail, status changes, cancellation, internal notes | orders built; returns/refunds, products, categories, inventory, customers and CMS not built: their pages say so |
+| 8b Deliveries (owner request 2026-11-18) | Rider role, assign, rider's phone screens, customer code, photo, signature, cash, failed attempts (`0003_riders.sql`, `0008_deliveries.sql`) | built on this machine (database tests, admin browser test); not applied to any project; rider location and dispatch map not built |
 | 9 Reports and monitoring | Audit log and health checks only | mostly not built |
 | 10 Deployment | — | not done; owner actions below |
 

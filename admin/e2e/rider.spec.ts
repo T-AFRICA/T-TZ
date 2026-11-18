@@ -1,0 +1,135 @@
+import { mkdirSync } from "node:fs";
+import path from "node:path";
+import { expect, test, type Page } from "@playwright/test";
+import { adminSql, countrySql, expectRefused, newSession, sideways, signIn } from "./support/helpers";
+import { ACCOUNTS } from "./support/stack";
+
+/**
+ * Deliveries by TRONIC's riders, end to end on this machine: an Order
+ * Manager gives an order to a rider; the rider, on a phone-sized screen,
+ * picks it up, starts the delivery and hands it over with the customer's
+ * code, a photo and a signature, collecting the cash. Everything is checked
+ * in the stand-in country's own database.
+ *
+ * Runs after orders.spec.ts (file order): Tanzania's service is connected
+ * there. The order is synthetic (support/country.ts: "Juma Said").
+ */
+const SHOTS = path.join(process.cwd(), "test-results", "rider");
+
+test.beforeAll(() => {
+  mkdirSync(SHOTS, { recursive: true });
+});
+
+async function orderOf(name: string): Promise<string> {
+  const [row] = await countrySql<{ order_number: string }>(`select order_number from orders where contact_name = $1`, [name]);
+  return row!.order_number;
+}
+
+async function confirmStep(page: Page, region: string, button: string) {
+  await page.getByRole("region", { name: region }).getByRole("button", { name: button }).click();
+  await page.getByRole("dialog").getByRole("button", { name: button }).click();
+}
+
+test("an order manager gives a packed order to a rider; the rider delivers it with the code, a photo, a signature and the cash", async ({ page, browser }) => {
+  const juma = await orderOf("Juma Said");
+
+  // Order Manager: prepare the order, then give it to the rider.
+  await signIn(page, ACCOUNTS.tzOrders);
+  await page.goto(`/c/tz/orders/${juma}`);
+  for (const step of ["Confirm order", "Start processing", "Mark as packed"]) {
+    await confirmStep(page, "Next step", step);
+    await expect(page.getByText(new RegExp(`Order ${juma} is now`)).first()).toBeVisible();
+  }
+  const delivery = page.getByRole("region", { name: "Delivery", exact: true });
+  await expect(delivery).toContainText("No rider yet.");
+  await delivery.getByLabel("Rider").selectOption({ label: ACCOUNTS.tzRider });
+  await delivery.getByRole("button", { name: "Assign rider" }).click();
+  await expect(page.getByText(`Order ${juma} is now with ${ACCOUNTS.tzRider}.`).first()).toBeVisible();
+  await expect(delivery).toContainText(ACCOUNTS.tzRider);
+
+  // The rider, on a phone.
+  const rider = await newSession(browser, 375, 812);
+  await signIn(rider, ACCOUNTS.tzRider);
+  await rider.goto("/c/tz/deliveries");
+  await expect(rider.getByRole("heading", { level: 1, name: "My deliveries" })).toBeVisible();
+  const card = rider.getByRole("list", { name: "Deliveries to make" }).getByRole("link").filter({ hasText: "Juma Said" });
+  await expect(card).toContainText("Collect TZS");
+  expect(await sideways(rider)).toBeLessThanOrEqual(1);
+  await card.click();
+  await expect(rider.getByRole("heading", { level: 1, name: "Juma Said" })).toBeVisible();
+  await expect(rider.getByRole("link", { name: /Call \+255712000004/ })).toHaveAttribute("href", "tel:+255712000004");
+
+  await confirmStep(rider, "Next step", "I have picked it up");
+  await expect(rider.getByText(`Order ${juma} picked up.`).first()).toBeVisible();
+  await confirmStep(rider, "Next step", "Start the delivery");
+  await expect(rider.getByText(/The customer can now see their code/).first()).toBeVisible();
+
+  // What the customer sees on their order page: the code, only now.
+  const [{ code }] = (await countrySql<{ code: string }>(
+    `select d.code from deliveries d join orders o on o.id = d.order_id where o.order_number = $1`,
+    [juma],
+  )) as [{ code: string }];
+  const [shown] = await countrySql<{ result: { code: string } | null }>(`select customer_delivery_code($1, 'juma@example.test') as result`, [juma]);
+  expect(shown!.result).toEqual({ code });
+
+  const handover = rider.getByRole("region", { name: "Hand over the order" });
+  // A wrong code first.
+  await handover.getByLabel("Customer's delivery code").fill(code === "000000" ? "111111" : "000000");
+  await handover.getByRole("button", { name: "Mark as delivered" }).click();
+  await expect(handover.getByText("Take the photo and get the customer's signature first.")).toBeVisible();
+
+  await handover.getByLabel("Photo of the order at the door").setInputFiles({ name: "door.png", mimeType: "image/png", buffer: await rider.screenshot() });
+  await expect(handover.getByRole("img", { name: "The photo that will be sent" })).toBeVisible();
+  const pad = handover.getByRole("img", { name: "Customer's signature" });
+  const box = (await pad.boundingBox())!;
+  await rider.mouse.move(box.x + 20, box.y + box.height / 2);
+  await rider.mouse.down();
+  await rider.mouse.move(box.x + 120, box.y + 30, { steps: 8 });
+  await rider.mouse.move(box.x + 220, box.y + box.height - 30, { steps: 8 });
+  await rider.mouse.up();
+  // The cash must be confirmed.
+  const wrong = code === "000000" ? "111111" : "000000";
+  await handover.getByLabel("Customer's delivery code").fill(wrong);
+  await handover.getByRole("button", { name: "Mark as delivered" }).click();
+  await expect(handover.getByText("Confirm that you collected the full amount in cash.").first()).toBeVisible();
+  await handover.getByRole("checkbox", { name: /I have collected TZS/ }).check();
+  // A wrong code is refused by the country and counted.
+  await handover.getByLabel("Customer's delivery code").fill(wrong);
+  await handover.getByRole("button", { name: "Mark as delivered" }).click();
+  await expect(handover.getByText(/That code is not right\. 4 tries left/)).toBeVisible();
+  await handover.getByLabel("Customer's delivery code").fill(code);
+  await expect(handover.getByRole("checkbox", { name: /I have collected TZS/ })).toBeChecked();
+  await rider.screenshot({ path: path.join(SHOTS, "375-handover.png"), fullPage: true });
+  await handover.getByRole("button", { name: "Mark as delivered" }).click();
+  await expect(rider.getByText(`Order ${juma} delivered. Thank you.`).first()).toBeVisible();
+  await expect(rider.getByText("Nothing more to do.")).toBeVisible();
+
+  expect(await countrySql(`select status, payment_status from orders where order_number = $1`, [juma])).toEqual([{ status: "delivered", payment_status: "paid" }]);
+  expect(await countrySql(`select p.kind from delivery_proofs p join orders o on o.id = p.order_id where o.order_number = $1 order by p.kind`, [juma])).toEqual([
+    { kind: "photo" },
+    { kind: "signature" },
+  ]);
+  const [riderProfile] = await adminSql<{ user_id: string }>(`select user_id from admin_profiles where email = $1`, [ACCOUNTS.tzRider]);
+  const steps = await countrySql<{ to_status: string; actor_id: string }>(
+    `select e.to_status, e.actor_id from order_status_events e join orders o on o.id = e.order_id where o.order_number = $1 and e.to_status in ('dispatched', 'in_transit', 'delivered') order by e.id`,
+    [juma],
+  );
+  expect(steps).toEqual(["dispatched", "in_transit", "delivered"].map((to_status) => ({ to_status, actor_id: riderProfile!.user_id })));
+  const audited = await adminSql<{ action: string }>(`select action from audit_logs where actor_email = $1 and action like 'delivery.%' order by id`, [ACCOUNTS.tzRider]);
+  expect(audited.map((row) => row.action)).toEqual(["delivery.pickup", "delivery.start", "delivery.deliver"]);
+
+  // A rider reaches only their own deliveries: no orders, no other order.
+  await expectRefused(rider, "/c/tz/orders");
+  await expectRefused(rider, `/c/tz/deliveries/${await orderOf("Neema Kessy")}`);
+  await rider.context().close();
+
+  // The order manager sees the proofs and the cash collected.
+  await page.goto(`/c/tz/orders/${juma}`);
+  await expect(delivery).toContainText("Cash collected");
+  await expect(delivery.getByRole("img", { name: "Customer's signature" })).toBeVisible();
+  const proof = await page.request.get(`/c/tz/orders/${juma}/proof/signature`);
+  expect(proof.status()).toBe(200);
+  expect(proof.headers()["content-type"]).toBe("image/png");
+  expect(proof.headers()["cache-control"]).toContain("no-store");
+  await page.screenshot({ path: path.join(SHOTS, "order-delivered.png"), fullPage: true });
+});

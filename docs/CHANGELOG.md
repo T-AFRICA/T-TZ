@@ -3,6 +3,28 @@
 Meaningful implementation changes, newest first. Dates are work dates;
 nothing below is released.
 
+## 2026-11-18 — Deliveries by TRONIC's riders
+
+- Owner decisions: TRONIC's own riders deliver; customers get status
+  updates (live map later); proof of delivery is the customer's code, a
+  photo and the customer's signature; riders use the Central Admin.
+- Permissions `deliveries.assign` (Order Manager, Country Super Admin)
+  and `deliveries.perform`; new Rider role. Admin migration
+  `0003_riders.sql` (draft): the role, the rider list for assigning, the
+  delivery actions in the audit log.
+- Country migration `0008_deliveries.sql` (draft): deliveries, proofs,
+  failed attempts and their rules (see `database/migrations/README.md`).
+- Country admin API: assign, delivery and proofs for managers; list,
+  order and steps for the rider, scoped to the signing rider.
+- Admin: Delivery panel on the order page (assign, progress, cash,
+  proofs, attempts); "My deliveries" for riders, phone first (call, open
+  in Maps, picked up, on the way, code, photo, signature, cash, failed
+  attempt).
+- Storefront: the customer sees their delivery code on the order and
+  tracking pages and in guest tracking, only while the order is on its
+  way; pages keep working before 0008 is applied.
+- Not built yet: rider location and the dispatch map.
+
 ## 2026-11-18 — Payment methods: checkout step and server preparation
 
 - Owner brief "Premium payment methods & checkout integration". No gateway

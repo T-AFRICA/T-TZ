@@ -1,6 +1,7 @@
 import {
   countCustomerOrdersByStatus,
   getCustomerOrder,
+  getDeliveryCode,
   listCustomerOrderPage,
   type CustomerOrderDetail,
   type CustomerOrderPage,
@@ -103,6 +104,8 @@ export interface AccountService {
   /** null inside `ok` means "no such order for this customer". */
   getOrder(orderNumber: string): Promise<ServiceResult<CustomerOrderDetail | null>>;
   getTracking(order: TrackableOrder): OrderTracking;
+  /** The code the customer gives the rider, while the order is on its way; null otherwise. */
+  getDeliveryCode(order: { orderNumber: string; status: string }): Promise<string | null>;
   listPayments(query?: Pick<CustomerOrderQuery, "page" | "pageSize">): Promise<ServiceResult<{ items: PaymentRecord[]; page: number; pageCount: number; total: number }>>;
   listAddresses(): Promise<ServiceResult<SavedAddress[]>>;
   listInvoices(): Promise<ServiceResult<InvoiceRecord[]>>;
@@ -143,6 +146,11 @@ export function createAccountService(user: SessionUser): AccountService {
     getOrder: (orderNumber) => withOrders(() => getCustomerOrder(getDb(), access, orderNumber)),
 
     getTracking: (order) => buildTracking(order),
+
+    getDeliveryCode: async (order) =>
+      ordersEnabled() && (order.status === "dispatched" || order.status === "in_transit")
+        ? getDeliveryCode(getDb(), access, order.orderNumber, null)
+        : null,
 
     listPayments: (query) =>
       withOrders(async () => {

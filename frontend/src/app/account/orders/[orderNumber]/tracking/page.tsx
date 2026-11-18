@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ChevronLeft, Info } from "lucide-react";
 import { OrderTimeline } from "@/components/account/OrderTimeline";
+import { DeliveryCode } from "@/components/orders/DeliveryCode";
 import { ButtonLink, Field, Panel, PortalPage, StatusBadge, formatDate, money } from "@/components/account/ui";
 import { createAccountService } from "@/features/account/service";
 import { requireCustomer } from "@/features/account/session";
@@ -32,6 +33,7 @@ export default async function OrderTrackingPage({ params }: { params: Promise<{ 
   if (result.status !== "ok" || result.data === null) notFound();
   const order = result.data;
   const tracking = service.getTracking(order);
+  const deliveryCode = await service.getDeliveryCode(order);
   const addressLines = [order.delivery.street, order.delivery.extra, order.delivery.ward, order.delivery.district, order.delivery.region].filter(
     (line): line is string => Boolean(line),
   );
@@ -56,6 +58,8 @@ export default async function OrderTrackingPage({ params }: { params: Promise<{ 
           <StatusBadge tone={orderStatusTone(order.status)}>{tracking.currentTitle}</StatusBadge>
         </div>
       </div>
+
+      {deliveryCode ? <DeliveryCode code={deliveryCode} /> : null}
 
       <div className="grid grid-cols-[minmax(0,1fr)] gap-4 xl:grid-cols-[minmax(0,1fr)_21rem] xl:gap-5">
         <Panel title="Progress" labelledBy="tracking-progress">
