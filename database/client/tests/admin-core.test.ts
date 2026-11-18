@@ -13,6 +13,7 @@ import {
   listAuditLog,
   listCountryServices,
   listPendingInvitations,
+  listRiders,
   listSecurityEvents,
   recordCountryHealthCheck,
   recordSecurityEvent,
@@ -591,4 +592,25 @@ describe("reaching a country and auditing what was done there (0002)", () => {
     expect(await recordCountryAction(t.db, mfa("master"), { ...base, action: "order.note_add", summary: { blob: "x".repeat(4000) } })).toEqual({ ok: false, code: "invalid_request" });
     expect(await recordCountryAction(t.db, mfa("master"), { ...base, action: "order.note_add" })).toEqual({ ok: true });
   });
+});
+
+describe("riders", () => {
+  it("lists a country's active riders for whoever may assign deliveries, and nothing for a rider", async () => {
+    await onboard(mfa("master"), "rider-one", "rider", "tz");
+    const riders = await listRiders(t.db, mfa("master"), "tz");
+    expect(riders).toContainEqual({ userId: users["rider-one"], email: "rider-one@example.test", name: null });
+    expect(await listRiders(t.db, password("rider-one"), "tz")).toEqual([]);
+    expect(await listRiders(t.db, mfa("master"), "ke")).toEqual([]);
+  });
+
+  it("answers an empty list while the riders migration (0003) is missing, so order pages keep working", async () => {
+    const bare = await createAdminTestDatabase();
+    try {
+      const id = await createAdminAuthUser(bare.db, "lone@example.test", true);
+      await bare.db.query(`drop function admin_list_riders(text)`);
+      expect(await listRiders(bare.db, { userId: id, aal: "aal2" }, "tz")).toEqual([]);
+    } finally {
+      await bare.pg.close();
+    }
+  }, 60_000);
 });

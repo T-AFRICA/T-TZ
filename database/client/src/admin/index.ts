@@ -638,9 +638,19 @@ export interface Rider {
   name: string | null;
 }
 
-/** The active riders of a country, for whoever may assign deliveries there; empty otherwise. */
+/**
+ * The active riders of a country, for whoever may assign deliveries there;
+ * empty otherwise, and empty while the database does not have riders yet
+ * (admin migration 0003), so order pages keep working before it is applied.
+ */
 export async function listRiders(db: Db, access: AdminAccess, countryId: string): Promise<Rider[]> {
-  const [row] = await withAdminAccess(db, access, (tx) => tx.query<{ result: unknown }>(`select admin_list_riders($1) as result`, [countryId]));
+  let row: { result: unknown } | undefined;
+  try {
+    [row] = await withAdminAccess(db, access, (tx) => tx.query<{ result: unknown }>(`select admin_list_riders($1) as result`, [countryId]));
+  } catch (error) {
+    if ((error as { code?: unknown } | null)?.code === "42883") return [];
+    throw error;
+  }
   const raw: unknown = typeof row?.result === "string" ? JSON.parse(row.result) : row?.result;
   if (!Array.isArray(raw)) return [];
   return (raw as Json[]).map((rider) => ({ userId: text(rider.user_id), email: text(rider.email), name: nullableText(rider.name) }));
