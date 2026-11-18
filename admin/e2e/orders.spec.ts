@@ -66,7 +66,7 @@ test("Master Super Admin connects Tanzania and the signed connection check passe
   await expect(page.getByText("Service registration saved.").first()).toBeVisible();
 
   await page.getByRole("button", { name: "Check connection" }).click();
-  await expect(page.getByText(/Tanzania's service answered in \d+ ms\. It is serving live records\./).first()).toBeVisible();
+  await expect(page.getByText(/Tanzania's service answered in \d+ ms\. Orders are connected\./).first()).toBeVisible();
   const [check] = await adminSql<{ ok: boolean; status_code: number }>(
     `select ok, status_code from country_health_checks where country_id = 'tz' order by id desc limit 1`,
   );

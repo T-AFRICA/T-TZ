@@ -99,6 +99,10 @@ export const SERVICE_UNAVAILABLE_TEXT: Record<CountryUnavailableReason, string> 
     "The Central Admin's signing key (COUNTRY_API_SIGNING_KEY) cannot be read. An owner has to paste the private key into the admin deployment again and redeploy.",
   country_key_invalid:
     "The country's deployment cannot read its copy of the Central Admin's public key (CENTRAL_ADMIN_VERIFY_KEY). An owner has to paste the public key there again and redeploy.",
+  country_orders_missing:
+    "The country's database does not have the order administration yet. An owner has to run database/migrations/0006_order_admin.sql in that country's Supabase SQL editor.",
+  country_database_denied:
+    "The country's database refused the role the admin requests run as (service_role). The country's DATABASE_URL must be the project's own pooler connection string.",
   unreachable: "The country service could not be reached.",
   timeout: "The country service did not answer in time.",
   rejected: "The country service refused the request.",

@@ -102,6 +102,10 @@ describe("a country that cannot read its copy of the public key", () => {
     const api = createCountryAdminApi({ baseUrl, countryCode: "TZ", signer, allowInsecureLoopback: true, timeoutMs: 1000 });
     answer = { status: 503, body: JSON.stringify({ ok: false, code: "verify_key_wrong_kind" }) };
     expect(await api.health(request.actorId)).toMatchObject({ available: false, reason: "country_key_invalid", statusCode: 503 });
+    answer = { status: 503, body: JSON.stringify({ ok: false, code: "order_admin_missing" }) };
+    expect(await api.listOrders(request.actorId)).toMatchObject({ available: false, reason: "country_orders_missing" });
+    answer = { status: 503, body: JSON.stringify({ ok: false, code: "database_permission" }) };
+    expect(await api.getOrder(request.actorId, "TZ-000000-ABCDEF12")).toMatchObject({ available: false, reason: "country_database_denied" });
     answer = { status: 503, body: JSON.stringify({ ok: false, code: "orders_not_connected" }) };
     expect(await api.listOrders(request.actorId)).toMatchObject({ available: false, reason: "server_error", statusCode: 503 });
     answer = { status: 503, body: "<html>maintenance</html>" };

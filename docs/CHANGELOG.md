@@ -21,6 +21,12 @@ nothing below is released.
 - Admin: "Check connection" and Orders now say when the country cannot
   read its copy of the public key, and when the admin's own signing key
   cannot be read, each with what an owner has to do.
+- The health check now also asks the country's database, as the role the
+  order functions run as, whether migration 0006 is installed. "Check
+  connection" says "Orders are connected" only when it is, and otherwise
+  names what is missing: the migration, or the database role. Orders
+  requests answer `order_admin_missing` or `database_permission` (503)
+  instead of a bare server error in those two cases.
 - Tests: 4 new contract tests (20 in total); workspace lint, typecheck and
   unit tests; storefront admin API browser tests (3); admin browser tests
   (20).

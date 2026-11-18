@@ -332,9 +332,33 @@ describe("internal notes", () => {
   });
 });
 
+describe("a country database that is not set up for the admin", () => {
+  it("says the order administration is missing, and that the database refused the role, instead of a bare error", async () => {
+    const bare = await createTestDatabase({ seed: false });
+    try {
+      const country: CountryAdminService = { ...service, db: bare.db };
+      const ask = async (method: "GET" | "POST", path: string, permission: string, body?: unknown) => {
+        const fullPath = `${COUNTRY_ADMIN_API_PREFIX}${path}`;
+        const text = body === undefined ? "" : JSON.stringify(body);
+        const token = await signer.sign({ countryCode: "TZ", actorId: ADMIN, permission, method, path: fullPath, body: text });
+        return handleCountryAdminRequest(country, { method, path: fullPath, authorization: `Bearer ${token}`, body: text });
+      };
+      // As if migration 0006 had not been run.
+      await bare.db.query(`drop function admin_list_orders(char, text, text, integer, integer)`);
+      expect((await ask("GET", "/health", "settings.read")).body).toMatchObject({ ok: true, database: true, orderAdmin: false });
+      expect(await ask("GET", "/orders", "orders.read")).toEqual({ status: 503, body: { ok: false, code: "order_admin_missing" } });
+      // As if the role the functions run as could not execute them.
+      await bare.db.query(`revoke execute on function admin_get_order(char, text) from service_role`);
+      expect(await ask("GET", "/orders/TZ-000000-ABCDEF12", "orders.read")).toEqual({ status: 503, body: { ok: false, code: "database_permission" } });
+    } finally {
+      await bare.pg.close();
+    }
+  });
+});
+
 describe("health and the sample catalogue", () => {
   it("reports the country, the data source and whether the database answers", async () => {
-    expect((await send("GET", "/health", "settings.read")).body).toMatchObject({ ok: true, country: "TZ", dataSource: "database", database: true });
+    expect((await send("GET", "/health", "settings.read")).body).toMatchObject({ ok: true, country: "TZ", dataSource: "database", database: true, orderAdmin: true });
   });
 
   it("has no orders to administer while a deployment runs on the sample catalogue", async () => {

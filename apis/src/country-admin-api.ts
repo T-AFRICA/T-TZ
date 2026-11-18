@@ -39,6 +39,12 @@ export const healthResponseSchema = z.object({
   dataSource: z.enum(["database", "mock"]),
   /** True when the country's database answered a trivial query; null when there is no database (mock). */
   database: z.boolean().nullable(),
+  /**
+   * True when the database has the order administration (migration 0006);
+   * false when it is missing; null when there is no database or it could
+   * not be asked. Optional so an older country still answers the contract.
+   */
+  orderAdmin: z.boolean().nullable().optional(),
   time: z.string().datetime(),
 });
 
@@ -173,6 +179,8 @@ export type CountryUnavailableReason =
   | "signing_not_configured" // the Central Admin has no signing key
   | "signing_key_invalid" // the Central Admin's signing key cannot be read
   | "country_key_invalid" // the country's copy of the public key cannot be read
+  | "country_orders_missing" // the country's database lacks the order administration (migration 0006)
+  | "country_database_denied" // the country's database refused the admin role (service_role)
   | "unreachable" // no connection
   | "timeout"
   | "rejected" // the country refused the request (401/403)
@@ -266,7 +274,7 @@ export function createCountryAdminApi(options: CountryAdminApiOptions): CountryA
       return { available: false, reason: timedOut ? "timeout" : "unreachable", statusCode: null, latencyMs: elapsed() };
     }
     if (response.status !== 200) {
-      // A country that cannot read its copy of the public key says so (503).
+      // A country that is not set up for the admin says what is missing (503).
       let reason = statusReason(response.status);
       if (response.status === 503) {
         const code = await response
@@ -274,6 +282,8 @@ export function createCountryAdminApi(options: CountryAdminApiOptions): CountryA
           .then((answer: unknown) => (answer as { code?: unknown } | null)?.code)
           .catch(() => undefined);
         if (typeof code === "string" && code.startsWith("verify_key_")) reason = "country_key_invalid";
+        else if (code === "order_admin_missing") reason = "country_orders_missing";
+        else if (code === "database_permission") reason = "country_database_denied";
       }
       return { available: false, reason, statusCode: response.status, latencyMs: elapsed() };
     }
