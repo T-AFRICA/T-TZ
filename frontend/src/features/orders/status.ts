@@ -18,9 +18,12 @@ export const PAYMENT_STATUS_LABELS: Record<string, string> = {
   refunded: "Refunded",
 };
 
-/** Payment methods the checkout offers (orders.payment_method). */
+/** Payment methods an order can carry (orders.payment_method, migration 0007). */
 export const PAYMENT_METHOD_LABELS: Record<string, string> = {
   pay_on_delivery: "Pay on delivery",
+  mobile_money: "Mobile money",
+  card: "Debit or credit card",
+  bank_transfer: "Bank transfer",
 };
 
 export const DELIVERY_METHOD_LABELS: Record<string, string> = {

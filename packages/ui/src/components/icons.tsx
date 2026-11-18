@@ -50,6 +50,13 @@ import {
   Tags,
   UserCog,
   Users,
+  // Checkout payment methods
+  Banknote,
+  CircleCheck,
+  CreditCard,
+  Landmark,
+  LockKeyhole,
+  Smartphone,
   type LucideIcon,
 } from "lucide-react";
 
@@ -107,6 +114,13 @@ export const SunIcon = wrap(Sun);
 export const TagsIcon = wrap(Tags);
 export const UserCogIcon = wrap(UserCog);
 export const UsersIcon = wrap(Users);
+// Checkout payment methods (storefront).
+export const BanknoteIcon = wrap(Banknote);
+export const CheckCircleIcon = wrap(CircleCheck);
+export const CreditCardIcon = wrap(CreditCard);
+export const BankIcon = wrap(Landmark);
+export const LockIcon = wrap(LockKeyhole);
+export const SmartphoneIcon = wrap(Smartphone);
 /**
  * Social brand glyphs. This lucide-react version has dropped its deprecated
  * brand icons (and never had TikTok), so these are drawn locally with the

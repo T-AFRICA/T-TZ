@@ -23,6 +23,7 @@ beforeEach(() => {
   placeOrder.mockReset();
   trackOrder.mockReset();
   cartStore.set([]);
+  window.sessionStorage.clear();
 });
 
 async function fillDetails(user: ReturnType<typeof userEvent.setup>) {
@@ -152,6 +153,50 @@ describe("checkout page", () => {
     expect(await screen.findByText(/Prices changed since you opened checkout/)).toHaveTextContent("TZS 30,000");
     expect(screen.queryByText("Order placed")).toBeNull();
     expect(cartStore.get()).toHaveLength(1);
+  });
+
+  it("payment: offers only approved methods, says what happens next, and the review lists every step", async () => {
+    const user = userEvent.setup({ delay: null });
+    cartStore.set([{ productId: panel.id, color: null, variant: null, quantity: 1 }]);
+    render(<CheckoutView buyNowLine={null} />);
+    const aside = await summary();
+    // Cash on delivery is the only live method, so it is chosen; its details show at once.
+    expect(screen.getByRole("radio", { name: /Cash on delivery/ })).toBeChecked();
+    expect(screen.getByText("Pay when it arrives")).toBeInTheDocument();
+    expect(aside).toHaveTextContent("PaymentCash on delivery");
+    // Methods without an approved provider are "Coming soon"; their fields never appear.
+    const coming = screen.getByRole("group", { name: "Coming soon" });
+    expect(within(coming).getAllByRole("radio")).toHaveLength(3);
+    for (const radio of within(coming).getAllByRole("radio")) expect(radio).toBeDisabled();
+    expect(screen.queryByLabelText(/Mobile money number/)).toBeNull();
+    expect(screen.queryByText(/card number|cvv/i)).toBeNull();
+    expect(screen.getByText(/never asks for your mobile money PIN/)).toBeInTheDocument();
+
+    const review = screen.getByRole("heading", { name: /Review and place order/ }).closest("section")!;
+    expect(within(review).getAllByText("Not complete yet")).toHaveLength(2);
+    await fillDetails(user);
+    expect(within(review).queryByText("Not complete yet")).toBeNull();
+    expect(review).toHaveTextContent("Amina Juma · 0712 345 678");
+    expect(review).toHaveTextContent("Sokoine Road 5, Kaloleni, Arusha City, Arusha");
+    expect(review).toHaveTextContent("PaymentCash on delivery");
+  });
+
+  it("keeps what the customer typed when they leave checkout and come back, and forgets it after the order", async () => {
+    const user = userEvent.setup({ delay: null });
+    cartStore.set([{ productId: panel.id, color: null, variant: null, quantity: 1 }]);
+    const first = render(<CheckoutView buyNowLine={null} ordersEnabled />);
+    await summary();
+    await fillDetails(user);
+    first.unmount();
+
+    render(<CheckoutView buyNowLine={null} ordersEnabled />);
+    await summary();
+    expect(screen.getByLabelText(/Full name/)).toHaveValue("Amina Juma");
+    expect(screen.getByLabelText(/Street or building/)).toHaveValue("Sokoine Road 5");
+    placeOrder.mockResolvedValueOnce({ ok: true, orderNumber: "TZ-261118-ABCD1234", totalMinor: panel.priceMinor, currency: "TZS", itemCount: 1 });
+    await user.click(screen.getAllByRole("button", { name: /Place order/ })[0]!);
+    expect(await screen.findByText("Order placed")).toBeInTheDocument();
+    expect(window.sessionStorage.getItem("tronic:checkout-draft")).toBeNull();
   });
 
   it("shows the empty state when there is nothing to buy", async () => {
