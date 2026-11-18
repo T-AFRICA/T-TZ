@@ -3,6 +3,25 @@
 Meaningful implementation changes, newest first. Dates are work dates;
 nothing below is released.
 
+## 2026-11-18 — Payment methods: checkout step and server preparation
+
+- Owner brief "Premium payment methods & checkout integration". No gateway
+  is chosen yet, so nothing new can be paid online; Cash on Delivery stays
+  the only method customers can use.
+- Per-country payment policy (`@tronic/country-config`): methods, wallets
+  (M-Pesa, Airtel Money, Mixx by Yas, HaloPesa: all unavailable until a
+  gateway supports them), confirmed bank accounts (none), Cash on Delivery
+  regions and limit (as today: everywhere, no limit). Kenya and Uganda:
+  nothing enabled.
+- Checkout payment step rebuilt inside the existing page: method cards
+  with icons, the chosen method's details, security note, a review of
+  contact, address and payment with links back, payment method in the
+  order summary, the form kept for the tab until the order is placed.
+- `@tronic/payments`: gateway adapter contract and the payment service
+  (start, verified webhooks, status checks, expiry). Draft migration
+  `0007_payments.sql` (not applied): payment records and their rules.
+  Tested with a stand-in gateway on a disposable database.
+
 ## 2026-11-18 — Central Admin runs next to its database
 
 - Owner report: admin orders work live (connection check: "Orders are

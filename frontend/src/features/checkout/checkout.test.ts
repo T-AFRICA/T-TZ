@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { MockCatalogClient } from "@tronic/api-client";
+import {
+  ONLINE_PAYMENT_METHODS,
+  getPaymentPolicy,
+  isMethodOffered,
+  offeredMobileMoneyProviders,
+  payOnDeliveryRefusal,
+  type CountryPaymentPolicy,
+} from "@tronic/country-config";
 import { formatPrice, getSampleProduct } from "@/components/home/sampleProducts";
 import { PAYMENT_METHODS, TZ_REGIONS } from "./config";
 import { buyNowHref, parseBuyNowParams } from "./links";
@@ -54,12 +62,62 @@ describe("checkout validation", () => {
     expect(PAYMENT_METHODS.filter((method) => method.status !== "unavailable").map((method) => method.id)).toEqual([
       "pay_on_delivery",
     ]);
-    expect(EMPTY_CHECKOUT_FORM.paymentMethod).toBe("pay_on_delivery");
+    expect(EMPTY_CHECKOUT_FORM.paymentMethod).toBe("pay_on_delivery");
   });
 
   it("refuses a payment method that is not available", () => {
     expect(validateCheckout({ ...valid, paymentMethod: "card" }).paymentMethod).toBeDefined();
     expect(validateCheckout({ ...valid, paymentMethod: "" }).paymentMethod).toBeDefined();
+  });
+});
+
+describe("country payment policy", () => {
+  const tz = getPaymentPolicy("TZ");
+
+  it("Tanzania offers cash on delivery only; Kenya and Uganda offer nothing yet", () => {
+    expect(ONLINE_PAYMENT_METHODS.filter((method) => isMethodOffered(tz, method))).toEqual([]);
+    expect(isMethodOffered(tz, "pay_on_delivery")).toBe(true);
+    expect(offeredMobileMoneyProviders(tz)).toEqual([]);
+    expect(tz.bankAccounts).toEqual([]);
+    for (const country of ["KE", "UG"] as const) {
+      const policy = getPaymentPolicy(country);
+      expect(Object.keys(policy.methods).filter((method) => isMethodOffered(policy, method))).toEqual([]);
+    }
+    expect(isMethodOffered(tz, "crypto")).toBe(false);
+  });
+
+  it("a live method still needs what it depends on: a supported wallet, a confirmed bank account", () => {
+    const allLive: CountryPaymentPolicy = {
+      ...tz,
+      methods: { mobile_money: "live", card: "live", bank_transfer: "live", pay_on_delivery: "live" },
+    };
+    expect(isMethodOffered(allLive, "mobile_money")).toBe(false);
+    expect(isMethodOffered(allLive, "bank_transfer")).toBe(false);
+    expect(isMethodOffered(allLive, "card")).toBe(true);
+    const withWallet: CountryPaymentPolicy = {
+      ...allLive,
+      mobileMoneyProviders: [
+        { id: "mpesa", name: "M-Pesa", availability: "live" },
+        { id: "halopesa", name: "HaloPesa", availability: "unavailable" },
+      ],
+    };
+    expect(isMethodOffered(withWallet, "mobile_money")).toBe(true);
+    expect(offeredMobileMoneyProviders(withWallet).map((provider) => provider.id)).toEqual(["mpesa"]);
+  });
+
+  it("cash on delivery can be limited by region and by order total", () => {
+    const limited: CountryPaymentPolicy = { ...tz, payOnDelivery: { regions: ["Dar es Salaam"], maxTotalMinor: 100_000_000 } };
+    expect(payOnDeliveryRefusal(limited, "Dar es Salaam", 5_600_000)).toBeNull();
+    expect(payOnDeliveryRefusal(limited, "Arusha", 5_600_000)).toBe("region");
+    expect(payOnDeliveryRefusal(limited, "Dar es Salaam", 100_000_001)).toBe("amount");
+    expect(payOnDeliveryRefusal(tz, "Arusha", 999_999_999_00)).toBeNull();
+    expect(payOnDeliveryRefusal(getPaymentPolicy("KE"), "Nairobi", 1)).toBe("not_offered");
+  });
+
+  it("mobile money needs a wallet and a Tanzanian number, but only when chosen", () => {
+    expect(validateCheckout({ ...valid, walletNumber: "junk" })).toEqual({});
+    // Not offered in Tanzania yet, so the choice itself is refused first.
+    expect(Object.keys(validateCheckout({ ...valid, paymentMethod: "mobile_money" }))).toEqual(["paymentMethod"]);
   });
 });
 

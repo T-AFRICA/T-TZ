@@ -16,7 +16,7 @@ const ISSUE_TEXT: Record<LineIssue, string> = {
  * Delivery and VAT show "Confirmed before payment" until TRONIC sets them;
  * the total says so instead of pretending to be final.
  */
-export function CheckoutSummary({ quote }: { quote: CheckoutQuote }) {
+export function CheckoutSummary({ quote, paymentLabel = null }: { quote: CheckoutQuote; paymentLabel?: string | null }) {
   const blocked = quote.lines.filter((line) => line.issue !== null).length + quote.missing;
   return (
     <div>
@@ -99,6 +99,12 @@ export function CheckoutSummary({ quote }: { quote: CheckoutQuote }) {
           <dt className="text-[var(--text-secondary)]">VAT</dt>
           <dd className="text-right text-[var(--text-secondary)]">Confirmed before payment</dd>
         </div>
+        {paymentLabel ? (
+          <div className="flex justify-between gap-3">
+            <dt className="text-[var(--text-secondary)]">Payment</dt>
+            <dd className="text-right font-medium">{paymentLabel}</dd>
+          </div>
+        ) : null}
         <div className="flex items-baseline justify-between gap-3 border-t border-[var(--color-light-grey)] pt-3">
           <dt className="font-semibold">{quote.totalIsPartial ? "Total so far" : "Total"}</dt>
           <dd className="text-xl font-bold tabular-nums text-[var(--color-action-red)]">
