@@ -22,7 +22,7 @@ export default async function AccountSecurityPage() {
   return (
     <PortalPage>
       <div>
-        <Link href="/account/profile" className="inline-flex items-center gap-1 text-sm font-semibold text-[var(--text-secondary)] hover:text-[var(--color-action-red)]">
+        <Link href="/account/profile" className="-my-2.5 inline-flex items-center gap-1 py-2.5 text-sm font-semibold text-[var(--text-secondary)] hover:text-[var(--color-action-red)]">
           <ChevronLeft size={16} aria-hidden="true" />
           Profile
         </Link>

@@ -26,7 +26,9 @@ export function ProductGallery({ product }: { product: SampleProduct }) {
   const reduceMotion = useReducedMotion() ?? false;
   const activeImage = images[activeIndex] ?? product.image;
   const hasMultiple = images.length > 1;
-  const zoomRef = useRef<HTMLSpanElement>(null);
+  /** The latest pointer position waiting for the next frame, and that frame's id. */
+  const zoomPending = useRef<{ frame: HTMLElement; x: number; y: number } | null>(null);
+  const zoomFrame = useRef(0);
   const touchStartX = useRef<number | null>(null);
   /** True right after a swipe, so the synthetic click that follows the
    *  touch does not also open the zoom dialog. */
@@ -61,21 +63,41 @@ export function ProductGallery({ product }: { product: SampleProduct }) {
   // cursor (origin follows the pointer). Mouse-only — touch keeps the
   // plain photo and the full-screen dialog. Direct style writes avoid a
   // re-render per mousemove.
+  // A mouse reports its position far more often than the screen repaints.
+  // The position is remembered and applied once per frame: one measure and
+  // one style write per frame, however many moves arrive.
   function onZoomMove(event: React.PointerEvent<HTMLButtonElement>) {
-    const zoom = zoomRef.current;
-    if (!zoom || event.pointerType !== "mouse") {
+    if (event.pointerType !== "mouse") {
       return;
     }
-    const rect = event.currentTarget.getBoundingClientRect();
-    const x = ((event.clientX - rect.left) / rect.width) * 100;
-    const y = ((event.clientY - rect.top) / rect.height) * 100;
-    zoom.style.transformOrigin = `${x.toFixed(1)}% ${y.toFixed(1)}%`;
-    zoom.style.transform = "scale(2)";
+    zoomPending.current = { frame: event.currentTarget, x: event.clientX, y: event.clientY };
+    if (zoomFrame.current) {
+      return;
+    }
+    zoomFrame.current = requestAnimationFrame(() => {
+      zoomFrame.current = 0;
+      const pending = zoomPending.current;
+      if (!pending) {
+        return;
+      }
+      const rect = pending.frame.getBoundingClientRect();
+      const x = ((pending.x - rect.left) / rect.width) * 100;
+      const y = ((pending.y - rect.top) / rect.height) * 100;
+      // During a cross-fade two photos are in the frame; both follow the pointer.
+      for (const zoom of pending.frame.querySelectorAll<HTMLElement>("[data-zoom]")) {
+        zoom.style.transformOrigin = `${x.toFixed(1)}% ${y.toFixed(1)}%`;
+        zoom.style.transform = "scale(2)";
+      }
+    });
   }
 
-  function onZoomLeave() {
-    const zoom = zoomRef.current;
-    if (zoom) {
+  function onZoomLeave(event: React.PointerEvent<HTMLButtonElement>) {
+    zoomPending.current = null;
+    if (zoomFrame.current) {
+      cancelAnimationFrame(zoomFrame.current);
+      zoomFrame.current = 0;
+    }
+    for (const zoom of event.currentTarget.querySelectorAll<HTMLElement>("[data-zoom]")) {
       zoom.style.transform = "";
     }
   }
@@ -118,7 +140,9 @@ export function ProductGallery({ product }: { product: SampleProduct }) {
           onTouchEnd={onTouchEnd}
           className="group relative block aspect-[5/4] w-full cursor-zoom-in overflow-hidden rounded-3xl bg-white animate-[hero-copy-in_450ms_ease-out] md:aspect-square md:ring-1 md:ring-[var(--color-light-grey)]"
         >
-          <AnimatePresence mode="wait" initial={false}>
+          {/* A cross-fade: the next photo starts to appear with the press.
+              (With mode="wait" it waited for the old one to fade out first.) */}
+          <AnimatePresence initial={false}>
             <motion.span
               key={activeImage}
               initial={{ opacity: 0 }}
@@ -128,7 +152,7 @@ export function ProductGallery({ product }: { product: SampleProduct }) {
               className="absolute inset-0"
             >
               <span
-                ref={zoomRef}
+                data-zoom
                 className="absolute inset-0 transition-transform duration-200 ease-out will-change-transform"
               >
                 <Image

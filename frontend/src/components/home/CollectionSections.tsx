@@ -86,7 +86,7 @@ export function ViewAll({ href, label, tone }: { href: string; label: string; to
   return (
     <Link
       href={href}
-      className={`inline-flex shrink-0 items-center gap-1 text-sm font-semibold ${
+      className={`-my-2.5 inline-flex shrink-0 items-center gap-1 py-2.5 text-sm font-semibold ${
         tone === "red" ? "text-[var(--color-action-red)]" : "text-white"
       } hover:underline`}
     >

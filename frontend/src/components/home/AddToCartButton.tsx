@@ -24,8 +24,9 @@ type Mode = "add" | "buy";
 
 /**
  * Card CTAs (owner request 2026-11-10: a working cart on every device).
- * A product without options goes straight into the cart: Add confirms with
- * a toast, Buy Now adds and opens the cart. A product with colours or
+ * A product without options acts at once: Add puts it in the cart and
+ * confirms with a toast; Buy Now opens the checkout with that one product
+ * and leaves the cart as it is. A product with colours or
  * variants first opens a small dialog where each must be chosen, so a line
  * never lands in the cart without its options.
  */

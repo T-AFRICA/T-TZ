@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import type { Metadata } from "next";
 import { ToastProvider } from "@tronic/ui";
 import { ACTIVE_COUNTRY } from "@tronic/country-config";
@@ -5,6 +6,7 @@ import { Header } from "@/components/header/Header";
 import { Navbar } from "@/components/header/Navbar";
 import { Footer } from "@/components/footer/Footer";
 import { BottomNav } from "@/components/nav/BottomNav";
+import { NavigationProgress } from "@/components/nav/NavigationProgress";
 import { WhatsAppButton } from "@/components/whatsapp/WhatsAppButton";
 import "./globals.css";
 
@@ -67,6 +69,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         >
           Skip to main content
         </a>
+        {/* Reads the address, so it waits in its own boundary and never holds back a page. */}
+        <Suspense fallback={null}>
+          <NavigationProgress />
+        </Suspense>
         <ToastProvider>
           {/* data-site-chrome wrappers are layout-neutral (display: contents);
               the login screen hides them (globals.css, data-auth-screen). */}

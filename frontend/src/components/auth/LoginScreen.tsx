@@ -129,7 +129,7 @@ export function Accent({ children }: { children: ReactNode }) {
 /** Inline link used in the card footers. */
 export function AuthLink({ href, children }: { href: string; children: ReactNode }) {
   return (
-    <Link href={href} className="font-semibold text-[var(--color-action-red)] underline-offset-4 hover:underline">
+    <Link href={href} className="-my-2 inline-block py-2 font-semibold text-[var(--color-action-red)] underline-offset-4 hover:underline">
       {children}
     </Link>
   );

@@ -40,7 +40,7 @@ export default async function OrderTrackingPage({ params }: { params: Promise<{ 
   return (
     <PortalPage>
       <div>
-        <Link href={base} className="inline-flex items-center gap-1 text-sm font-semibold text-[var(--text-secondary)] hover:text-[var(--color-action-red)]">
+        <Link href={base} className="-my-2.5 inline-flex items-center gap-1 py-2.5 text-sm font-semibold text-[var(--text-secondary)] hover:text-[var(--color-action-red)]">
           <ChevronLeft size={16} aria-hidden="true" />
           Order details
         </Link>

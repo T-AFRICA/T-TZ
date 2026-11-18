@@ -46,7 +46,7 @@ export function CheckoutSummary({ quote }: { quote: CheckoutQuote }) {
               <div className="min-w-0 flex-1">
                 <Link
                   href={`/products/${line.slug}`}
-                  className="line-clamp-2 text-sm font-semibold leading-snug hover:text-[var(--color-action-red)]"
+                  className="line-clamp-2 min-h-6 text-sm font-semibold leading-snug hover:text-[var(--color-action-red)]"
                 >
                   {line.name}
                 </Link>
