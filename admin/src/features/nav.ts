@@ -21,7 +21,8 @@ export type NavIcon =
   | "promotions"
   | "reports"
   | "staff"
-  | "settings";
+  | "settings"
+  | "deliveries";
 
 export interface NavItem {
   href: string;
@@ -71,6 +72,11 @@ export function buildNav(actor: Actor, country: { id: string; name: string } | n
   if (country) {
     const base = `/c/${country.id}`;
     const items: NavItem[] = [{ href: base, label: "Dashboard", icon: "dashboard" }];
+    // A rider's own deliveries, first: for a rider it is the whole console.
+    // Shown for the Rider role only; super admins hold the permission too
+    // but follow deliveries from Orders.
+    const rider = actor.assignments.some((assignment) => assignment.role === "rider" && assignment.countryId === country.id);
+    if (rider && can(actor, "deliveries.perform", country.id)) items.push({ href: `${base}/deliveries`, label: "My deliveries", icon: "deliveries" });
     for (const [key, module] of Object.entries(COUNTRY_MODULES)) {
       if (can(actor, module.permission, country.id)) items.push({ href: `${base}/${key}`, label: module.label, icon: module.icon });
     }

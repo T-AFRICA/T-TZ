@@ -1,6 +1,6 @@
 "use server";
 
-import { trackOrder } from "@tronic/database";
+import { ANON, getDeliveryCode, trackOrder } from "@tronic/database";
 import { normalizeTzPhone } from "@/features/checkout/validation";
 import { getDb, ordersEnabled } from "@/features/data/source";
 import { ORDER_NUMBER_PATTERN } from "./status";
@@ -19,6 +19,8 @@ export type TrackOrderState =
   | {
       status: "found";
       order: { orderNumber: string; status: string; createdAt: string; totalMinor: number; currency: string; itemCount: number };
+      /** The code for the rider, while the order is on its way; null otherwise. */
+      deliveryCode: string | null;
     };
 
 function text(form: FormData, key: string): string {
@@ -40,5 +42,7 @@ export async function trackOrderAction(_previous: TrackOrderState, form: FormDat
   const found = await trackOrder(getDb(), orderNumber, contact);
   if (!found.found) return { status: "not_found" };
   const { orderNumber: number, status, createdAt, totalMinor, currency, itemCount } = found;
-  return { status: "found", order: { orderNumber: number, status, createdAt, totalMinor, currency, itemCount } };
+  const onTheWay = status === "dispatched" || status === "in_transit";
+  const deliveryCode = onTheWay ? await getDeliveryCode(getDb(), ANON, number, contact) : null;
+  return { status: "found", order: { orderNumber: number, status, createdAt, totalMinor, currency, itemCount }, deliveryCode };
 }

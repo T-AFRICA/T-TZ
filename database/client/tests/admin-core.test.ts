@@ -158,6 +158,7 @@ describe("grants and exposure", () => {
       "app_private.is_master",
       "public.accept_admin_invitations",
       "public.admin_country_endpoint",
+      "public.admin_list_riders",
       "public.admin_session",
       "public.invite_admin",
       "public.record_country_action",

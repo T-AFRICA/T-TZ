@@ -623,7 +623,28 @@ export async function getCountryEndpoint(db: Db, access: AdminAccess, countryId:
   };
 }
 
-export type CountryAction = "order.status_change" | "order.note_add";
+export type CountryAction =
+  | "order.status_change"
+  | "order.note_add"
+  | "delivery.assign"
+  | "delivery.pickup"
+  | "delivery.start"
+  | "delivery.deliver"
+  | "delivery.fail";
+
+export interface Rider {
+  userId: string;
+  email: string;
+  name: string | null;
+}
+
+/** The active riders of a country, for whoever may assign deliveries there; empty otherwise. */
+export async function listRiders(db: Db, access: AdminAccess, countryId: string): Promise<Rider[]> {
+  const [row] = await withAdminAccess(db, access, (tx) => tx.query<{ result: unknown }>(`select admin_list_riders($1) as result`, [countryId]));
+  const raw: unknown = typeof row?.result === "string" ? JSON.parse(row.result) : row?.result;
+  if (!Array.isArray(raw)) return [];
+  return (raw as Json[]).map((rider) => ({ userId: text(rider.user_id), email: text(rider.email), name: nullableText(rider.name) }));
+}
 
 /** The audit entry for a change made in a country's own system through this console. */
 export async function recordCountryAction(

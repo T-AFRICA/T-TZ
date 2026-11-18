@@ -25,6 +25,7 @@ import {
   ShoppingBagIcon,
   SunIcon,
   TagsIcon,
+  TruckIcon,
   UserCogIcon,
   UsersIcon,
   XIcon,
@@ -50,6 +51,7 @@ const ICONS: Record<NavIcon, (props: IconProps) => ReactNode> = {
   reports: ChartIcon,
   staff: UsersIcon,
   settings: SettingsIcon,
+  deliveries: TruckIcon,
 };
 
 export interface ShellCountry {

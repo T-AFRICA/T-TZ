@@ -45,6 +45,9 @@ const nextConfig: NextConfig = {
   transpilePackages: ["@tronic/ui", "@tronic/database", "@tronic/permissions", "@tronic/api-contracts", "@tronic/api-client", "@tronic/country-config", "@tronic/types"],
   // The Postgres driver stays a plain Node dependency of the server bundle.
   serverExternalPackages: ["postgres"],
+  // A rider's delivery step carries a photo and a signature (each at most
+  // 1 MB, made smaller on the phone first).
+  experimental: { serverActions: { bodySizeLimit: "3mb" } },
   async headers() {
     return [{ source: "/(.*)", headers: securityHeaders }];
   },

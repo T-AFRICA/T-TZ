@@ -86,6 +86,15 @@ describe("navigation", () => {
     ]);
   });
 
+  it("shows a rider their deliveries and nothing else of the country", () => {
+    const sections = buildNav(actor([{ role: "rider", countryId: "tz" }], false), tanzania);
+    expect(labels(sections)).toEqual([
+      ["Platform", ["Overview"]],
+      ["Tanzania", ["Dashboard", "My deliveries"]],
+    ]);
+    expect(sections[1]!.items.find((item) => item.label === "My deliveries")?.href).toBe("/c/tz/deliveries");
+  });
+
   it("shows nothing of a country the administrator has no role in", () => {
     const sections = buildNav(actor([{ role: "country_super_admin", countryId: "tz" }]), { id: "ke", name: "Kenya" });
     expect(labels(sections)[1]).toEqual(["Kenya", ["Dashboard"]]);

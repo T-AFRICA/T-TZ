@@ -13,6 +13,7 @@ export {
   getCustomerOrder,
   listCustomerOrderPage,
   listCustomerOrders,
+  getDeliveryCode,
   placeCodOrder,
   trackOrder,
   type CustomerOrder,

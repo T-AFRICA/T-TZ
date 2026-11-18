@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { ChevronLeft, FileText, LifeBuoy, Truck } from "lucide-react";
 import { LineThumb } from "@/components/account/OrderCard";
 import { OrderTimeline } from "@/components/account/OrderTimeline";
+import { DeliveryCode } from "@/components/orders/DeliveryCode";
 import { Field, Panel, PortalPage, StatusBadge, formatDate, money } from "@/components/account/ui";
 import { createAccountService, loadLineImages } from "@/features/account/service";
 import { requireCustomer } from "@/features/account/session";
@@ -35,7 +36,7 @@ export default async function OrderDetailsPage({ params }: { params: Promise<{ o
   const result = await service.getOrder(orderNumber);
   if (result.status !== "ok" || result.data === null) notFound();
   const order = result.data;
-  const images = await loadLineImages([order]);
+  const [images, deliveryCode] = await Promise.all([loadLineImages([order]), service.getDeliveryCode(order)]);
   const tracking = service.getTracking(order);
   const addressLines = [order.delivery.street, order.delivery.extra, order.delivery.ward, order.delivery.district, order.delivery.region].filter(
     (line): line is string => Boolean(line),
@@ -63,6 +64,8 @@ export default async function OrderDetailsPage({ params }: { params: Promise<{ o
           </div>
         </div>
       </div>
+
+      {deliveryCode ? <DeliveryCode code={deliveryCode} /> : null}
 
       <div className="grid grid-cols-[minmax(0,1fr)] gap-4 xl:grid-cols-[minmax(0,1fr)_21rem] xl:gap-5">
         <div className="min-w-0 space-y-4 md:space-y-5">
