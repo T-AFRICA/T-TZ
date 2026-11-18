@@ -47,6 +47,16 @@ Design, role model, API contract and what is and is not built:
 Do not run `next build` for the admin while its dev server is running: they
 share `admin/.next`. The browser tests build into their own folder.
 
+## Region
+
+`admin/vercel.json` runs the admin's server functions in `fra1` (Frankfurt),
+next to its Supabase project in `eu-central-1` (Frankfurt). Every console page makes
+several database round trips and two account-service calls, so the distance
+between the two adds up on every click: on 18 Nov 2026 the admin ran in
+Vercel's default `iad1` (Washington) and pages felt slow. Orders pages also call
+Tanzania's storefront in `dub1` (Dublin), a short hop from Frankfurt. If the
+Supabase project is ever moved, move this region with it.
+
 ## Deployment variables (server-side, never `NEXT_PUBLIC_`)
 
 | Variable | Value |
