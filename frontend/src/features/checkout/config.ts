@@ -6,8 +6,17 @@
  * coverage, showroom pickup points, tax treatment and payment providers
  * have not been confirmed by TRONIC, so every option that depends on them
  * is marked unavailable or "confirmed later". When the owner confirms them,
- * only this file changes; the checkout page reads it.
+ * only this file changes; the checkout page reads it. Payment methods come
+ * from the country's payment policy in @tronic/country-config.
  */
+import {
+  ACTIVE_COUNTRY,
+  getPaymentPolicy,
+  isMethodOffered,
+  type CountryPaymentPolicy,
+  type PaymentAvailability,
+  type PaymentMethodId,
+} from "@tronic/country-config";
 
 /** Tanzania's 31 administrative regions (26 mainland, 5 Zanzibar). A list of
  *  places to deliver to, not a claim of delivery coverage. */
@@ -78,52 +87,41 @@ export const DELIVERY_METHODS: readonly DeliveryMethod[] = [
   },
 ];
 
-export type PaymentMethodId = "mobile_money" | "card" | "bank_transfer" | "pay_on_delivery";
+export type { PaymentMethodId } from "@tronic/country-config";
+
+/** This deployment's payment policy (packages/country-config/src/payments.ts). */
+export const PAYMENT_POLICY: CountryPaymentPolicy = getPaymentPolicy(ACTIVE_COUNTRY.code);
 
 export interface PaymentMethod {
   id: PaymentMethodId;
   label: string;
   description: string;
   /**
-   * "unavailable" until a provider is connected and approved. "sandbox"
-   * will mark test-only providers; "live" is set only for an approved,
-   * verified provider. No payment method is live yet.
+   * From the country's payment policy: "unavailable" until a provider is
+   * approved and connected, "sandbox" on test deployments only, "live" for
+   * an approved, verified provider (today: cash on delivery only).
    */
-  status: "unavailable" | "sandbox" | "live";
+  status: PaymentAvailability;
 }
 
-export const PAYMENT_METHODS: readonly PaymentMethod[] = [
-  {
-    id: "mobile_money",
-    label: "Mobile money",
-    description: "Pay from your mobile money wallet.",
-    status: "unavailable",
-  },
-  {
-    id: "card",
-    label: "Debit or credit card",
-    description: "On the payment provider's secure page; TRONIC never sees card details.",
-    status: "unavailable",
-  },
-  {
-    id: "bank_transfer",
-    label: "Bank transfer",
-    description: "Transfer to TRONIC's account; your order ships once paid.",
-    status: "unavailable",
-  },
-  {
-    // Owner decision 2026-11-10: keep cash on delivery open. No provider is
-    // involved: the delivery team collects cash and payment is recorded as
-    // pending until the order is marked paid.
-    id: "pay_on_delivery",
-    label: "Cash on delivery",
-    description: "Pay in cash when your order arrives.",
-    status: "live",
-  },
-];
+const METHOD_TEXT: Record<PaymentMethodId, { label: string; description: string }> = {
+  mobile_money: { label: "Mobile money", description: "Approve the payment on your phone." },
+  card: { label: "Debit or credit card", description: "Visa or Mastercard, on the payment provider's secure page." },
+  bank_transfer: { label: "Bank transfer", description: "Transfer to TRONIC's bank account; we ship once it arrives." },
+  pay_on_delivery: { label: "Cash on delivery", description: "Pay in cash when your order arrives." },
+};
+
+/** Display order: the primary method first, cash on delivery last. */
+const METHOD_ORDER: readonly PaymentMethodId[] = ["mobile_money", "card", "bank_transfer", "pay_on_delivery"];
+
+export const PAYMENT_METHODS: readonly PaymentMethod[] = METHOD_ORDER.map((id) => ({
+  id,
+  ...METHOD_TEXT[id],
+  status: isMethodOffered(PAYMENT_POLICY, id) ? PAYMENT_POLICY.methods[id] : "unavailable",
+}));
 
 export function isPaymentMethodAvailable(id: string): boolean {
-  return PAYMENT_METHODS.some((method) => method.id === id && method.status !== "unavailable");
+  return isMethodOffered(PAYMENT_POLICY, id);
 }
 
 /** The only available method is chosen for the customer; otherwise none. */

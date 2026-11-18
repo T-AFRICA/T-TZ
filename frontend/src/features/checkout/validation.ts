@@ -1,5 +1,7 @@
+import { offeredMobileMoneyProviders, payOnDeliveryRefusal } from "@tronic/country-config";
 import {
   DELIVERY_METHODS,
+  PAYMENT_POLICY,
   TZ_REGIONS,
   defaultPaymentMethod,
   isPaymentMethodAvailable,
@@ -24,6 +26,9 @@ export interface CheckoutForm {
   addressExtra: string;
   instructions: string;
   paymentMethod: PaymentMethodId | "";
+  /** Mobile money only: the wallet and the number that receives the payment prompt. */
+  walletProvider: string;
+  walletNumber: string;
 }
 
 export type CheckoutField = keyof CheckoutForm;
@@ -41,7 +46,20 @@ export const EMPTY_CHECKOUT_FORM: CheckoutForm = {
   addressExtra: "",
   instructions: "",
   paymentMethod: defaultPaymentMethod(),
+  walletProvider: "",
+  walletNumber: "",
 };
+
+/** Copies only the known checkout fields, as strings, from untrusted input. */
+export function readCheckoutForm(raw: unknown): CheckoutForm {
+  const source = raw && typeof raw === "object" ? (raw as Record<string, unknown>) : {};
+  const form = { ...EMPTY_CHECKOUT_FORM };
+  for (const key of Object.keys(form) as (keyof CheckoutForm)[]) {
+    const value = source[key];
+    if (typeof value === "string") (form as Record<string, string>)[key] = value;
+  }
+  return form;
+}
 
 export const FIELD_LIMITS = {
   fullName: 80,
@@ -52,6 +70,7 @@ export const FIELD_LIMITS = {
   street: 120,
   addressExtra: 120,
   instructions: 300,
+  walletNumber: 20,
 } as const;
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
@@ -114,6 +133,16 @@ export function validateCheckout(form: CheckoutForm): CheckoutErrors {
 
   if (!isPaymentMethodAvailable(form.paymentMethod)) {
     errors.paymentMethod = "Choose an available payment method.";
+  } else if (form.paymentMethod === "pay_on_delivery" && form.deliveryMethod === "home") {
+    if (payOnDeliveryRefusal(PAYMENT_POLICY, form.region, null) === "region") {
+      errors.paymentMethod = `Cash on delivery isn't offered in ${form.region} yet. Choose another payment method.`;
+    }
+  } else if (form.paymentMethod === "mobile_money") {
+    if (!offeredMobileMoneyProviders(PAYMENT_POLICY).some((provider) => provider.id === form.walletProvider)) {
+      errors.walletProvider = "Choose your mobile money provider.";
+    }
+    if (form.walletNumber.trim().length === 0) errors.walletNumber = "Enter the number of your mobile money wallet.";
+    else if (!normalizeTzPhone(form.walletNumber)) errors.walletNumber = "Enter a Tanzanian mobile number, like 0712 345 678.";
   }
 
   return errors;
@@ -132,4 +161,6 @@ export const FIELD_ORDER: readonly CheckoutField[] = [
   "addressExtra",
   "instructions",
   "paymentMethod",
+  "walletProvider",
+  "walletNumber",
 ];

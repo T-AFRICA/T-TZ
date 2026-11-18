@@ -21,5 +21,19 @@ order. The page shows the confirmation only after the order is saved; the
 order number is never put in a URL. Guest checkout stays allowed; a signed-in
 customer's order is linked from the verified session.
 
+## Payment methods (2026-11-18)
+
+Which methods and wallets a country offers comes from its payment policy
+(`packages/country-config/src/payments.ts`); `config.ts` only adds the
+labels. `components/checkout/PaymentMethods.tsx` shows the method cards and
+the fields of the chosen method (mobile money: wallet and number; card: the
+gateway's hosted page; bank transfer: confirmed accounts only). Methods
+without an approved gateway show "Coming soon" and cannot be chosen; today
+Cash on delivery is the only one. Cash on delivery can be limited by region
+and order total in the policy; the server action checks both. The form is
+kept in `sessionStorage` for the tab and cleared once the order is placed.
+The server side of online payments is `@tronic/payments` (not wired to
+checkout until a gateway is approved).
+
 Amounts are integers in ISO 4217 minor units (TZS ×100) everywhere; see
 `packages/country-config/src/money.ts`.

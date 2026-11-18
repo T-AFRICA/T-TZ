@@ -8,18 +8,25 @@ import { useCart, useHydrated } from "@/features/cart/hooks";
 import type { CartLine } from "@/features/cart/store";
 import { cartStore } from "@/features/cart/store";
 import { getCheckoutQuote, placeOrderAction, type PlaceOrderResponse } from "@/features/checkout/actions";
-import { DELIVERY_METHODS, PAYMENT_METHODS, TZ_REGIONS } from "@/features/checkout/config";
+import { DELIVERY_METHODS, TZ_REGIONS, isPaymentMethodAvailable } from "@/features/checkout/config";
 import type { CheckoutQuote } from "@/features/checkout/quote";
 import {
   EMPTY_CHECKOUT_FORM,
   FIELD_LIMITS,
   FIELD_ORDER,
+  readCheckoutForm,
   validateCheckout,
   type CheckoutErrors,
   type CheckoutField,
   type CheckoutForm,
 } from "@/features/checkout/validation";
 import { CheckoutSummary } from "./CheckoutSummary";
+import { PAYMENT_LABELS, PaymentMethods } from "./PaymentMethods";
+
+/** The form survives leaving checkout (back to the cart, a product page)
+ *  for the rest of this browser tab, and is cleared once the order is placed. */
+const DRAFT_KEY = "tronic:checkout-draft";
+const PAYMENT_FIELDS: readonly CheckoutField[] = ["paymentMethod", "walletProvider", "walletNumber"];
 
 const SECTION = "rounded-2xl bg-white p-4 md:border md:border-[var(--color-light-grey)] md:p-6";
 const HEADING_FONT = { fontFamily: "var(--font-heading, var(--font-fallback-heading))" };
@@ -102,10 +109,48 @@ export function CheckoutView({ buyNowLine, ordersEnabled = false }: { buyNowLine
     };
   }, [hydrated, linesKey, form.deliveryMethod, reload]);
 
+  // Bring back what the customer typed earlier in this tab (untrusted:
+  // known string fields only; a payment method no longer offered is dropped).
+  const restoredRef = useRef(false);
+  useEffect(() => {
+    if (!hydrated || restoredRef.current) return;
+    restoredRef.current = true;
+    let raw: string | null = null;
+    try {
+      raw = window.sessionStorage.getItem(DRAFT_KEY);
+    } catch {
+      return;
+    }
+    if (!raw) return;
+    try {
+      const draft = readCheckoutForm(JSON.parse(raw) as unknown);
+      if (!isPaymentMethodAvailable(draft.paymentMethod)) {
+        draft.paymentMethod = EMPTY_CHECKOUT_FORM.paymentMethod;
+        draft.walletProvider = "";
+      }
+      setForm(draft);
+    } catch {
+      // A damaged draft is ignored.
+    }
+  }, [hydrated]);
+
+  useEffect(() => {
+    if (!restoredRef.current || confirmation) return;
+    try {
+      window.sessionStorage.setItem(DRAFT_KEY, JSON.stringify(form));
+    } catch {
+      // Storage may be blocked; the form still works without it.
+    }
+  }, [form, confirmation]);
+
   const update = useCallback(
     (field: CheckoutField, value: string) => {
       setForm((current) => {
         const next = { ...current, [field]: value } as CheckoutForm;
+        // The wallet number starts as the contact number; the customer can change it.
+        if (field === "paymentMethod" && value === "mobile_money" && next.walletNumber.trim() === "") {
+          next.walletNumber = current.phone;
+        }
         if (touched[field]) {
           const fieldError = validateCheckout(next)[field];
           setErrors((existing) => ({ ...existing, [field]: fieldError }));
@@ -128,7 +173,8 @@ export function CheckoutView({ buyNowLine, ordersEnabled = false }: { buyNowLine
   const allErrors = useMemo(() => validateCheckout(form), [form]);
   const contactDone = CONTACT_FIELDS.every((field) => !allErrors[field]);
   const deliveryDone = DELIVERY_FIELDS.every((field) => !allErrors[field]);
-  const paymentDone = !allErrors.paymentMethod;
+  const paymentDone = PAYMENT_FIELDS.every((field) => !allErrors[field]);
+  const paymentLabel = !allErrors.paymentMethod && form.paymentMethod ? PAYMENT_LABELS[form.paymentMethod] : null;
 
   const quote = quoteState.status === "ready" ? quoteState.quote : null;
   const canSubmit = quote !== null && quote.itemCount > 0 && !submitting;
@@ -164,6 +210,11 @@ export function CheckoutView({ buyNowLine, ordersEnabled = false }: { buyNowLine
       const result = await placeOrderAction({ idempotencyKey: attemptRef.current.key, ...payload });
       if (result.ok) {
         if (!buyNowLine) cartStore.set([]);
+        try {
+          window.sessionStorage.removeItem(DRAFT_KEY);
+        } catch {
+          // Nothing to clear.
+        }
         setConfirmation(result);
         window.scrollTo({ top: 0 });
         return;
@@ -311,7 +362,7 @@ export function CheckoutView({ buyNowLine, ordersEnabled = false }: { buyNowLine
           >
             <div className="overflow-hidden" inert={!summaryOpen}>
               <div className="border-t border-[var(--color-light-grey)] px-4 py-4">
-                <CheckoutSummary quote={quote} />
+                <CheckoutSummary quote={quote} paymentLabel={paymentLabel} />
               </div>
             </div>
           </div>
@@ -447,64 +498,31 @@ export function CheckoutView({ buyNowLine, ordersEnabled = false }: { buyNowLine
             </Section>
 
             <Section number={3} title="Payment" done={paymentDone}>
-              <fieldset aria-describedby="payment-status">
-                <legend className="sr-only">Payment method</legend>
-                <div className="grid gap-2.5">
-                  {PAYMENT_METHODS.map((method) => {
-                    const available = method.status !== "unavailable";
-                    const checked = form.paymentMethod === method.id;
-                    return (
-                      <label
-                        key={method.id}
-                        className={`flex items-center gap-3 rounded-xl border p-3.5 transition-colors ${
-                          !available
-                            ? "cursor-not-allowed border-[var(--color-light-grey)] bg-[var(--surface-card)]"
-                            : checked
-                              ? "cursor-pointer border-[var(--color-action-red)] bg-[#fff7f7] ring-1 ring-[var(--color-action-red)]"
-                              : "cursor-pointer border-[var(--color-light-grey)] hover:border-[var(--color-mid-grey)]"
-                        }`}
-                      >
-                        <input
-                          type="radio"
-                          name="paymentMethod"
-                          value={method.id}
-                          checked={checked}
-                          disabled={!available}
-                          onChange={() => update("paymentMethod", method.id)}
-                          className="h-4 w-4 shrink-0 accent-[var(--color-action-red)]"
-                        />
-                        <span className="min-w-0 flex-1">
-                          <span className={`block text-sm font-semibold ${available ? "" : "text-[var(--text-secondary)]"}`}>
-                            {method.label}
-                          </span>
-                          <span className="block text-xs text-[var(--text-muted)]">{method.description}</span>
-                        </span>
-                        <span
-                          className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
-                            available
-                              ? "bg-[#e8f5ec] text-[var(--color-success)]"
-                              : "border border-dashed border-[var(--color-light-grey)] text-[var(--text-muted)]"
-                          }`}
-                        >
-                          {method.status === "sandbox" ? "Test mode" : available ? "Available" : "Not available yet"}
-                        </span>
-                      </label>
-                    );
-                  })}
-                </div>
-              </fieldset>
-              {touched.paymentMethod && errors.paymentMethod ? (
-                <p className="mt-2 text-xs font-medium text-[var(--color-action-red)]">{errors.paymentMethod}</p>
-              ) : null}
-              <p id="payment-status" className="mt-3 text-xs leading-relaxed text-[var(--text-secondary)]">
-                {form.paymentMethod === "pay_on_delivery"
-                  ? "Pay the delivery team in cash when your order arrives. "
-                  : null}
-                Mobile money, card and bank transfer are being connected. TRONIC never stores card details.
-              </p>
+              <PaymentMethods
+                form={form}
+                errors={errors}
+                touched={touched}
+                totalMinor={quote.totalMinor}
+                totalIsPartial={quote.totalIsPartial}
+                onChange={update}
+                onBlur={blur}
+              />
             </Section>
 
             <Section number={4} title="Review and place order" done={false}>
+              <dl className="mb-4 divide-y divide-[var(--color-light-grey)] rounded-xl border border-[var(--color-light-grey)] text-sm">
+                <ReviewRow label="Contact" step={1} complete={contactDone}>
+                  {contactDone ? `${form.fullName.trim()} · ${form.phone.trim()}` : null}
+                </ReviewRow>
+                <ReviewRow label="Deliver to" step={2} complete={deliveryDone}>
+                  {deliveryDone
+                    ? [form.street, form.ward, form.district, form.region].map((part) => part.trim()).filter(Boolean).join(", ")
+                    : null}
+                </ReviewRow>
+                <ReviewRow label="Payment" step={3} complete={paymentDone}>
+                  {paymentDone && form.paymentMethod ? PAYMENT_LABELS[form.paymentMethod] : null}
+                </ReviewRow>
+              </dl>
               <p className="text-sm text-[var(--text-secondary)]">
                 By placing an order you agree to our{" "}
                 <Link href="/policies/terms" className="font-medium text-[var(--text-primary)] underline underline-offset-2">
@@ -540,7 +558,7 @@ export function CheckoutView({ buyNowLine, ordersEnabled = false }: { buyNowLine
             <h2 className="mb-4 text-base font-bold" style={HEADING_FONT}>
               Order summary
             </h2>
-            <CheckoutSummary quote={quote} />
+            <CheckoutSummary quote={quote} paymentLabel={paymentLabel} />
           </aside>
         </div>
       </Container>
@@ -615,10 +633,29 @@ function OrderConfirmation({ confirmation }: { confirmation: Confirmation }) {
   );
 }
 
+/** One line of the order review, with a link back to its step. */
+function ReviewRow({ label, step, complete, children }: { label: string; step: number; complete: boolean; children: ReactNode }) {
+  return (
+    <div className="flex items-start gap-3 px-3.5 py-3">
+      <dt className="w-20 shrink-0 text-[var(--text-secondary)]">{label}</dt>
+      <dd className={`min-w-0 flex-1 break-words ${complete ? "font-medium" : "text-[var(--text-muted)]"}`}>
+        {complete ? children : "Not complete yet"}
+      </dd>
+      <a
+        href={`#checkout-step-${step}`}
+        className="-my-1 inline-flex min-h-8 shrink-0 items-center rounded-full px-2 text-xs font-semibold text-[var(--color-action-red)] underline-offset-4 hover:underline"
+      >
+        {complete ? "Edit" : "Complete"}
+        <span className="sr-only"> {label.toLowerCase()}</span>
+      </a>
+    </div>
+  );
+}
+
 function Section({ number, title, done, children }: { number: number; title: string; done: boolean; children: ReactNode }) {
   return (
     <section aria-labelledby={`checkout-step-${number}`} className={SECTION}>
-      <h2 id={`checkout-step-${number}`} className="mb-4 flex items-center gap-2.5 text-base font-bold md:text-lg" style={HEADING_FONT}>
+      <h2 id={`checkout-step-${number}`} className="mb-4 flex scroll-mt-[calc(var(--header-height)_+_1rem)] items-center gap-2.5 text-base font-bold md:text-lg" style={HEADING_FONT}>
         <span
           aria-hidden="true"
           className={`grid h-7 w-7 shrink-0 place-items-center rounded-full text-xs font-bold transition-colors ${

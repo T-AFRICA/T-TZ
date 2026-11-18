@@ -7,6 +7,7 @@
     ".": "./src/index.ts",
     "./admin": "./src/admin/index.ts",
     "./country-admin": "./src/country-admin/index.ts",
+    "./payments": "./src/payments/index.ts",
     "./testing": "./src/testing/index.ts"
   },
   "scripts": {
@@ -18,6 +19,7 @@
     "@tronic/api-client": "workspace:*",
     "@tronic/api-contracts": "workspace:*",
     "@tronic/country-config": "workspace:*",
+    "@tronic/payments": "workspace:*",
     "@tronic/types": "workspace:*",
     "postgres": "^4.1.1"
   },
