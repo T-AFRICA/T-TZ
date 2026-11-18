@@ -3,6 +3,20 @@
 Meaningful implementation changes, newest first. Dates are work dates;
 nothing below is released.
 
+## 2026-11-18 — Central Admin runs next to its database
+
+- Owner report: admin orders work live (connection check: "Orders are
+  connected", 374 ms), but pages feel slow.
+- Measured: the deployed admin answered from Vercel's default region `iad1`
+  (Washington; response header `x-vercel-id` …::iad1::…), while its Supabase
+  project is in `eu-central-1` (Frankfurt) and Tanzania's storefront in
+  `dub1` (Dublin). Each console page
+  makes several database round trips and two account-service calls, each
+  crossing the Atlantic.
+- `admin/vercel.json` now sets `regions: ["fra1"]` (Frankfurt), next to its
+  database (owner confirmed `eu-central-1`). Orders pages still make one
+  short Frankfurt to Dublin hop to the storefront.
+
 ## 2026-11-16 — keys pasted into a dashboard are read in any usual shape; a key fault is named
 
 - First try between the two deployments: the live storefront answered
