@@ -283,16 +283,31 @@ export async function handleCountryAdminRequest(service: CountryAdminService, re
   const { db, countryCode } = service;
   try {
     if (matched.endpoint === "health") {
+      // Asks, as the role the order functions run as, whether they exist:
+      // the check proves the role switch and the migration together.
       let database: boolean | null = null;
+      let orderAdmin: boolean | null = null;
       if (db) {
         try {
-          await withServiceAccess(db, (tx) => tx.query("select 1"));
+          const [row] = await withServiceAccess(db, (tx) =>
+            tx.query<{ installed: boolean }>(
+              `select to_regprocedure('public.admin_list_orders(character,text,text,integer,integer)') is not null as installed`,
+            ),
+          );
           database = true;
+          orderAdmin = row?.installed === true;
         } catch {
           database = false;
         }
       }
-      const body: CountryHealth = { ok: true, country: countryCode, dataSource: db ? "database" : "mock", database, time: new Date().toISOString() };
+      const body: CountryHealth = {
+        ok: true,
+        country: countryCode,
+        dataSource: db ? "database" : "mock",
+        database,
+        orderAdmin,
+        time: new Date().toISOString(),
+      };
       return { status: 200, body };
     }
 
@@ -335,7 +350,13 @@ export async function handleCountryAdminRequest(service: CountryAdminService, re
     const body = await addOrderNoteForAdmin(db, countryCode, orderNumber, { body: note.data.body, actorId: verified.actorId, requestId: verified.tokenId });
     return { status: 200, body };
   } catch (error) {
-    console.error("country admin API: request failed", { endpoint: matched.endpoint, error: error instanceof Error ? error.name : "unknown" });
+    // Two set-up faults are named, so an owner knows what to do: the order
+    // functions are not installed (migration 0006), or the database refused
+    // the role they run as. The answer carries the code, never the message.
+    const code = typeof (error as { code?: unknown } | null)?.code === "string" ? (error as { code: string }).code : "";
+    if (code === "42883" || code === "42P01") return refuse(503, "order_admin_missing");
+    if (code === "42501") return refuse(503, "database_permission");
+    console.error("country admin API: request failed", { endpoint: matched.endpoint, error: error instanceof Error ? error.name : "unknown", code });
     return refuse(500, "server_error");
   }
 }

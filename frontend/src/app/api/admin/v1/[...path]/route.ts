@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { KeyFormatError } from "@tronic/api-contracts";
 import { handleCountryAdminRequest } from "@tronic/database/country-admin";
 import { countryAdminService } from "@/features/admin-api/service";
 import { clientKey, createRateLimiter } from "@/features/search/rate-limit";
@@ -46,7 +47,18 @@ async function handle(request: NextRequest) {
     });
     return json(response.body, response.status);
   } catch (error) {
-    // Configuration that cannot be used (an unreadable key, a missing database address).
+    // The Central Admin's public key as configured here cannot be used. Say
+    // which way it is wrong (never the value), so an owner can fix it: the
+    // answer names the fault, and nothing is verified or read until it is.
+    if (error instanceof KeyFormatError) {
+      console.error("country admin API: CENTRAL_ADMIN_VERIFY_KEY cannot be used", { reason: error.reason });
+      return json({ ok: false, code: `verify_key_${error.reason}` }, 503);
+    }
+    // The data source of this deployment is set up wrongly (features/data/source.ts raises it; the text is ours and holds no value).
+    if (error instanceof Error && error.message.includes("DATA_SOURCE")) {
+      console.error("country admin API: the data source is not set up", { error: error.message });
+      return json({ ok: false, code: "data_source_misconfigured" }, 503);
+    }
     console.error("country admin API: not available", { error: error instanceof Error ? error.name : "unknown" });
     return json({ ok: false, code: "server_error" }, 500);
   }

@@ -161,6 +161,19 @@ export async function checkCountryServiceAction(_previous: FormState, form: Form
     revalidatePath("/", "layout");
     return { status: "error", message: SERVICE_UNAVAILABLE_TEXT[result.reason] };
   }
-  const source = result.data.dataSource === "database" ? "live records" : "the sample catalogue";
-  return done(`${country.name}'s service answered in ${result.latencyMs} ms. It is serving ${source}.`);
+  // The service answered. Say what it can do, and what is still missing for orders.
+  const answered = `${country.name}'s service answered in ${result.latencyMs} ms.`;
+  if (result.data.dataSource === "mock") {
+    revalidatePath("/", "layout");
+    return { status: "error", message: `${answered} It runs on the sample catalogue (DATA_SOURCE=mock), so it has no orders.` };
+  }
+  if (result.data.database === false) {
+    revalidatePath("/", "layout");
+    return { status: "error", message: `${answered} ${SERVICE_UNAVAILABLE_TEXT.country_database_denied}` };
+  }
+  if (result.data.orderAdmin === false) {
+    revalidatePath("/", "layout");
+    return { status: "error", message: `${answered} ${SERVICE_UNAVAILABLE_TEXT.country_orders_missing}` };
+  }
+  return done(`${answered} Orders are connected.`);
 }

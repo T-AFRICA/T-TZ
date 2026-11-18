@@ -28,7 +28,8 @@ export function countryAdminService(): Promise<CountryAdminService> | null {
   if (!countryAdminApiConfigured()) return null;
   service ??= (async () => {
     const keyId = (process.env.CENTRAL_ADMIN_VERIFY_KEY_ID as string).trim();
-    const publicKeyPem = (process.env.CENTRAL_ADMIN_VERIFY_KEY as string).replace(/\\n/g, "\n").trim();
+    // Read as pasted: line breaks as "\n", quotes or a missing BEGIN line are all accepted (normalizePem).
+    const publicKeyPem = process.env.CENTRAL_ADMIN_VERIFY_KEY as string;
     const verifier = await createServiceTokenVerifier({
       countryCode: ACTIVE_COUNTRY.code,
       publicKeysPem: { [keyId]: publicKeyPem },

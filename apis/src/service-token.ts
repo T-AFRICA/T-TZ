@@ -25,6 +25,46 @@ export const SERVICE_TOKEN_CLOCK_TOLERANCE_SECONDS = 10;
 const PERMISSION = /^[a-z]+(\.[a-z_]+){1,2}$/;
 const COUNTRY_CODE = /^[A-Z]{2}$/;
 
+export type PemKind = "PUBLIC KEY" | "PRIVATE KEY";
+
+/** Why a configured key cannot be used. Never carries the key or any part of it. */
+export class KeyFormatError extends Error {
+  constructor(
+    readonly reason: "empty" | "wrong_kind" | "unreadable",
+    readonly expected: PemKind,
+  ) {
+    super(
+      reason === "empty"
+        ? "no key is configured"
+        : reason === "wrong_kind"
+          ? `the configured value is not a ${expected}`
+          : `the configured ${expected} cannot be read`,
+    );
+    this.name = "KeyFormatError";
+  }
+}
+
+/**
+ * A key as it arrives from an environment variable, made into the PEM text
+ * the key importers accept. A value pasted into a hosting dashboard may
+ * have its line breaks written as "\n", be wrapped in quotes, have lost its
+ * line breaks, or be only the middle part without the BEGIN and END lines;
+ * all of these are the same key. What is refused, with the reason: nothing
+ * at all, the other half of the pair (a private key where the public one
+ * belongs, or the reverse), and text that is not a key.
+ */
+export function normalizePem(value: string | undefined, kind: PemKind): string {
+  let text = (value ?? "").replace(/\\r/g, "").replace(/\\n/g, "\n").trim();
+  if ((text.startsWith('"') && text.endsWith('"')) || (text.startsWith("'") && text.endsWith("'"))) text = text.slice(1, -1).trim();
+  if (!text) throw new KeyFormatError("empty", kind);
+
+  const header = /-----BEGIN ([A-Z0-9 ]+)-----/.exec(text);
+  if (header && header[1] !== kind) throw new KeyFormatError(/PUBLIC|PRIVATE/.test(header[1] as string) ? "wrong_kind" : "unreadable", kind);
+  const body = text.replace(/-----(BEGIN|END) [A-Z0-9 ]+-----/g, "").replace(/\s+/g, "");
+  if (body.length < 80 || !/^[A-Za-z0-9+/]+={0,2}$/.test(body)) throw new KeyFormatError("unreadable", kind);
+  return `-----BEGIN ${kind}-----\n${body.match(/.{1,64}/g)?.join("\n") ?? body}\n-----END ${kind}-----\n`;
+}
+
 function audienceFor(countryCode: string): string {
   return `tronic-country:${countryCode}`;
 }
@@ -64,7 +104,12 @@ export interface ServiceTokenSigner {
  * country can hold two public keys while one is being replaced.
  */
 export async function createServiceTokenSigner(options: { privateKeyPem: string; keyId: string; now?: () => Date }): Promise<ServiceTokenSigner> {
-  const key = await importPKCS8(options.privateKeyPem, SERVICE_TOKEN_ALGORITHM);
+  let key: CryptoKey;
+  try {
+    key = await importPKCS8(normalizePem(options.privateKeyPem, "PRIVATE KEY"), SERVICE_TOKEN_ALGORITHM);
+  } catch (error) {
+    throw error instanceof KeyFormatError ? error : new KeyFormatError("unreadable", "PRIVATE KEY");
+  }
   const now = options.now ?? (() => new Date());
   return {
     async sign(request) {
@@ -134,7 +179,11 @@ export async function createServiceTokenVerifier(options: {
   if (!COUNTRY_CODE.test(options.countryCode)) throw new Error("service token verifier: a two-letter country code is required");
   const keys = new Map<string, CryptoKey>();
   for (const [keyId, pem] of Object.entries(options.publicKeysPem)) {
-    keys.set(keyId, await importSPKI(pem, SERVICE_TOKEN_ALGORITHM));
+    try {
+      keys.set(keyId, await importSPKI(normalizePem(pem, "PUBLIC KEY"), SERVICE_TOKEN_ALGORITHM));
+    } catch (error) {
+      throw error instanceof KeyFormatError ? error : new KeyFormatError("unreadable", "PUBLIC KEY");
+    }
   }
   if (keys.size === 0) throw new Error("service token verifier: at least one public key is required");
   const now = options.now ?? (() => new Date());

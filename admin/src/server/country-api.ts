@@ -1,5 +1,6 @@
 import "server-only";
 import {
+  KeyFormatError,
   createCountryAdminApi,
   createServiceTokenSigner,
   unavailableCountryApi,
@@ -44,8 +45,13 @@ export async function countryApiFor(admin: AdminContext, country: AdminCountry):
   if (!pending) return unavailableCountryApi("signing_not_configured");
   try {
     return createCountryAdminApi({ baseUrl: service.apiBaseUrl, countryCode: country.isoCode, signer: await pending });
-  } catch {
-    // A key that cannot be read, or an address that is not HTTPS.
-    return unavailableCountryApi("signing_not_configured");
+  } catch (error) {
+    // The signing key as configured cannot be read (the reason goes to the log, never the key).
+    if (error instanceof KeyFormatError) {
+      console.error("admin: COUNTRY_API_SIGNING_KEY cannot be used", { reason: error.reason });
+      return unavailableCountryApi("signing_key_invalid");
+    }
+    // An address that is not HTTPS.
+    return unavailableCountryApi("not_configured");
   }
 }

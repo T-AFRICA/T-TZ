@@ -3,6 +3,34 @@
 Meaningful implementation changes, newest first. Dates are work dates;
 nothing below is released.
 
+## 2026-11-16 — keys pasted into a dashboard are read in any usual shape; a key fault is named
+
+- First try between the two deployments: the live storefront answered
+  `server_error` for its admin API, because its copy of the Central Admin's
+  public key could not be read as pasted. From outside there was no way to
+  tell what was wrong with it.
+- `normalizePem` (`@tronic/api-contracts`): a key arrives as full PEM, with
+  line breaks written as `\n`, in quotes, on one line, with Windows line
+  endings, or as only the middle part without the BEGIN and END lines; all
+  are read as the same key. Refused with a reason: nothing, the other half
+  of the pair, text that is not a key. The reason never includes the value.
+- Storefront route: a key that cannot be used answers 503 with
+  `verify_key_empty`, `verify_key_wrong_kind` or `verify_key_unreadable`
+  instead of a bare 500, and a wrongly set data source answers
+  `data_source_misconfigured`. Nothing is verified or read in that state.
+- Admin: "Check connection" and Orders now say when the country cannot
+  read its copy of the public key, and when the admin's own signing key
+  cannot be read, each with what an owner has to do.
+- The health check now also asks the country's database, as the role the
+  order functions run as, whether migration 0006 is installed. "Check
+  connection" says "Orders are connected" only when it is, and otherwise
+  names what is missing: the migration, or the database role. Orders
+  requests answer `order_admin_missing` or `database_permission` (503)
+  instead of a bare server error in those two cases.
+- Tests: 4 new contract tests (20 in total); workspace lint, typecheck and
+  unit tests; storefront admin API browser tests (3); admin browser tests
+  (20).
+
 ## 2026-11-16 — one command for the Central Admin's signing key pair
 
 - `pnpm --filter @tronic/admin run signing-key` makes the key pair that

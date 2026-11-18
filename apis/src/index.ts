@@ -1,4 +1,5 @@
 export {
+  KeyFormatError,
   SERVICE_TOKEN_ALGORITHM,
   SERVICE_TOKEN_CLOCK_TOLERANCE_SECONDS,
   SERVICE_TOKEN_ISSUER,
@@ -7,6 +8,8 @@ export {
   createMemoryReplayGuard,
   createServiceTokenSigner,
   createServiceTokenVerifier,
+  normalizePem,
+  type PemKind,
   type ServiceRequestDescription,
   type ServiceTokenRejection,
   type ServiceTokenSigner,
