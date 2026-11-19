@@ -7,7 +7,6 @@ import { loadCollection, loadOffers, loadProducts, type CollectionResult } from 
 import { Notice, ProductGrid, ViewAll } from "./CollectionSections";
 import { ProductCard } from "./ProductCard";
 import { ScrollRow } from "./ScrollRow";
-import { TickerRow } from "./TickerRow";
 
 /**
  * The eight core homepage sections (owner brief 2026-11-12), in order:
@@ -41,13 +40,6 @@ const FEATURED_PRODUCT_IDS = [
 
 /** Card widths inside a ScrollRow: about 2, 3, 4, 5 and 6 per view. */
 const SCROLL_CARD = "w-[46%] shrink-0 snap-start sm:w-[31%] md:w-[23%] lg:w-[18.5%] xl:w-[15.5%]";
-/** Fixed card width in the Offers ticker. */
-const TICKER_CARD = "w-[12.5rem] shrink-0 md:w-[14rem]";
-/**
- * Below this many offers one copy of the ticker can be narrower than the
- * band on wide screens (a product would show twice), so the row stays still.
- */
-const TICKER_MIN_PRODUCTS = 5;
 /** Every product, newest first (category pages sort newest by default). */
 const ALL_PRODUCTS_HREF = "/categories/shop-by-use";
 
@@ -98,40 +90,18 @@ function CardRow({ result, label, tone = "light", emptyHref, emptyMessage }: { r
   );
 }
 
-/** 01 — red band with a slowly moving row (ticker) of reduced products. */
+/**
+ * 01 — reduced products in a row that moves only when the visitor moves it
+ * (swipe, mouse drag, arrows or keyboard). Owner request 2026-11-19: no
+ * red band and no automatic movement.
+ */
 function OffersSection({ result }: { result: CollectionResult }) {
   return (
     <section aria-labelledby="home-offers" className="mt-8 md:mt-12">
       <Reveal>
-        <div className="relative isolate overflow-hidden rounded-2xl bg-[linear-gradient(135deg,#d71920_0%,#9e1118_100%)] px-4 py-6 text-white sm:px-6 md:px-8 md:py-8">
-          <div aria-hidden="true" className="absolute -right-24 -top-24 -z-10 h-80 w-80 rounded-full border-[40px] border-white/[0.06]" />
-          <div aria-hidden="true" className="absolute -bottom-32 left-1/3 -z-10 h-72 w-72 rounded-full bg-[radial-gradient(circle,rgba(255,255,255,0.12),transparent_65%)]" />
-          <h2 id="home-offers" className="font-display text-[clamp(1.6rem,1.1rem+1.6vw,2.4rem)] leading-tight">
-            Offers &amp; Promotions
-          </h2>
-          <p className="mt-1 max-w-xl text-sm text-white/85">Products with a reduced price in our catalogue.</p>
-          <div className="mt-5">
-            {/* A slow ticker like the category rail (owner request
-                2026-11-12) once there are enough offers for each copy to be
-                wider than the band; fewer offers stay a swipeable row. */}
-            {result.status === "ok" && result.products.length >= TICKER_MIN_PRODUCTS ? (
-              <div className="-mx-4 text-[var(--text-primary)] sm:-mx-6 md:-mx-8">
-                <TickerRow label="Offers" seconds={result.products.length * 6}>
-                  {result.products.map((product) => (
-                    <ProductCard key={product.id} product={product} className={TICKER_CARD} />
-                  ))}
-                </TickerRow>
-              </div>
-            ) : (
-              <CardRow
-                result={result}
-                label="Offers"
-                tone="dark"
-                emptyHref={ALL_PRODUCTS_HREF}
-                emptyMessage="There are no reduced prices right now."
-              />
-            )}
-          </div>
+        <SectionHeading id="home-offers" title="Offers & Promotions" description="Products with a reduced price in our catalogue." />
+        <div className="mt-3 md:mt-5">
+          <CardRow result={result} label="Offers" emptyHref={ALL_PRODUCTS_HREF} emptyMessage="There are no reduced prices right now." />
         </div>
       </Reveal>
     </section>

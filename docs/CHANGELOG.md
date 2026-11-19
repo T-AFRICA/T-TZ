@@ -3,6 +3,18 @@
 Meaningful implementation changes, newest first. Dates are work dates;
 nothing below is released.
 
+## 2026-11-19 — Homepage Offers: no red band, moved by hand only
+
+- Owner request: Offers & Promotions loses its red band and its moving
+  ticker. It is a plain section like New Arrivals: a row that moves only
+  when the visitor moves it (swipe, mouse drag, the arrows or the
+  keyboard). The ticker component, its test and its CSS are removed.
+- Every product row on the homepage (`ScrollRow`) can now be dragged with
+  a mouse; a drag does not open the card it started on, a click does.
+- Browser test `e2e/home-offers.spec.ts`: no red background, no movement
+  by itself, a drag moves the row and stays on the page, a click opens
+  the product.
+
 ## 2026-11-19 — Tracking: rider privacy, WhatsApp, arrival and distance
 
 - Owner report: the tracking page showed a rider's email address (a rider
