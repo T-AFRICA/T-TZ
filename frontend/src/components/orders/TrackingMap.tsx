@@ -7,11 +7,11 @@ import "maplibre-gl/dist/maplibre-gl.css";
 
 /**
  * The rider's live position on an OpenFreeMap map (owner decision
- * 2026-11-19: free, no key, MapLibre GL). Shows only what the rider's phone
- * reported: the latest point as the rider marker and the path so far as a
- * red line. There are no store or address coordinates yet, so there is no
- * destination pin and no route; without a position the map shows Tanzania
- * and says why. MapLibre is loaded only on this page, after it renders.
+ * 2026-11-19: free, no key, MapLibre GL). Shows only what the phones
+ * reported: the rider's latest point as a lorry marker, the path so far as
+ * a red line, and the point the customer shared as a home pin. Without a
+ * rider position the map shows the home pin or Tanzania, and says why.
+ * MapLibre is loaded only on this page, after it renders.
  */
 
 export interface MapPoint {
@@ -22,37 +22,55 @@ export interface MapPoint {
 
 const STYLE_URL = "https://tiles.openfreemap.org/styles/positron";
 const TANZANIA = { center: [34.9, -6.4] as [number, number], zoom: 4.6 };
-const RIDER_ZOOM = 15;
+const CLOSE_ZOOM = 15;
+/** Room for the arrival strip at the top, the controls and the phone sheet at the bottom. */
+const FRAME_PADDING = { top: 110, bottom: 100, left: 60, right: 70 };
 const BRAND_RED = "#d71920";
+const SVG = 'viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"';
 
 function reducedMotion(): boolean {
   return typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 }
 
+/** The rider: a lorry in a red disc with a soft pulse (globals.css). */
 function riderElement(): HTMLElement {
   const element = document.createElement("div");
   element.className = "tracking-rider-marker";
   element.setAttribute("aria-hidden", "true");
-  element.innerHTML =
-    '<span class="tracking-rider-pulse"></span><span class="tracking-rider-dot"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18.5" cy="17.5" r="3.5"/><circle cx="5.5" cy="17.5" r="3.5"/><circle cx="15" cy="5" r="1"/><path d="M12 17.5V14l-3-3 4-3 2 3h2"/></svg></span>';
+  element.innerHTML = `<span class="tracking-rider-pulse"></span><span class="tracking-rider-dot"><svg ${SVG}><path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"/><path d="M15 18H9"/><path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14"/><circle cx="17" cy="18" r="2"/><circle cx="7" cy="18" r="2"/></svg></span>`;
+  return element;
+}
+
+/** The customer's shared point: a house on a dark pin. */
+function homeElement(): HTMLElement {
+  const element = document.createElement("div");
+  element.className = "tracking-home-marker";
+  element.setAttribute("aria-hidden", "true");
+  element.innerHTML = `<span class="tracking-home-dot"><svg ${SVG}><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></span>`;
   return element;
 }
 
 export function TrackingMap({
   path,
+  destination,
   overlay,
   children,
 }: {
   /** Oldest first; the last point is where the rider is now. */
   path: readonly MapPoint[];
-  /** A short message over the map when there is no position to show. */
+  /** The point the customer shared; null without one. */
+  destination: { lat: number; lng: number } | null;
+  /** A short message over the map when there is nothing to follow. */
   overlay: string | null;
   /** Floating content at the top of the map (the arrival strip). */
   children?: React.ReactNode;
 }) {
   const container = useRef<HTMLDivElement>(null);
   const map = useRef<MapLibreMap | null>(null);
-  const marker = useRef<Marker | null>(null);
+  const rider = useRef<Marker | null>(null);
+  const home = useRef<Marker | null>(null);
+  /** What the map was last framed on, so a new kind of view frames again and updates do not. */
+  const framed = useRef<string | null>(null);
   const [ready, setReady] = useState(false);
   const [failed, setFailed] = useState(false);
   const latest = path.at(-1) ?? null;
@@ -90,6 +108,8 @@ export function TrackingMap({
             layout: { "line-cap": "round", "line-join": "round" },
             paint: { "line-color": BRAND_RED, "line-width": 4, "line-opacity": 0.85 },
           });
+          // The compact attribution starts folded to its (i) button; it opens on a tap.
+          container.current?.querySelector(".maplibregl-ctrl-attrib")?.classList.remove("maplibregl-compact-show");
           map.current = instance;
           setReady(true);
         });
@@ -99,50 +119,84 @@ export function TrackingMap({
       });
     return () => {
       cancelled = true;
-      marker.current?.remove();
-      marker.current = null;
+      rider.current?.remove();
+      home.current?.remove();
+      rider.current = null;
+      home.current = null;
       instance?.remove();
       map.current = null;
     };
   }, []);
 
-  // Draw the path and move the rider whenever a new position arrives.
+  // Draw the path, move the rider, place the home pin; frame both the first time they are known.
   useEffect(() => {
     const instance = map.current;
     if (!ready || !instance) return;
-    const source = instance.getSource<GeoJSONSource>("rider-path");
-    source?.setData({
+    instance.getSource<GeoJSONSource>("rider-path")?.setData({
       type: "FeatureCollection",
       features:
         path.length > 1
           ? [{ type: "Feature", properties: {}, geometry: { type: "LineString", coordinates: path.map((p) => [p.lng, p.lat]) } }]
           : [],
     });
-    if (!latest) {
-      marker.current?.remove();
-      marker.current = null;
-      instance.jumpTo(TANZANIA);
-      return;
-    }
-    const position: [number, number] = [latest.lng, latest.lat];
-    void import("maplibre-gl").then(({ Marker: MarkerClass }) => {
-      if (!map.current) return;
-      if (!marker.current) {
-        marker.current = new MarkerClass({ element: riderElement() }).setLngLat(position).addTo(map.current);
-        map.current.jumpTo({ center: position, zoom: RIDER_ZOOM });
+    let cancelled = false;
+    void import("maplibre-gl").then(({ Marker: MarkerClass, LngLatBounds }) => {
+      const current = map.current;
+      if (cancelled || !current) return;
+      if (latest) {
+        const at: [number, number] = [latest.lng, latest.lat];
+        if (rider.current) rider.current.setLngLat(at);
+        else rider.current = new MarkerClass({ element: riderElement() }).setLngLat(at).addTo(current);
       } else {
-        marker.current.setLngLat(position);
-        if (reducedMotion()) map.current.jumpTo({ center: position });
-        else map.current.easeTo({ center: position, duration: 800 });
+        rider.current?.remove();
+        rider.current = null;
+      }
+      if (destination) {
+        const at: [number, number] = [destination.lng, destination.lat];
+        if (home.current) home.current.setLngLat(at);
+        else home.current = new MarkerClass({ element: homeElement(), anchor: "bottom" }).setLngLat(at).addTo(current);
+      } else {
+        home.current?.remove();
+        home.current = null;
+      }
+
+      const both = latest && destination;
+      const want = both ? "both" : latest ? "rider" : destination ? "home" : "none";
+      if (framed.current !== want) {
+        if (both) {
+          const bounds = new LngLatBounds([latest.lng, latest.lat], [latest.lng, latest.lat]).extend([destination.lng, destination.lat]);
+          current.fitBounds(bounds, { padding: FRAME_PADDING, maxZoom: 16, duration: reducedMotion() ? 0 : 600 });
+        } else if (latest || destination) {
+          const p = (latest ?? destination)!;
+          current.jumpTo({ center: [p.lng, p.lat], zoom: CLOSE_ZOOM });
+        } else {
+          current.jumpTo(TANZANIA);
+        }
+        framed.current = want;
+      } else if (latest && !both) {
+        // Follow the rider when only the rider is shown.
+        if (reducedMotion()) current.jumpTo({ center: [latest.lng, latest.lat] });
+        else current.easeTo({ center: [latest.lng, latest.lat], duration: 800 });
       }
     });
-  }, [ready, path, latest]);
+    return () => {
+      cancelled = true;
+    };
+  }, [ready, path, latest, destination]);
 
   const recenter = () => {
-    if (!map.current || !latest) return;
-    const target = { center: [latest.lng, latest.lat] as [number, number], zoom: RIDER_ZOOM };
-    if (reducedMotion()) map.current.jumpTo(target);
-    else map.current.easeTo({ ...target, duration: 600 });
+    const current = map.current;
+    if (!current || !latest) return;
+    void import("maplibre-gl").then(({ LngLatBounds }) => {
+      if (destination) {
+        const bounds = new LngLatBounds([latest.lng, latest.lat], [latest.lng, latest.lat]).extend([destination.lng, destination.lat]);
+        current.fitBounds(bounds, { padding: FRAME_PADDING, maxZoom: 16, duration: reducedMotion() ? 0 : 600 });
+      } else {
+        const target = { center: [latest.lng, latest.lat] as [number, number], zoom: CLOSE_ZOOM };
+        if (reducedMotion()) current.jumpTo(target);
+        else current.easeTo({ ...target, duration: 600 });
+      }
+    });
   };
 
   return (
@@ -153,7 +207,7 @@ export function TrackingMap({
           ref={container}
           className="h-full w-full"
           role="region"
-          aria-label={latest ? "Map with the rider's current location" : "Map of Tanzania"}
+          aria-label={latest ? "Map with the rider's current location" : destination ? "Map with your delivery location" : "Map of Tanzania"}
         />
       </div>
       {children ? <div className="pointer-events-none absolute inset-x-3 top-3 z-10">{children}</div> : null}
@@ -174,8 +228,8 @@ export function TrackingMap({
           type="button"
           onClick={recenter}
           className="tracking-recenter absolute bottom-[5.25rem] right-2.5 z-10 grid h-[29px] w-[29px] place-items-center rounded-[4px] bg-white text-[var(--text-primary)] shadow-[0_0_0_2px_rgba(0,0,0,0.1)] hover:bg-[#f2f2f2] focus-visible:outline-2 focus-visible:outline-[var(--color-action-red)]"
-          aria-label="Centre the map on the rider"
-          title="Centre on the rider"
+          aria-label={destination ? "Show the rider and your location" : "Centre the map on the rider"}
+          title={destination ? "Show the rider and your location" : "Centre on the rider"}
         >
           <LocateFixed size={16} aria-hidden="true" />
         </button>

@@ -140,10 +140,13 @@ by the hygiene check).
 While an order is on its way, the rider's delivery page shares the phone's
 location (the browser asks the rider once; at most every 15 seconds, only
 while that page is open). The customer's tracking page on the storefront
-shows the rider's first name, a Call button with the rider's phone, and
-the rider's position and path on an OpenFreeMap map (free, no key).
-Arrival time and distance say "Not available": there are no store or
-delivery-address coordinates yet.
+shows the rider's first name and phone (Call and WhatsApp), and the
+rider's position and path on an OpenFreeMap map (free, no key). When the
+customer presses "Share my location", the map shows their home pin with
+the distance and an arrival estimate, and the rider's delivery page gets
+"Directions to the customer's pin". That needs
+`database/migrations/0013_delivery_point.sql` (after 0012), which also
+keeps a rider's email address off the customer's page.
 
 1. Central Admin project: `database/admin-migrations/0004_admin_phone.sql`
    (after 0003). Riders → "Add a rider" takes the email the rider signs in

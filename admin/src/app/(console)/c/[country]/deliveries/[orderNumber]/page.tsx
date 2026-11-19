@@ -69,12 +69,25 @@ export default async function DeliveryPage({ params }: { params: Promise<{ count
             <a href={`tel:${delivery.contact.phone}`} className={buttonClass.primary}>
               Call {delivery.contact.phone}
             </a>
+            {delivery.destination ? (
+              <a
+                href={`https://www.google.com/maps/dir/?api=1&destination=${delivery.destination.lat},${delivery.destination.lng}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={buttonClass.secondary}
+              >
+                Directions to the customer&apos;s pin
+              </a>
+            ) : null}
             {maps ? (
               <a href={maps} target="_blank" rel="noopener noreferrer" className={buttonClass.secondary}>
                 Open in Maps
               </a>
             ) : null}
           </div>
+          {onTheWay && !delivery.destination ? (
+            <p className="text-xs text-muted">The customer has not shared their location yet; use the address.</p>
+          ) : null}
         </div>
       </Panel>
 

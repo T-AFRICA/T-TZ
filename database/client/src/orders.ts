@@ -161,10 +161,57 @@ export interface CustomerTracking {
   status: string;
   /** When the order reached each status, from the order's history (oldest first). */
   events: { status: string; at: string }[];
-  /** While the order is on its way: the rider's first name and phone. */
-  rider: { name: string; phone: string | null } | null;
+  /**
+   * While the order is on its way: the rider's first name (null when the
+   * records have none fit to show, never an email address) and phone.
+   */
+  rider: { name: string | null; phone: string | null } | null;
   /** While the order is on its way: the rider's path so far, oldest first. */
   path: CustomerTrackingPoint[];
+  /** Where the customer said the order should go (migration 0013); null without one. */
+  destination: { lat: number; lng: number; at: string } | null;
+}
+
+/** A rider's first name for a customer: nothing that is or contains an email address. */
+function riderFirstName(value: unknown): string | null {
+  const first = typeof value === "string" ? (value.trim().split(/\s+/)[0] ?? "") : "";
+  return first === "" || first.includes("@") ? null : first;
+}
+
+function trackingPoint(value: unknown): { lat: number; lng: number; at: string } | null {
+  if (!value || typeof value !== "object") return null;
+  const p = value as Json;
+  const lat = Number(p.lat);
+  const lng = Number(p.lng);
+  return Number.isFinite(lat) && Number.isFinite(lng) ? { lat, lng, at: iso(p.at) } : null;
+}
+
+export type DeliveryPointResult = "saved" | "not_found" | "finished" | "invalid_request" | "unavailable";
+
+/**
+ * The signed-in customer says where their order should go (migration 0013):
+ * their phone's position, for the arrival time, the distance and the
+ * rider's directions. "unavailable" before the migration is applied.
+ */
+export async function setDeliveryPoint(
+  db: Db,
+  access: Access,
+  orderNumber: string,
+  point: { lat: number; lng: number; accuracy: number | null },
+): Promise<DeliveryPointResult> {
+  let raw: unknown;
+  try {
+    const [row] = await withAccess(db, access, (tx) =>
+      tx.query<{ result: unknown }>(`select customer_set_delivery_point($1, $2, $3, $4) as result`, [orderNumber, point.lat, point.lng, point.accuracy]),
+    );
+    raw = typeof row?.result === "string" ? JSON.parse(row.result) : row?.result;
+  } catch (error) {
+    if ((error as { code?: unknown } | null)?.code === "42883") return "unavailable";
+    throw error;
+  }
+  const r = (raw ?? {}) as Json;
+  if (r.ok === true) return "saved";
+  return r.code === "finished" || r.code === "not_found" ? r.code : "invalid_request";
 }
 
 /**
@@ -191,10 +238,11 @@ export async function getCustomerTracking(db: Db, access: Access, orderNumber: s
   return {
     status: String(t.status),
     events: list(t.events).map((e) => ({ status: String(e.status), at: iso(e.at) })),
-    rider: rider ? { name: String(rider.name ?? ""), phone: nullableText(rider.phone) } : null,
+    rider: rider ? { name: riderFirstName(rider.name), phone: nullableText(rider.phone) } : null,
     path: list(t.path)
       .map((p) => ({ lat: Number(p.lat), lng: Number(p.lng), accuracy: p.accuracy === null || p.accuracy === undefined ? null : Number(p.accuracy), at: iso(p.at) }))
       .filter((p) => Number.isFinite(p.lat) && Number.isFinite(p.lng)),
+    destination: trackingPoint(t.destination),
   };
 }
 

@@ -398,6 +398,8 @@ export const riderDeliverySchema = z.object({
   /** Set while too many wrong codes lock the order. */
   codeLockedUntil: z.string().datetime().nullable(),
   attempts: z.array(deliveryAttempt),
+  /** Where the customer said the order should go, for directions (country migration 0013); absent from older countries. */
+  destination: z.object({ lat: z.number().min(-90).max(90), lng: z.number().min(-180).max(180) }).nullable().default(null),
 });
 
 export const riderDeliveryResponseSchema = z.discriminatedUnion("ok", [

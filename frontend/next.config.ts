@@ -40,7 +40,9 @@ const securityHeaders = [
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
   {
     key: "Permissions-Policy",
-    value: "camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()",
+    // geolocation: the customer may share their location for an order's
+    // arrival time (tracking page, owner decision 2026-11-19); only this site.
+    value: "camera=(), microphone=(), geolocation=(self), payment=(), usb=(), interest-cohort=()",
   },
   // Two years, subdomains included. Vercel sets HSTS on its edge too; this
   // keeps the guarantee if the host changes. Submit to the preload list only

@@ -756,6 +756,25 @@ details.drawer-acc[open] > ul > li {
   border: 3px solid #fff;
   box-shadow: 0 4px 12px rgba(17, 17, 17, 0.28);
 }
+.tracking-home-marker {
+  display: grid;
+  justify-items: center;
+}
+.tracking-home-dot {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 9999px 9999px 9999px 2px;
+  transform: rotate(-45deg);
+  background: var(--color-premium-black, #111);
+  color: #fff;
+  border: 3px solid #fff;
+  box-shadow: 0 4px 12px rgba(17, 17, 17, 0.28);
+}
+.tracking-home-dot svg {
+  transform: rotate(45deg);
+}
 .tracking-rider-pulse {
   position: absolute;
   inset: 0;

@@ -14,7 +14,7 @@ import {
 } from "@tronic/api-contracts";
 import { ANON, withAccess } from "../src/db";
 import { handleCountryAdminRequest, type CountryAdminResponse, type CountryAdminService } from "../src/country-admin";
-import { getCustomerTracking, placeCodOrder } from "../src/orders";
+import { getCustomerTracking, placeCodOrder, setDeliveryPoint } from "../src/orders";
 import { createAuthUser, createTestDatabase, type TestDatabase } from "../src/testing";
 
 /**
@@ -289,6 +289,54 @@ describe("live tracking", () => {
     await asRider("POST", `/deliveries/${orderNumber}/deliver`, { code, cashCollectedMinor: Number(total), photo: image(), signature: image() });
     expect(await customerTracking(orderNumber, PHONE)).toMatchObject({ status: "delivered", rider: null, path: [] });
     expect((await asRider("POST", `/deliveries/${orderNumber}/location`, point)).body).toEqual({ ok: false, code: "not_on_the_way" });
+  });
+
+  it("never shows the customer an email address as the rider's name", async () => {
+    const { orderNumber } = await packedOrder();
+    // A rider without a name in the admin was given with their email (owner report 2026-11-19).
+    await assign(orderNumber, RIDER, "rider.person@example.test");
+    await asRider("POST", `/deliveries/${orderNumber}/pickup`, {});
+    expect(await customerTracking(orderNumber, PHONE)).toMatchObject({ rider: { name: null } });
+    const [row] = await withAccess(t.db, ANON, (tx) => tx.query<{ result: unknown }>(`select customer_order_tracking($1, $2) as result`, [orderNumber, PHONE]));
+    expect(JSON.stringify(row?.result)).not.toContain("@");
+  });
+
+  it("the signed-in customer shares where the order should go; the rider gets it for directions", async () => {
+    const owner = { role: "authenticated" as const, userId: await createAuthUser(t.db, "owner.point@example.test") };
+    const stranger = { role: "authenticated" as const, userId: await createAuthUser(t.db, "stranger.point@example.test") };
+    const placed = await placeCodOrder(t.db, owner, {
+      idempotencyKey: randomUUID(),
+      country: "TZ",
+      contact: { name: "Owner Point", email: "owner.point@example.test", phone: PHONE },
+      delivery: { method: "home", region: "Dar es Salaam", district: "Ilala", ward: "Upanga", street: "Plot 9", extra: "", notes: "" },
+      lines: [{ product: "sample-led-panel", color: null, variant: null, quantity: 1 }],
+      expectedTotalMinor: null,
+    });
+    if (!placed.ok) throw new Error(placed.code);
+    const orderNumber = placed.orderNumber;
+    const home = { lat: -6.8, lng: 39.28, accuracy: 15 };
+
+    // Only the owner, with sensible numbers; a guest or another customer cannot.
+    expect(await setDeliveryPoint(t.db, stranger, orderNumber, home)).toBe("not_found");
+    await expect(setDeliveryPoint(t.db, ANON, orderNumber, home)).rejects.toThrow(/permission denied/);
+    expect(await setDeliveryPoint(t.db, owner, orderNumber, { lat: 95, lng: 39, accuracy: null })).toBe("invalid_request");
+    expect(await setDeliveryPoint(t.db, owner, orderNumber, home)).toBe("saved");
+    // Moved: the new point replaces the old one.
+    expect(await setDeliveryPoint(t.db, owner, orderNumber, { ...home, lat: -6.81 })).toBe("saved");
+    expect((await getCustomerTracking(t.db, owner, orderNumber, null))?.destination).toMatchObject({ lat: -6.81, lng: 39.28 });
+
+    for (const status of ["confirmed", "processing", "packed"]) await moveTo(orderNumber, status);
+    await assign(orderNumber);
+    const forRider = await asRider("GET", `/deliveries/${orderNumber}`);
+    expect(riderDeliveryResponseSchema.parse(forRider.body)).toMatchObject({ ok: true, delivery: { destination: { lat: -6.81, lng: 39.28 } } });
+    // Another rider gets nothing of this order.
+    expect((await asRider("GET", `/deliveries/${orderNumber}`, undefined, OTHER_RIDER)).body).toEqual({ ok: false, code: "not_found" });
+
+    // Finished: no more sharing, and the point is no longer shown.
+    await moveTo(orderNumber, "cancelled");
+    expect(await setDeliveryPoint(t.db, owner, orderNumber, home)).toBe("finished");
+    expect((await getCustomerTracking(t.db, owner, orderNumber, null))?.destination).toBeNull();
+    await expect(withAccess(t.db, owner, (tx) => tx.query(`select * from order_delivery_points`))).rejects.toThrow(/permission denied/);
   });
 
   it("keeps the location table private", async () => {
