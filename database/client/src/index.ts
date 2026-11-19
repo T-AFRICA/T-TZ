@@ -9,6 +9,7 @@ export { DatabaseCatalogClient, loadPublicProducts, rowToProduct } from "./catal
 export {
   CUSTOMER_ORDER_PAGE_SIZE,
   ORDER_STATUSES,
+  claimGuestOrders,
   countCustomerOrdersByStatus,
   getCustomerOrder,
   listCustomerOrderPage,

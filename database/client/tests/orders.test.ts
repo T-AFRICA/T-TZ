@@ -2,8 +2,8 @@ import { randomUUID } from "node:crypto";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { ACTIVE_COUNTRY, COUNTRIES, formatMoney } from "@tronic/country-config";
 import { ANON, withAccess, type Access } from "../src/db";
-import { listCustomerOrders, placeCodOrder, trackOrder, type PlaceCodOrderInput } from "../src/orders";
-import { createAuthUser, createTestDatabase, type TestDatabase } from "../src/testing";
+import { claimGuestOrders, listCustomerOrders, placeCodOrder, trackOrder, type PlaceCodOrderInput } from "../src/orders";
+import { createAdminAuthUser, createAuthUser, createTestDatabase, type TestDatabase } from "../src/testing";
 
 /**
  * Cash on Delivery orders (migration 0004) on a disposable PGlite database.
@@ -307,6 +307,36 @@ describe("reading orders", () => {
     expect(await trackOrder(t.db, placed.orderNumber.toLowerCase(), "+255712345678")).toMatchObject({ found: true });
     expect(await trackOrder(t.db, placed.orderNumber, "someone@example.test")).toEqual({ found: false });
     expect(await trackOrder(t.db, "TZ-000000-00000000", "asha@example.test")).toEqual({ found: false });
+  });
+});
+
+describe("guest orders joining the account (migration 0014)", () => {
+  it("a customer with a verified email takes over the guest orders placed with it, and nothing else", async () => {
+    const asha = await createAdminAuthUser(t.db, "asha.claim@example.test", true);
+    const guest = await placeCodOrder(t.db, ANON, order({ contact: { name: "Asha", email: "Asha.Claim@Example.test", phone: "+255712345678" } }));
+    const stranger = await placeCodOrder(t.db, ANON, order({ contact: { name: "Neema", email: "neema@example.test", phone: "+255712345670" } }));
+    const bobs = await placeCodOrder(t.db, { role: "authenticated", userId: bob }, order({ contact: { name: "Bob", email: "asha.claim@example.test", phone: "+255712345671" } }));
+    if (!guest.ok || !stranger.ok || !bobs.ok) throw new Error("order failed");
+    const access: Access = { role: "authenticated", userId: asha };
+
+    expect(await listCustomerOrders(t.db, access)).toEqual([]);
+    expect(await claimGuestOrders(t.db, access)).toBe(1);
+    expect((await listCustomerOrders(t.db, access)).map((o) => o.orderNumber)).toEqual([guest.orderNumber]);
+    // Running it again changes nothing; another account's order and another address's guest order stay where they are.
+    expect(await claimGuestOrders(t.db, access)).toBe(0);
+    expect((await listCustomerOrders(t.db, { role: "authenticated", userId: bob })).map((o) => o.orderNumber)).toEqual([bobs.orderNumber]);
+    const [left] = await t.db.query<{ user_id: string | null }>(`select user_id from orders where order_number = $1`, [stranger.orderNumber]);
+    expect(left!.user_id).toBeNull();
+  });
+
+  it("an unverified address takes over nothing, and a guest session cannot call it", async () => {
+    const unverified = await createAdminAuthUser(t.db, "pending.claim@example.test", false);
+    const guest = await placeCodOrder(t.db, ANON, order({ contact: { name: "Pending", email: "pending.claim@example.test", phone: "+255712345678" } }));
+    if (!guest.ok) throw new Error("order failed");
+    expect(await claimGuestOrders(t.db, { role: "authenticated", userId: unverified })).toBe(0);
+    const [row] = await t.db.query<{ user_id: string | null }>(`select user_id from orders where order_number = $1`, [guest.orderNumber]);
+    expect(row!.user_id).toBeNull();
+    await expect(withAccess(t.db, ANON, (tx) => tx.query(`select customer_claim_guest_orders()`))).rejects.toThrow(/permission denied/);
   });
 });
 

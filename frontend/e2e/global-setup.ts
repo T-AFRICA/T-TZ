@@ -29,7 +29,10 @@ export default async function globalSetup() {
   const db = createPostgresDb(`postgres://postgres:postgres@127.0.0.1:${PORTS.database}/postgres`, { max: 1 });
 
   const auth = new FakeAuth(async (user) => {
-    await db.query(`insert into auth.users (id, email) values ($1, $2) on conflict (id) do nothing`, [user.id, user.email]);
+    await db.query(
+      `insert into auth.users (id, email, email_confirmed_at) values ($1, $2, case when $3::boolean then now() end) on conflict (id) do nothing`,
+      [user.id, user.email, user.confirmed],
+    );
   });
   await auth.start(PORTS.auth);
 

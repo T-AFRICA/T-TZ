@@ -3,6 +3,25 @@
 Meaningful implementation changes, newest first. Dates are work dates;
 nothing below is released.
 
+## 2026-11-19 — Guest orders show in the customer's account
+
+- Owner report: an order reached the shop and a rider, but the customer's
+  account showed 0 orders. The order was placed without signing in (a
+  guest order, linked to no account), and the account lists only orders
+  linked to it.
+- Migration `0014_claim_guest_orders.sql` (draft):
+  `customer_claim_guest_orders()` links the guest orders placed with the
+  signed-in customer's verified email address to their account. An
+  unverified address takes over nothing; an order already linked to an
+  account never moves.
+- Every account page calls it before reading orders (`requireCustomer`);
+  before the migration is applied it does nothing.
+- Owner setting this relies on: keep Supabase Auth "Confirm email" on, so
+  an address counts as verified only after its owner opened the link.
+- Tests: database (verified, unverified, another account's order, guest
+  session refused) and browser (`e2e/account-portal.spec.ts`: a guest order
+  shows after signing in).
+
 ## 2026-11-19 — Homepage Offers: no red band, moved by hand only
 
 - Owner request: Offers & Promotions loses its red band and its moving
