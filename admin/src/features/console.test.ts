@@ -67,7 +67,7 @@ describe("navigation", () => {
     const sections = buildNav(actor([{ role: "master_super_admin", countryId: null }]), tanzania);
     expect(labels(sections)).toEqual([
       ["Platform", ["Overview", "Countries", "Administrators", "Audit log", "Security events"]],
-      ["Tanzania", ["Dashboard", "Products", "Categories", "Inventory", "Orders", "Customers", "Website content", "Promotions", "Reports", "Staff", "Settings"]],
+      ["Tanzania", ["Dashboard", "Products", "Categories", "Inventory", "Orders", "Customers", "Website content", "Promotions", "Reports", "Riders", "Staff", "Settings"]],
     ]);
     expect(sections[1]!.items.find((item) => item.label === "Orders")?.href).toBe("/c/tz/orders");
   });
@@ -75,14 +75,14 @@ describe("navigation", () => {
   it("shows a Country Super Admin their country and the audit log, without the platform administration", () => {
     const sections = buildNav(actor([{ role: "country_super_admin", countryId: "tz" }]), tanzania);
     expect(labels(sections)[0]).toEqual(["Platform", ["Overview", "Audit log"]]);
-    expect(sections[1]!.items).toHaveLength(11);
+    expect(sections[1]!.items).toHaveLength(12);
   });
 
   it("shows staff only what their role covers", () => {
     const sections = buildNav(actor([{ role: "order_manager", countryId: "tz" }], false), tanzania);
     expect(labels(sections)).toEqual([
       ["Platform", ["Overview"]],
-      ["Tanzania", ["Dashboard", "Products", "Inventory", "Orders", "Customers"]],
+      ["Tanzania", ["Dashboard", "Products", "Inventory", "Orders", "Customers", "Riders"]],
     ]);
   });
 

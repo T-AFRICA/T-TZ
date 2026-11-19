@@ -23,6 +23,7 @@ export {
   BankIcon,
   BanknoteIcon,
   BellIcon,
+  BikeIcon,
   BoxesIcon,
   CartIcon,
   ChartIcon,

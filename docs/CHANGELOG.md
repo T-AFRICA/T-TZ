@@ -3,6 +3,28 @@
 Meaningful implementation changes, newest first. Dates are work dates;
 nothing below is released.
 
+## 2026-11-19 — Customers
+
+- Country migration `0011_customer_admin.sql` (draft) and signed
+  `GET /customers`, `GET /customers/<id>` (`customers.read`), read only.
+- Admin: Customers lists website accounts (orders, paid total, last order,
+  joined), searchable by email, name or phone, 25 per page; a customer's
+  page shows contact details and every order, linked to Orders for whoever
+  may see them. The test stand-in for Supabase Auth now has `created_at`,
+  as Supabase has.
+
+## 2026-11-19 — Riders page
+
+- Owner request: a "Riders" module in the sidebar with every rider of the
+  country and their details.
+- Country migration `0010_rider_figures.sql` (draft) and signed
+  `GET /riders`, `GET /riders/<id>` (`deliveries.assign`).
+- Admin: Riders (Order Manager, Country Super Admin): each rider with the
+  orders with them now, on the way, delivered in 7 days, failed attempts,
+  cash collected today and last delivery; a rider's page with their
+  orders now, the last 50 deliveries (cash collected) and failed attempts
+  of 30 days. Riders themselves cannot open it.
+
 ## 2026-11-19 — Country dashboard figures
 
 - Owner report: the Country Super Admin's dashboard showed six

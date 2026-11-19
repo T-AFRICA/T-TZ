@@ -7,6 +7,8 @@ import {
   type DeliveryProofKind,
   type DeliveryProofResponse,
   type OrderStatus,
+  type RiderDeliveries,
+  type RiderFigures,
   type RiderDeliveryList,
   type RiderDeliveryResponse,
   type RiderDeliveryUpdate,
@@ -58,6 +60,65 @@ function decodeImage(data: string): Buffer | null {
 
 export function deliveryFunctions(withServiceAccess: ServiceAccess) {
   return {
+    async riderFigures(db: Db, country: string): Promise<RiderFigures> {
+      const [figures, money] = await Promise.all([
+        call(withServiceAccess, db, `select admin_rider_figures($1::char(2)) as result`, [country]),
+        call(withServiceAccess, db, `select jsonb_build_object('currency', c.currency, 'exponent', cur.exponent) as result from countries c join currencies cur on cur.code = c.currency where c.code = $1`, [country]),
+      ]);
+      const byRider = object(figures) ?? {};
+      const currency = object(money) ?? {};
+      return {
+        ok: true,
+        currency: String(currency.currency),
+        currencyExponent: int(currency.exponent),
+        riders: Object.fromEntries(
+          Object.entries(byRider).map(([riderId, raw]) => {
+            const f = (object(raw) ?? {}) as Json;
+            return [
+              riderId,
+              {
+                open: int(f.open),
+                onTheWay: int(f.on_the_way),
+                deliveredToday: int(f.delivered_today),
+                delivered7Days: int(f.delivered_7_days),
+                delivered30Days: int(f.delivered_30_days),
+                failed7Days: int(f.failed_7_days),
+                cashTodayMinor: int(f.cash_today_minor),
+                lastDeliveredAt: isoOrNull(f.last_delivered_at),
+              },
+            ];
+          }),
+        ),
+      };
+    },
+
+    async riderDeliveries(db: Db, country: string, riderId: string): Promise<RiderDeliveries> {
+      const r = object(await call(withServiceAccess, db, `select admin_rider_deliveries($1::char(2), $2::uuid, $3) as result`, [country, riderId, 50])) ?? {};
+      return {
+        ok: true,
+        currency: String(r.currency),
+        currencyExponent: int(r.currency_exponent),
+        deliveries: list(r.deliveries).map((d) => ({
+          orderNumber: String(d.order_number),
+          status: String(d.status) as OrderStatus,
+          contactName: String(d.contact_name),
+          district: text(d.district),
+          region: text(d.region),
+          paymentMethod: String(d.payment_method),
+          totalMinor: int(d.total_minor),
+          cashCollectedMinor: d.cash_collected_minor === null || d.cash_collected_minor === undefined ? null : int(d.cash_collected_minor),
+          assignedAt: iso(d.assigned_at),
+          deliveredAt: isoOrNull(d.delivered_at),
+        })),
+        attempts: list(r.attempts).map((a) => ({
+          orderNumber: String(a.order_number),
+          reason: String(a.reason) as DeliveryFailureReason,
+          note: text(a.note),
+          createdAt: iso(a.created_at),
+        })),
+      };
+    },
+
     async assign(db: Db, country: string, orderNumber: string, rider: { riderId: string; riderName: string }, actorId: string): Promise<DeliveryAssignResult> {
       const result = object(
         await call(withServiceAccess, db, `select admin_assign_delivery($1::char(2), $2, $3::uuid, $4, $5::uuid) as result`, [

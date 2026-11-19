@@ -33,6 +33,12 @@ export const COUNTRY_ADMIN_ENDPOINTS = {
   listMyDeliveries: { method: "GET", path: "/deliveries", permission: "deliveries.perform" },
   getMyDelivery: { method: "GET", path: "/deliveries/:orderNumber", permission: "deliveries.perform" },
   updateMyDelivery: { method: "POST", path: "/deliveries/:orderNumber/:action", permission: "deliveries.perform" },
+  // Riders' figures for whoever assigns deliveries (migration 0010).
+  riderFigures: { method: "GET", path: "/riders", permission: "deliveries.assign" },
+  riderDeliveries: { method: "GET", path: "/riders/:riderId", permission: "deliveries.assign" },
+  // The customer directory, read only (migration 0011).
+  listCustomers: { method: "GET", path: "/customers", permission: "customers.read" },
+  getCustomer: { method: "GET", path: "/customers/:customerId", permission: "customers.read" },
 } as const;
 
 export type CountryAdminEndpoint = keyof typeof COUNTRY_ADMIN_ENDPOINTS;
@@ -85,6 +91,70 @@ export const countrySummarySchema = z.object({
 });
 
 export type CountrySummary = z.infer<typeof countrySummarySchema>;
+
+// --------------------------------------------------------------- customers --
+
+export const CUSTOMER_PAGE_SIZE = 25;
+
+export const customerListQuerySchema = z.object({
+  q: z.string().trim().max(120).optional(),
+  page: z.coerce.number().int().min(1).max(10_000).default(1),
+});
+
+export const customerListResponseSchema = z.object({
+  ok: z.literal(true),
+  total: z.number().int().nonnegative(),
+  page: z.number().int().positive(),
+  pageSize: z.number().int().positive(),
+  currency: z.string().regex(/^[A-Z]{3}$/),
+  currencyExponent: z.number().int().min(0).max(3),
+  customers: z.array(
+    z.object({
+      id: z.string().uuid(),
+      email: z.string().nullable(),
+      name: z.string().nullable(),
+      phone: z.string().nullable(),
+      createdAt: z.string().datetime(),
+      /** Orders of this country placed from the account. */
+      orders: z.number().int().nonnegative(),
+      /** Total of their paid orders, minor units. */
+      paidMinor: z.number().int().nonnegative(),
+      lastOrderAt: z.string().datetime().nullable(),
+    }),
+  ),
+});
+
+export const customerDetailResponseSchema = z.discriminatedUnion("ok", [
+  z.object({
+    ok: z.literal(true),
+    customer: z.object({
+      id: z.string().uuid(),
+      email: z.string().nullable(),
+      emailConfirmed: z.boolean(),
+      name: z.string().nullable(),
+      phone: z.string().nullable(),
+      createdAt: z.string().datetime(),
+      currency: z.string().regex(/^[A-Z]{3}$/),
+      currencyExponent: z.number().int().min(0).max(3),
+      orders: z.array(
+        z.object({
+          orderNumber: z.string(),
+          status: z.string(),
+          paymentStatus: z.string(),
+          paymentMethod: z.string(),
+          totalMinor: z.number().int().nonnegative(),
+          itemCount: z.number().int().nonnegative(),
+          createdAt: z.string().datetime(),
+        }),
+      ),
+    }),
+  }),
+  z.object({ ok: z.literal(false), code: z.literal("not_found") }),
+]);
+
+export type CustomerListQuery = { q?: string; page?: number };
+export type CustomerList = z.infer<typeof customerListResponseSchema>;
+export type CustomerDetailResponse = z.infer<typeof customerDetailResponseSchema>;
 
 // ------------------------------------------------------------------ orders --
 
@@ -323,6 +393,49 @@ export const riderDeliveryUpdateResponseSchema = z.discriminatedUnion("ok", [
   }),
 ]);
 
+/** One rider's figures in the country. "Today" is the country's own day. */
+export const riderFigureSchema = z.object({
+  open: z.number().int().nonnegative(),
+  onTheWay: z.number().int().nonnegative(),
+  deliveredToday: z.number().int().nonnegative(),
+  delivered7Days: z.number().int().nonnegative(),
+  delivered30Days: z.number().int().nonnegative(),
+  failed7Days: z.number().int().nonnegative(),
+  cashTodayMinor: minor,
+  lastDeliveredAt: z.string().datetime().nullable(),
+});
+
+export const riderFiguresResponseSchema = z.object({
+  ok: z.literal(true),
+  ...money,
+  /** By rider id; a rider who was never given an order is absent. */
+  riders: z.record(z.string().uuid(), riderFigureSchema),
+});
+
+export const riderDeliveriesResponseSchema = z.object({
+  ok: z.literal(true),
+  ...money,
+  deliveries: z.array(
+    z.object({
+      orderNumber: z.string().regex(ORDER_NUMBER_PATTERN),
+      status: orderStatus,
+      contactName: z.string(),
+      district: z.string().nullable(),
+      region: z.string().nullable(),
+      paymentMethod: z.string(),
+      totalMinor: minor,
+      cashCollectedMinor: minor.nullable(),
+      assignedAt: z.string().datetime(),
+      deliveredAt: z.string().datetime().nullable(),
+    }),
+  ),
+  /** Failed attempts of the last 30 days. */
+  attempts: z.array(z.object({ orderNumber: z.string().regex(ORDER_NUMBER_PATTERN), reason: z.enum(DELIVERY_FAILURE_REASONS), note: z.string().nullable(), createdAt: z.string().datetime() })),
+});
+
+export type RiderFigure = z.infer<typeof riderFigureSchema>;
+export type RiderFigures = z.infer<typeof riderFiguresResponseSchema>;
+export type RiderDeliveries = z.infer<typeof riderDeliveriesResponseSchema>;
 export type DeliveryAssignResult = z.infer<typeof deliveryAssignResponseSchema>;
 export type DeliveryInfo = z.infer<typeof deliveryInfoSchema>;
 export type DeliveryInfoResponse = z.infer<typeof deliveryInfoResponseSchema>;
@@ -348,6 +461,8 @@ export type CountryUnavailableReason =
   | "country_database_denied" // the country's database refused the admin role (service_role)
   | "country_deliveries_missing" // the country's database lacks deliveries (migration 0008)
   | "country_summary_missing" // the country's database lacks the dashboard figures (migration 0009)
+  | "country_rider_figures_missing" // the country's database lacks riders' figures (migration 0010)
+  | "country_customers_missing" // the country's database lacks the customer directory (migration 0011)
   | "unreachable" // no connection
   | "timeout"
   | "rejected" // the country refused the request (401/403)
@@ -375,6 +490,10 @@ export interface CountryAdminApi {
   listMyDeliveries(actorId: string): Promise<CountryApiResult<RiderDeliveryList>>;
   getMyDelivery(actorId: string, orderNumber: string): Promise<CountryApiResult<RiderDeliveryResponse>>;
   updateMyDelivery(actorId: string, orderNumber: string, action: DeliveryAction, update: RiderDeliveryUpdate): Promise<CountryApiResult<RiderDeliveryUpdateResult>>;
+  riderFigures(actorId: string): Promise<CountryApiResult<RiderFigures>>;
+  riderDeliveries(actorId: string, riderId: string): Promise<CountryApiResult<RiderDeliveries>>;
+  listCustomers(actorId: string, query?: CustomerListQuery): Promise<CountryApiResult<CustomerList>>;
+  getCustomer(actorId: string, customerId: string): Promise<CountryApiResult<CustomerDetailResponse>>;
 }
 
 /** A country whose service cannot be called. Every request answers with the reason; nothing is sent anywhere. */
@@ -393,6 +512,10 @@ export function unavailableCountryApi(reason: CountryUnavailableReason): Country
     listMyDeliveries: answer,
     getMyDelivery: answer,
     updateMyDelivery: answer,
+    riderFigures: answer,
+    riderDeliveries: answer,
+    listCustomers: answer,
+    getCustomer: answer,
   };
 }
 
@@ -476,6 +599,8 @@ export function createCountryAdminApi(options: CountryAdminApiOptions): CountryA
         else if (code === "database_permission") reason = "country_database_denied";
         else if (code === "delivery_admin_missing") reason = "country_deliveries_missing";
         else if (code === "summary_missing") reason = "country_summary_missing";
+        else if (code === "rider_figures_missing") reason = "country_rider_figures_missing";
+        else if (code === "customers_missing") reason = "country_customers_missing";
       }
       return { available: false, reason, statusCode: response.status, latencyMs: elapsed() };
     }
@@ -536,6 +661,20 @@ export function createCountryAdminApi(options: CountryAdminApiOptions): CountryA
     },
     updateMyDelivery(actorId, orderNumber, action, update) {
       return call("updateMyDelivery", riderDeliveryUpdateResponseSchema, actorId, { params: { orderNumber, action }, body: update });
+    },
+    riderFigures(actorId) {
+      return call("riderFigures", riderFiguresResponseSchema, actorId);
+    },
+    riderDeliveries(actorId, riderId) {
+      return call("riderDeliveries", riderDeliveriesResponseSchema, actorId, { params: { riderId } });
+    },
+    listCustomers(actorId, query = {}) {
+      return call("listCustomers", customerListResponseSchema, actorId, {
+        query: { q: query.q, page: query.page && query.page > 1 ? String(query.page) : undefined },
+      });
+    },
+    getCustomer(actorId, customerId) {
+      return call("getCustomer", customerDetailResponseSchema, actorId, { params: { customerId } });
     },
   };
 }

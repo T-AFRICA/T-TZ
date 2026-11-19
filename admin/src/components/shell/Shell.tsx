@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
+  BikeIcon,
   BoxesIcon,
   BrandMark,
   ChartIcon,
@@ -52,6 +53,7 @@ const ICONS: Record<NavIcon, (props: IconProps) => ReactNode> = {
   staff: UsersIcon,
   settings: SettingsIcon,
   deliveries: TruckIcon,
+  riders: BikeIcon,
 };
 
 export interface ShellCountry {

@@ -50,6 +50,8 @@ import {
   Tags,
   UserCog,
   Users,
+  // Delivery riders (admin)
+  Bike,
   // Checkout payment methods
   Banknote,
   CircleCheck,
@@ -114,6 +116,7 @@ export const SunIcon = wrap(Sun);
 export const TagsIcon = wrap(Tags);
 export const UserCogIcon = wrap(UserCog);
 export const UsersIcon = wrap(Users);
+export const BikeIcon = wrap(Bike);
 // Checkout payment methods (storefront).
 export const BanknoteIcon = wrap(Banknote);
 export const CheckCircleIcon = wrap(CircleCheck);

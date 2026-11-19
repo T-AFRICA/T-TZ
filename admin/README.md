@@ -135,6 +135,24 @@ by the hygiene check).
 4. Until step 2 is done, the delivery pages say the country's database
    does not have deliveries yet; orders keep working.
 
+## Customers (owner)
+
+"Customers" (for whoever holds `customers.read`: Order Manager, Customer
+Support, Country Super Admin) lists the country's website accounts with
+their orders, paid total and last order, searchable by email, name or
+phone; a customer's page shows their contact details and every order.
+Read only. Guest checkouts have no account and stay under Orders. Needs
+`database/migrations/0011_customer_admin.sql` in the country's project.
+
+## Riders page (owner)
+
+"Riders" (for whoever may assign deliveries) lists everyone with the Rider
+role in the country and, from the country, what each has with them now,
+on the way, delivered, failed attempts and the cash collected today; each
+rider's page shows their orders, recent deliveries and failed attempts.
+The figures need `database/migrations/0010_rider_figures.sql` in the
+country's Supabase project.
+
 ## Country dashboard figures (owner)
 
 Run `database/migrations/0009_admin_summary.sql` in the country's Supabase

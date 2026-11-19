@@ -261,7 +261,7 @@ test("staff see only their modules, which say they are not connected instead of 
   // No second step for a staff role.
   await inConsole(page);
   await expect(page).toHaveURL(/\/c\/tz$/);
-  await expect(consoleNav(page).getByRole("link")).toHaveText(["Overview", "Dashboard", "Products", "Inventory", "Orders", "Customers"]);
+  await expect(consoleNav(page).getByRole("link")).toHaveText(["Overview", "Dashboard", "Products", "Inventory", "Orders", "Customers", "Riders"]);
   await expect(page.getByText("Unavailable", { exact: true })).toHaveCount(6);
 
   // Orders come from Tanzania's own backend, which nobody has registered yet.
