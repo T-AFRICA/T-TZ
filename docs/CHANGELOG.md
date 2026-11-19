@@ -28,6 +28,22 @@ nothing below is released.
   (`order-flow.spec.ts`: signed out → sign in or register → back to
   checkout; signed-in orders linked to the account).
 
+## 2026-11-19 — A map on the rider's delivery page
+
+- Owner request: the rider's delivery page had only the address and map
+  links. It now has a map (MapLibre GL 5.24.0 and OpenFreeMap, as on the
+  customer's tracking page): the rider's own position from their phone as
+  a lorry, the point the customer shared as a home pin, and the straight-
+  line distance between them.
+- The position on the map is the one the phone already shares with the
+  customer while the order is on its way; nothing new is sent anywhere.
+  Before pickup the map shows only the customer's pin, when there is one.
+- Admin `Content-Security-Policy`: `connect-src` gains
+  `https://tiles.openfreemap.org`, `img-src` and `worker-src` gain `blob:`
+  (MapLibre's icons and worker). Only map tiles come from OpenFreeMap.
+- Tests: admin unit (distance) and `e2e/rider.spec.ts` on a 375px phone
+  (map, distance, directions link, no sideways scrolling).
+
 ## 2026-11-19 — Guest orders show in the customer's account
 
 - Owner report: an order reached the shop and a rider, but the customer's

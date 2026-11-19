@@ -359,3 +359,30 @@ dialog.console-dialog::backdrop {
   .auth-radiate { display: none; }
   .auth-brand::before, .auth-wordmark .auth-logo, .auth-foot, .auth-card, .auth-badge { animation: none; }
 }
+
+/* The rider's delivery map (2026-11-19): the rider as a lorry in a red disc
+   with a soft pulse, the customer's shared point as a dark home pin. The
+   same markers as the customer's tracking page on the storefront. */
+.rider-map-me { position: relative; width: 40px; height: 40px; }
+.rider-map-me-dot {
+  position: absolute; inset: 4px; display: grid; place-items: center; border-radius: 9999px;
+  background: #d71920; color: #fff; border: 3px solid #fff; box-shadow: 0 4px 12px rgba(17, 17, 17, 0.28);
+}
+.rider-map-me-pulse {
+  position: absolute; inset: 0; border-radius: 9999px; background: rgba(215, 25, 32, 0.25);
+  animation: rider-map-pulse 1.8s ease-out infinite;
+}
+@keyframes rider-map-pulse {
+  from { transform: scale(0.7); opacity: 1; }
+  to { transform: scale(1.6); opacity: 0; }
+}
+.rider-map-home { display: grid; justify-items: center; }
+.rider-map-home-dot {
+  display: grid; place-items: center; width: 34px; height: 34px; border-radius: 9999px 9999px 9999px 2px;
+  transform: rotate(-45deg); background: #111; color: #fff; border: 3px solid #fff; box-shadow: 0 4px 12px rgba(17, 17, 17, 0.28);
+}
+.rider-map-home-dot svg { transform: rotate(45deg); }
+
+@media (prefers-reduced-motion: reduce) {
+  .rider-map-me-pulse { animation: none; opacity: 0.6; }
+}
