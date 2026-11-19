@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ORDER_NUMBER_PATTERN } from "@tronic/api-contracts";
 import { DeliverForm, FailedAttemptForm } from "@/components/deliveries";
-import { LocationSharing } from "@/components/location-sharing";
+import { DeliveryMap } from "@/components/delivery-map";
 import { ConfirmAction } from "@/components/forms";
 import { Notice, PageHeader, Panel, StatusPill, buttonClass } from "@/components/ui";
 import { riderStepAction } from "@/features/deliveries/actions";
@@ -62,7 +62,9 @@ export default async function DeliveryPage({ params }: { params: Promise<{ count
 
       <Panel title="Where">
         <div className="flex flex-col gap-3">
-          {onTheWay ? <LocationSharing countryId={country.id} orderNumber={delivery.orderNumber} /> : null}
+          {onTheWay || (delivery.destination && delivery.status !== "delivered" && delivery.status !== "cancelled") ? (
+            <DeliveryMap countryId={country.id} orderNumber={delivery.orderNumber} sharing={onTheWay} destination={delivery.destination} />
+          ) : null}
           <p className="text-base text-ink [overflow-wrap:anywhere]">{address || "No address given"}</p>
           {place.notes ? <p className="rounded-lg bg-raised px-3 py-2 text-sm text-ink">Customer&apos;s note: {place.notes}</p> : null}
           <div className="flex flex-wrap gap-2">

@@ -74,6 +74,22 @@ test("an order manager gives a packed order to a rider; the rider delivers it wi
   await confirmStep(rider, "Next step", "Start the delivery");
   await expect(rider.getByText(/The customer can now see their code/).first()).toBeVisible();
 
+  // The rider's map: their own position (this phone) and the point the customer shared, with the distance.
+  // OpenFreeMap is not reached from the tests: the map says it could not load, the rest still works.
+  await rider.route("https://tiles.openfreemap.org/**", (route) => route.abort());
+  await rider.context().grantPermissions(["geolocation"]);
+  await rider.context().setGeolocation({ latitude: -6.78, longitude: 39.25 });
+  await countrySql(
+    `insert into order_delivery_points (order_id, lat, lng, accuracy_m) select id, -6.7924, 39.2083, 20 from orders where order_number = $1
+       on conflict (order_id) do update set lat = excluded.lat, lng = excluded.lng`,
+    [juma],
+  );
+  await rider.reload();
+  await expect(rider.getByRole("region", { name: "Map with your location and the customer's pin" })).toBeVisible();
+  await expect(rider.getByTestId("rider-distance")).toHaveText(/About 4\.\d km from you to the customer's pin/);
+  await expect(rider.getByRole("link", { name: "Directions to the customer's pin" })).toHaveAttribute("href", /destination=-6\.7924\d*,39\.2083/);
+  expect(await sideways(rider)).toBeLessThanOrEqual(1);
+
   // What the customer sees on their order page: the code, only now.
   const [{ code }] = (await countrySql<{ code: string }>(
     `select d.code from deliveries d join orders o on o.id = d.order_id where o.order_number = $1`,
