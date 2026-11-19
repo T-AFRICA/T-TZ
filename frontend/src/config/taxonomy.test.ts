@@ -17,7 +17,7 @@ describe("category taxonomy", () => {
     }
   });
 
-  it("exposes the dedicated Meter navbar item at /meter (FR-003)", () => {
-    expect(METER_NAV_ITEM.href).toBe("/meter");
+  it("points the dedicated Meter navbar item at TRONIC's meter token site (FR-003; owner decision 2026-11-19)", () => {
+    expect(METER_NAV_ITEM).toEqual({ href: "https://metertokentz.vercel.app/", label: "Meter Token Issuer" });
   });
 });

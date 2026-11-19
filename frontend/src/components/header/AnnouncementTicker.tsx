@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ANNOUNCEMENTS } from "@/config/site";
+import { ANNOUNCEMENTS, externalLinkProps } from "@/config/site";
 
 const ROTATE_INTERVAL_MS = 5000;
 
@@ -47,6 +47,7 @@ export function AnnouncementTicker() {
       <span className="hidden sm:inline">{item.message}</span>{" "}
       <Link
         href={item.href}
+        {...externalLinkProps(item.href)}
         className="font-semibold text-white underline decoration-white/80 decoration-2 underline-offset-4 transition-colors hover:decoration-white"
       >
         {item.linkLabel}

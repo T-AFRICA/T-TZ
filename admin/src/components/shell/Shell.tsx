@@ -4,8 +4,8 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
+  BikeIcon,
   BoxesIcon,
-  BrandMark,
   ChartIcon,
   ChevronDownIcon,
   ClipboardListIcon,
@@ -31,8 +31,10 @@ import {
   XIcon,
   type IconProps,
 } from "@tronic/ui";
+import { WhiteMark } from "@/components/brand";
 import { countryIdFromPath, isCurrentNavItem, type NavIcon, type NavItem, type NavSection } from "@/features/nav";
 import { SIDEBAR_COOKIE, THEME_COOKIE, THEME_LABEL, nextTheme, type Theme } from "@/features/theme";
+
 
 const ICONS: Record<NavIcon, (props: IconProps) => ReactNode> = {
   overview: GridIcon,
@@ -52,6 +54,7 @@ const ICONS: Record<NavIcon, (props: IconProps) => ReactNode> = {
   staff: UsersIcon,
   settings: SettingsIcon,
   deliveries: TruckIcon,
+  riders: BikeIcon,
 };
 
 export interface ShellCountry {
@@ -137,11 +140,13 @@ function NavList({ sections, pathname, collapsed, onNavigate }: { sections: NavS
                     aria-current={current ? "page" : undefined}
                     title={collapsed ? item.label : undefined}
                     onClick={onNavigate}
-                    className={`flex min-h-10 items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
-                      current ? "bg-sidebar-active text-white shadow-[inset_3px_0_0_var(--a-accent)]" : "text-sidebar-muted hover:bg-sidebar-hover hover:text-sidebar-ink"
+                    className={`group relative flex min-h-10 items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-[background-color,color,transform] duration-200 ease-out before:absolute before:inset-y-2 before:left-0 before:w-[3px] before:rounded-full before:bg-white before:transition-transform before:duration-200 before:ease-out ${
+                      current
+                        ? "bg-sidebar-active text-white before:scale-y-100"
+                        : "text-sidebar-muted before:scale-y-0 hover:bg-sidebar-hover hover:text-sidebar-ink hover:before:scale-y-50 motion-safe:hover:translate-x-1"
                     } ${collapsed ? "justify-center px-0" : ""}`}
                   >
-                    <Icon size={18} className="shrink-0" />
+                    <Icon size={18} className="shrink-0 transition-transform duration-200 ease-out motion-safe:group-hover:scale-110" />
                     <span className={collapsed ? "sr-only" : "truncate"}>{item.label}</span>
                   </Link>
                 </li>
@@ -198,14 +203,12 @@ export function Shell({ platform, countries, allCountries, user, initialTheme, i
   const brand = (
     <Link href="/" className="flex min-h-16 items-center gap-3 border-b border-sidebar-line px-5" aria-label="TRONIC Central Admin, overview">
       <span className={collapsed ? "sr-only" : "flex items-center gap-3"}>
-        <BrandMark tone="dark" />
+        <WhiteMark className="h-7 w-auto" />
         <span className="text-[11px] font-semibold uppercase leading-tight tracking-[0.16em] text-sidebar-muted">
-          Central
-          <br />
           Admin
         </span>
       </span>
-      {collapsed ? <span aria-hidden="true" className="mx-auto grid h-9 w-9 place-items-center rounded-lg bg-accent text-sm font-black text-white">T</span> : null}
+      {collapsed ? <span aria-hidden="true" className="mx-auto grid h-9 w-9 place-items-center rounded-lg bg-white text-sm font-black text-[#d71920]">T</span> : null}
     </Link>
   );
 
@@ -213,7 +216,7 @@ export function Shell({ platform, countries, allCountries, user, initialTheme, i
     <div className="flex min-h-screen">
       <aside
         data-collapsed={collapsed}
-        className={`sticky top-0 hidden h-screen shrink-0 flex-col bg-sidebar text-sidebar-ink transition-[width] duration-200 lg:flex ${collapsed ? "w-[4.5rem]" : "w-64"}`}
+        className={`sticky top-0 hidden h-screen shrink-0 flex-col bg-sidebar text-sidebar-ink transition-[width] duration-200 [--focus-ring:2px_solid_#ffffff] lg:flex ${collapsed ? "w-[4.5rem]" : "w-64"}`}
       >
         {brand}
         <NavList sections={sections} pathname={pathname} collapsed={collapsed} />
@@ -226,13 +229,13 @@ export function Shell({ platform, countries, allCountries, user, initialTheme, i
         onClick={(event) => {
           if (event.target === drawer.current) setDrawerOpen(false);
         }}
-        className="m-0 h-dvh max-h-none w-[min(19rem,88vw)] max-w-none bg-sidebar p-0 text-sidebar-ink backdrop:bg-black/60 lg:hidden"
+        className="m-0 h-dvh max-h-none w-[min(19rem,88vw)] max-w-none bg-sidebar p-0 text-sidebar-ink [--focus-ring:2px_solid_#ffffff] backdrop:bg-black/60 lg:hidden"
       >
         <div className="flex h-full flex-col">
           <div className="flex min-h-16 items-center justify-between border-b border-sidebar-line px-5">
             <span className="flex items-center gap-3">
-              <BrandMark tone="dark" />
-              <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-sidebar-muted">Central Admin</span>
+              <WhiteMark className="h-7 w-auto" />
+              <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-sidebar-muted">Admin</span>
             </span>
             <button
               type="button"

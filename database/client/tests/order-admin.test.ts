@@ -5,6 +5,8 @@ import {
   COUNTRY_ADMIN_API_PREFIX,
   countrySummarySchema,
   createServiceTokenSigner,
+  customerDetailResponseSchema,
+  customerListResponseSchema,
   createServiceTokenVerifier,
   orderDetailResponseSchema,
   orderListResponseSchema,
@@ -149,7 +151,7 @@ describe("who may use the order administration", () => {
   });
 
   it("answers 404 for an address that is not part of the API", async () => {
-    expect(await send("GET", "/customers", "customers.read")).toMatchObject({ status: 404 });
+    expect(await send("GET", "/products", "products.read")).toMatchObject({ status: 404 });
     expect(await send("POST", "/orders", "orders.update", {})).toMatchObject({ status: 404 });
   });
 });
@@ -359,6 +361,33 @@ describe("a country database that is not set up for the admin", () => {
     }
     // Builds a database of its own, like the other tests that do (CI took over 5 s).
   }, 60_000);
+});
+
+describe("customer directory", () => {
+  it("lists accounts with their orders here, finds one by email, and shows one in full; read only, customers.read", async () => {
+    expect((await send("GET", "/customers", "orders.read")).status).toBe(401);
+    const list = customerListResponseSchema.parse((await send("GET", "/customers", "customers.read")).body);
+    const [counts] = await t.db.query<{ accounts: number; orders: number }>(
+      `select (select count(*)::int from auth.users) as accounts,
+              (select count(*)::int from orders where user_id = $1 and country_code = 'TZ') as orders`,
+      [customer],
+    );
+    expect(list).toMatchObject({ total: counts!.accounts, currency: "TZS", currencyExponent: 2 });
+    const row = list.customers.find((c) => c.id === customer)!;
+    expect(row).toMatchObject({ email: "customer@example.test", orders: counts!.orders });
+    expect(row.orders).toBeGreaterThan(0);
+
+    const found = customerListResponseSchema.parse((await send("GET", "/customers?q=CUSTOMER%40example.test", "customers.read")).body);
+    expect(found.customers.map((c) => c.id)).toEqual([customer]);
+    expect(customerListResponseSchema.parse((await send("GET", "/customers?q=nobody-here", "customers.read")).body)).toMatchObject({ total: 0, customers: [] });
+
+    const detail = customerDetailResponseSchema.parse((await send("GET", `/customers/${customer}`, "customers.read")).body);
+    if (!detail.ok) throw new Error("customer not found");
+    expect(detail.customer.orders).toHaveLength(counts!.orders);
+    expect(detail.customer.orders.every((o) => /^TZ-/.test(o.orderNumber))).toBe(true);
+    expect((await send("GET", `/customers/${randomUUID()}`, "customers.read")).body).toEqual({ ok: false, code: "not_found" });
+    expect((await send("GET", "/customers/not-an-id", "customers.read")).body).toEqual({ ok: false, code: "not_found" });
+  });
 });
 
 describe("dashboard figures", () => {

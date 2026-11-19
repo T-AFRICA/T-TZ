@@ -7,7 +7,7 @@ import { CATEGORY_SECTIONS, METER_NAV_ITEM } from "@tronic/country-config";
 import { BrandMark, HeartIcon, MeterIcon, ShieldCheckIcon, TruckIcon, UserIcon } from "@tronic/ui";
 import { CountrySelector } from "@/components/country/CountrySelector";
 import { CategoryArt } from "@/components/home/CategoryArt";
-import { ACCOUNT_LINK, CHECK_WARRANTY_LINK, SIGNED_IN_ACCOUNT_LINK, TRACK_ORDER_LINK, WISHLIST_LINK } from "@/config/site";
+import { ACCOUNT_LINK, CHECK_WARRANTY_LINK, SIGNED_IN_ACCOUNT_LINK, TRACK_ORDER_LINK, WISHLIST_LINK, externalLinkProps } from "@/config/site";
 import { useSignedInHint } from "@/features/auth/sessionHint";
 
 /**
@@ -220,6 +220,7 @@ export function MobileNav() {
                 >
                   <Link
                     href={item.href}
+                    {...externalLinkProps(item.href)}
                     onClick={close}
                     aria-current={isActive ? "page" : undefined}
                     className={`group flex items-center gap-3 px-3 py-1.5 text-sm font-medium transition-colors hover:bg-[var(--surface-alt)] active:bg-[var(--surface-card)] ${

@@ -6,6 +6,7 @@
  * phone and social profile URLs before the Tanzania launch gate. Keeping them
  * here — not inside components — makes the swap a one-file change.
  */
+import { METER_SITE_URL } from "@tronic/country-config";
 
 /**
  * Rotating announcement ticker (owner request Nov 2026). PLACEHOLDER copy
@@ -30,7 +31,7 @@ export const ANNOUNCEMENTS = [
     message: "TRONIC Meter — prepaid meter tokens on one dedicated page.",
     shortMessage: "TRONIC Meter token service.",
     linkLabel: "Learn more",
-    href: "/meter",
+    href: METER_SITE_URL,
   },
 ] as const;
 
@@ -90,6 +91,14 @@ export const POLICY_LINKS = [
 ] as const;
 
 /** Account, order tracking, wishlist and cart UIs land in W03-W04; routes exist as placeholders. */
+/**
+ * Props for a link that leaves this site (an absolute http(s) address): a
+ * new tab, without access back to this page. Empty for links within the site.
+ */
+export function externalLinkProps(href: string): { target?: "_blank"; rel?: string } {
+  return /^https?:\/\//.test(href) ? { target: "_blank", rel: "noopener noreferrer" } : {};
+}
+
 export const TRACK_ORDER_LINK = { href: "/track-order", label: "Track Order" } as const;
 /** Warranty lookup tool (owner request Nov 2026) — placeholder route until the feature is built. */
 export const CHECK_WARRANTY_LINK = { href: "/check-warranty", label: "Check Warranty" } as const;

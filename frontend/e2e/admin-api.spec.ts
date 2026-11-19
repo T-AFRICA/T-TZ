@@ -56,7 +56,7 @@ test("requests must be signed for this country and for the endpoint's permission
 
   expect((await call(request, "GET", "/health", "settings.read", undefined, { countryCode: "KE" })).status()).toBe(401);
   expect((await call(request, "GET", "/orders", "settings.read")).status()).toBe(401);
-  expect((await call(request, "GET", "/customers", "customers.read")).status()).toBe(404);
+  expect((await call(request, "GET", "/products", "products.read")).status()).toBe(404);
 
   const health = await call(request, "GET", "/health", "settings.read");
   expect(health.status()).toBe(200);

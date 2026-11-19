@@ -1,5 +1,5 @@
 export { COUNTRIES, ACTIVE_COUNTRY, getCountry } from "./countries";
-export { CATEGORY_SECTIONS, METER_NAV_ITEM, getCategorySection } from "./tz/categories";
+export { CATEGORY_SECTIONS, METER_NAV_ITEM, METER_SITE_URL, getCategorySection } from "./tz/categories";
 export {
   ONLINE_PAYMENT_METHODS,
   PAYMENT_POLICIES,

@@ -79,7 +79,8 @@ test("a visitor without a session reaches only the sign-in page, which has no re
   }
   await expect(page.getByRole("heading", { level: 1, name: "Sign in" })).toBeVisible();
   await expect(page.getByRole("link", { name: /register|create|sign up/i })).toHaveCount(0);
-  await expect(page.getByText("There is no self-registration.")).toBeVisible();
+  // No notes on the sign-in page (owner request): only the form.
+  await expect(page.getByRole("textbox")).toHaveCount(2);
 
   // A wrong password and an unknown address get the same answer.
   await fillSignIn(page, ACCOUNTS.master, "not-the-right-one");
@@ -261,7 +262,7 @@ test("staff see only their modules, which say they are not connected instead of 
   // No second step for a staff role.
   await inConsole(page);
   await expect(page).toHaveURL(/\/c\/tz$/);
-  await expect(consoleNav(page).getByRole("link")).toHaveText(["Overview", "Dashboard", "Products", "Inventory", "Orders", "Customers"]);
+  await expect(consoleNav(page).getByRole("link")).toHaveText(["Overview", "Dashboard", "Products", "Inventory", "Orders", "Customers", "Riders"]);
   await expect(page.getByText("Unavailable", { exact: true })).toHaveCount(6);
 
   // Orders come from Tanzania's own backend, which nobody has registered yet.

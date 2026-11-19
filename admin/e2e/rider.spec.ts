@@ -1,7 +1,7 @@
 import { mkdirSync } from "node:fs";
 import path from "node:path";
 import { expect, test, type Page } from "@playwright/test";
-import { adminSql, countrySql, expectRefused, newSession, sideways, signIn } from "./support/helpers";
+import { adminSql, countrySql, expectRefused, newSession, sideways, signIn, signInWithCode } from "./support/helpers";
 import { ACCOUNTS } from "./support/stack";
 
 /**
@@ -142,4 +142,27 @@ test("an order manager gives a packed order to a rider; the rider delivers it wi
   expect(proof.headers()["content-type"]).toBe("image/png");
   expect(proof.headers()["cache-control"]).toContain("no-store");
   await page.screenshot({ path: path.join(SHOTS, "order-delivered.png"), fullPage: true });
+});
+
+test("the Riders page lists the country's riders with their figures; a rider's page shows their deliveries", async ({ page }) => {
+  // A Country Super Admin (the Order Manager's sign-ins are used up by earlier tests).
+  await signInWithCode(page, ACCOUNTS.tzSuper);
+  await page.goto("/c/tz/riders");
+  await expect(page.getByRole("heading", { level: 1, name: "Riders" })).toBeVisible();
+  const row = page.getByRole("table", { name: "Riders" }).getByRole("row").filter({ hasText: ACCOUNTS.tzRider });
+  // From the test above: one order delivered today with TZS 22,000 collected.
+  await expect(row).toContainText("TZS 22,000");
+  await row.getByRole("link", { name: ACCOUNTS.tzRider }).click();
+  await expect(page.getByRole("heading", { level: 1, name: ACCOUNTS.tzRider })).toBeVisible();
+  await expect(page.getByText("Delivered today", { exact: true })).toBeVisible();
+  await expect(page.getByRole("table", { name: "Recent deliveries" })).toContainText("Juma Said");
+  await expect(page.getByRole("table", { name: "Recent deliveries" })).toContainText("TZS 22,000");
+  expect(await sideways(page)).toBeLessThanOrEqual(1);
+  await page.screenshot({ path: path.join(SHOTS, "rider-page.png"), fullPage: true });
+
+  // A rider cannot open the Riders pages.
+  const rider = await newSession(page.context().browser()!);
+  await signIn(rider, ACCOUNTS.tzRider);
+  await expectRefused(rider, "/c/tz/riders");
+  await rider.context().close();
 });

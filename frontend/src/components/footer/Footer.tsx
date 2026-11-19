@@ -9,7 +9,7 @@ import {
   type IconProps,
 } from "@tronic/ui";
 import { ACTIVE_COUNTRY, CATEGORY_SECTIONS, METER_NAV_ITEM } from "@tronic/country-config";
-import { COMPANY_LINKS, POLICY_LINKS, SOCIAL_LINKS, SUPPORT_PHONE } from "@/config/site";
+import { COMPANY_LINKS, POLICY_LINKS, SOCIAL_LINKS, SUPPORT_PHONE, externalLinkProps } from "@/config/site";
 
 /**
  * Global footer on the dark surface. Brand guide §9 asks for the white logo
@@ -87,6 +87,7 @@ export function Footer() {
             <li>
               <Link
                 href={METER_NAV_ITEM.href}
+                {...externalLinkProps(METER_NAV_ITEM.href)}
                 className="text-sm font-semibold text-white hover:underline"
               >
                 {METER_NAV_ITEM.label}

@@ -112,6 +112,10 @@ export const SERVICE_UNAVAILABLE_TEXT: Record<CountryUnavailableReason, string> 
     "The country's database refused the role the admin requests run as (service_role). The country's DATABASE_URL must be the project's own pooler connection string.",
   country_summary_missing:
     "The country's database does not have the dashboard figures yet. An owner has to run database/migrations/0009_admin_summary.sql in that country's Supabase SQL editor.",
+  country_rider_figures_missing:
+    "The country's database does not have riders' figures yet. An owner has to run database/migrations/0010_rider_figures.sql in that country's Supabase SQL editor.",
+  country_customers_missing:
+    "The country's database does not have the customer directory yet. An owner has to run database/migrations/0011_customer_admin.sql in that country's Supabase SQL editor.",
   country_deliveries_missing:
     "The country's database does not have deliveries yet. An owner has to run database/migrations/0008_deliveries.sql in that country's Supabase SQL editor.",
   unreachable: "The country service could not be reached.",

@@ -6,7 +6,9 @@ import {
   createServiceTokenSigner,
   createServiceTokenVerifier,
   deliveryInfoResponseSchema,
+  riderDeliveriesResponseSchema,
   riderDeliveryListResponseSchema,
+  riderFiguresResponseSchema,
   riderDeliveryResponseSchema,
   type ServiceTokenSigner,
 } from "@tronic/api-contracts";
@@ -40,7 +42,12 @@ async function send(method: "GET" | "POST", path: string, permission: string, ac
   return handleCountryAdminRequest(service, { method, path: fullPath, authorization: `Bearer ${token}`, body: text });
 }
 
-const asManager = (method: "GET" | "POST", path: string, body?: unknown) => send(method, path, method === "GET" && !path.includes("delivery") ? "orders.read" : path.includes("delivery") ? "deliveries.assign" : "orders.update", MANAGER, body);
+/** As an Order Manager, with the one permission the endpoint needs. */
+function managerPermission(method: "GET" | "POST", path: string): string {
+  if (path.includes("delivery") || path.startsWith("/riders")) return "deliveries.assign";
+  return method === "GET" ? "orders.read" : "orders.update";
+}
+const asManager = (method: "GET" | "POST", path: string, body?: unknown) => send(method, path, managerPermission(method, path), MANAGER, body);
 const asRider = (method: "GET" | "POST", path: string, body?: unknown, rider = RIDER) => send(method, path, "deliveries.perform", rider, body);
 const moveTo = (orderNumber: string, status: string) => send("POST", `/orders/${orderNumber}/status`, "orders.update", MANAGER, { status });
 
@@ -218,5 +225,32 @@ describe("who can reach deliveries", () => {
     expect(await refused(`select rider_list_deliveries('TZ', gen_random_uuid())`)).toBe("denied");
     expect(await refused(`select admin_assign_delivery('TZ', 'x', gen_random_uuid(), 'x', gen_random_uuid())`)).toBe("denied");
     expect(await refused(`select customer_delivery_code('TZ-000000-NOTHERE1', '+255712340001')`)).toBe("allowed");
+  });
+});
+
+describe("riders' figures", () => {
+  it("counts each rider's deliveries, failed attempts and today's cash, for whoever assigns deliveries", async () => {
+    const figures = await asManager("GET", "/riders");
+    expect(figures.status).toBe(200);
+    const body = riderFiguresResponseSchema.parse(figures.body);
+    expect(body).toMatchObject({ currency: "TZS", currencyExponent: 2 });
+    const mine = body.riders[RIDER]!;
+    // From the tests above: one delivered today with its cash, one locked, one with a failed attempt.
+    expect(mine.deliveredToday).toBeGreaterThanOrEqual(1);
+    expect(mine.delivered7Days).toBe(mine.deliveredToday);
+    expect(mine.cashTodayMinor).toBeGreaterThan(0);
+    expect(mine.open).toBeGreaterThanOrEqual(2);
+    expect(mine.failed7Days).toBeGreaterThanOrEqual(1);
+    expect(mine.lastDeliveredAt).not.toBeNull();
+    expect(JSON.stringify(body)).not.toMatch(/"code"/);
+
+    const history = riderDeliveriesResponseSchema.parse((await asManager("GET", `/riders/${RIDER}`)).body);
+    expect(history.deliveries.some((d) => d.status === "delivered" && d.cashCollectedMinor !== null)).toBe(true);
+    expect(history.attempts.map((a) => a.reason)).toContain("customer_unreachable");
+    expect(JSON.stringify(history)).not.toMatch(/"code"/);
+    // A rider with no orders has an empty history; a rider cannot read anyone's figures.
+    expect(riderDeliveriesResponseSchema.parse((await asManager("GET", `/riders/${randomUUID()}`)).body).deliveries).toEqual([]);
+    expect((await send("GET", "/riders", "deliveries.perform", RIDER)).status).toBe(401);
+    expect((await asManager("GET", "/riders/not-a-uuid")).status).toBe(400);
   });
 });

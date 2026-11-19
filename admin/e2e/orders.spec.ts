@@ -263,5 +263,10 @@ test("the country dashboard counts Tanzania's own orders, sales and stock for a 
   await signIn(manager, ACCOUNTS.stranger);
   await manager.goto("/c/tz");
   await expect(manager.getByText("Your role does not include the country's reports.").first()).toBeVisible();
+  // Customer Support reads the customer directory from the country.
+  await manager.goto("/c/tz/customers");
+  await expect(manager.getByRole("heading", { level: 1, name: "Customers" })).toBeVisible();
+  await expect(manager.getByText(/cannot be shown right now/)).toHaveCount(0);
+  await expect(manager.getByRole("region", { name: /customers?$/ })).toBeVisible();
   await manager.context().close();
 });

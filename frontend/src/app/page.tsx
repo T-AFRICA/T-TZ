@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowRightIcon, Container } from "@tronic/ui";
 import { METER_NAV_ITEM } from "@tronic/country-config";
+import { externalLinkProps } from "@/config/site";
 import { Hero } from "@/components/home/Hero";
 import { CategoryRail } from "@/components/home/CategoryRail";
 import { HomeCollections } from "@/components/home/HomeCollections";
@@ -57,6 +58,7 @@ export default function HomePage() {
             </div>
             <Link
               href={METER_NAV_ITEM.href}
+              {...externalLinkProps(METER_NAV_ITEM.href)}
               className="inline-flex h-12 shrink-0 items-center gap-2 rounded-full bg-[var(--color-action-red)] px-6 text-sm font-semibold text-white shadow-[0_12px_24px_-12px_rgba(215,25,32,0.7)] transition-colors hover:bg-[var(--color-action-red-dark)]"
             >
               Visit Meter

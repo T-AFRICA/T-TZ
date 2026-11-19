@@ -22,7 +22,8 @@ export type NavIcon =
   | "reports"
   | "staff"
   | "settings"
-  | "deliveries";
+  | "deliveries"
+  | "riders";
 
 export interface NavItem {
   href: string;
@@ -80,6 +81,7 @@ export function buildNav(actor: Actor, country: { id: string; name: string } | n
     for (const [key, module] of Object.entries(COUNTRY_MODULES)) {
       if (can(actor, module.permission, country.id)) items.push({ href: `${base}/${key}`, label: module.label, icon: module.icon });
     }
+    if (can(actor, "deliveries.assign", country.id)) items.push({ href: `${base}/riders`, label: "Riders", icon: "riders" });
     if (can(actor, "staff.read", country.id)) items.push({ href: `${base}/staff`, label: "Staff", icon: "staff" });
     if (can(actor, "settings.read", country.id)) items.push({ href: `${base}/settings`, label: "Settings", icon: "settings" });
     sections.push({ title: country.name, items });

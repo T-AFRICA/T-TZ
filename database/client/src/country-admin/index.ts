@@ -4,6 +4,7 @@ import {
   DELIVERY_ACTIONS,
   DELIVERY_PROOF_KINDS,
   LOW_STOCK_THRESHOLD,
+  customerListQuerySchema,
   type CountrySummary,
   deliveryAssignBodySchema,
   deliveryUpdateBodySchema,
@@ -21,6 +22,7 @@ import {
   type ServiceTokenVerifier,
 } from "@tronic/api-contracts";
 import type { Db, Row } from "../db";
+import { customerFunctions } from "./customers";
 import { deliveryFunctions } from "./deliveries";
 
 /**
@@ -50,6 +52,7 @@ export async function withServiceAccess<T>(db: Db, fn: (tx: Db) => Promise<T>): 
 }
 
 const deliveries = deliveryFunctions(withServiceAccess);
+const customers = customerFunctions(withServiceAccess);
 
 type Json = Record<string, unknown>;
 
@@ -348,6 +351,25 @@ export async function handleCountryAdminRequest(service: CountryAdminService, re
       return { status: 200, body };
     }
 
+    if (matched.endpoint === "listCustomers") {
+      const query = customerListQuerySchema.safeParse(Object.fromEntries(url.searchParams));
+      if (!query.success) return refuse(400, "invalid_request");
+      return { status: 200, body: await customers.list(db, countryCode, query.data) };
+    }
+    if (matched.endpoint === "getCustomer") {
+      const customerId = matched.params.customerId ?? "";
+      if (!UUID.test(customerId)) return { status: 200, body: { ok: false, code: "not_found" } };
+      return { status: 200, body: await customers.get(db, countryCode, customerId.toLowerCase()) };
+    }
+    if (matched.endpoint === "riderFigures") {
+      return { status: 200, body: await deliveries.riderFigures(db, countryCode) };
+    }
+    if (matched.endpoint === "riderDeliveries") {
+      const riderId = matched.params.riderId ?? "";
+      if (!UUID.test(riderId)) return refuse(400, "invalid_request");
+      return { status: 200, body: await deliveries.riderDeliveries(db, countryCode, riderId.toLowerCase()) };
+    }
+
     const orderNumber = (matched.params.orderNumber ?? "").toUpperCase();
     if (matched.endpoint !== "listOrders" && matched.endpoint !== "listMyDeliveries" && !ORDER_NUMBER_PATTERN.test(orderNumber)) {
       return { status: 200, body: { ok: false, code: "not_found" } };
@@ -423,6 +445,8 @@ export async function handleCountryAdminRequest(service: CountryAdminService, re
     const code = typeof (error as { code?: unknown } | null)?.code === "string" ? (error as { code: string }).code : "";
     if (code === "42883" || code === "42P01") {
       if (matched.endpoint === "summary") return refuse(503, "summary_missing");
+      if (matched.endpoint === "riderFigures" || matched.endpoint === "riderDeliveries") return refuse(503, "rider_figures_missing");
+      if (matched.endpoint === "listCustomers" || matched.endpoint === "getCustomer") return refuse(503, "customers_missing");
       const deliveryEndpoint = COUNTRY_ADMIN_ENDPOINTS[matched.endpoint].permission.startsWith("deliveries.");
       return refuse(503, deliveryEndpoint ? "delivery_admin_missing" : "order_admin_missing");
     }

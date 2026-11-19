@@ -1,6 +1,7 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
+import { ArrowRightIcon, EyeIcon, EyeOffIcon, LockIcon, MailIcon } from "@tronic/ui";
 import type { AdminCountry, CountryService } from "@tronic/database/admin";
 import { checkCountryServiceAction, inviteAdminAction, updateCountryAction, updateCountryServiceAction } from "@/features/admin/actions";
 import {
@@ -17,16 +18,93 @@ import { buttonClass, inputClass } from "./ui";
 
 // --------------------------------------------------------------- sign-in --
 
+/** A sign-in field with an icon inside, in the TRONIC sign-in style (globals.css, .auth-*). */
+function AuthField({
+  id,
+  label,
+  icon,
+  error,
+  reveal,
+  ...input
+}: {
+  id: string;
+  label: string;
+  icon: React.ReactNode;
+  error?: string | undefined;
+  reveal?: React.ReactNode;
+} & Omit<React.InputHTMLAttributes<HTMLInputElement>, "id" | "className">) {
+  return (
+    <div className="auth-field">
+      <label htmlFor={id}>{label}</label>
+      <div className="auth-input">
+        {icon}
+        <input id={id} aria-invalid={error ? true : undefined} aria-describedby={error ? `${id}-error` : undefined} {...input} />
+        {reveal}
+      </div>
+      {error ? (
+        <p id={`${id}-error`} className="auth-field-error">
+          {error}
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
+function PasswordField({ disabled, error }: { disabled: boolean; error?: string | undefined }) {
+  const [shown, setShown] = useState(false);
+  return (
+    <AuthField
+      id="sign-in-password"
+      name="password"
+      label="Password"
+      icon={<LockIcon size={18} />}
+      type={shown ? "text" : "password"}
+      autoComplete="current-password"
+      placeholder="Your password"
+      required
+      disabled={disabled}
+      error={error}
+      reveal={
+        <button type="button" className="auth-reveal" onClick={() => setShown((value) => !value)} aria-pressed={shown} aria-label={shown ? "Hide what you typed" : "Show what you typed"} disabled={disabled}>
+          {shown ? <EyeOffIcon size={18} /> : <EyeIcon size={18} />}
+        </button>
+      }
+    />
+  );
+}
+
 export function SignInForm({ disabled }: { disabled: boolean }) {
   return (
-    <ActionForm action={signInAction}>
+    <ActionForm action={signInAction} className="auth-form flex flex-col gap-4">
       {(state, pending) => (
         <>
-          <TextField name="email" label="Email address" type="email" autoComplete="username" inputMode="email" required disabled={disabled} error={state.fieldErrors?.email} />
-          <TextField name="password" label="Password" type="password" autoComplete="current-password" required disabled={disabled} error={state.fieldErrors?.password} />
+          <AuthField
+            id="sign-in-email"
+            name="email"
+            label="Email address"
+            icon={<MailIcon size={18} />}
+            type="email"
+            autoComplete="username"
+            inputMode="email"
+            autoCapitalize="none"
+            spellCheck={false}
+            placeholder="Your work email"
+            required
+            disabled={disabled}
+            error={state.fieldErrors?.email}
+          />
+          <PasswordField disabled={disabled} error={state.fieldErrors?.password} />
           <FormMessage state={state} />
-          <button type="submit" className={`${buttonClass.primary} w-full`} disabled={pending || disabled}>
-            {pending ? "Signing in…" : "Sign in"}
+          <button type="submit" className="auth-submit" disabled={pending || disabled}>
+            {pending ? (
+              <>
+                <span className="auth-spinner" aria-hidden="true" /> Signing in…
+              </>
+            ) : (
+              <>
+                Sign in <ArrowRightIcon size={18} />
+              </>
+            )}
           </button>
         </>
       )}
