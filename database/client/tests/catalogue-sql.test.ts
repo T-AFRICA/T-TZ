@@ -3,9 +3,8 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { buildSampleCatalogueSql } from "../scripts/catalogue-sql";
-import { ANON } from "../src/db";
 import { placeCodOrder } from "../src/orders";
-import { createTestDatabase, migrationsDir, type TestDatabase } from "../src/testing";
+import { createShopper, createTestDatabase, migrationsDir, type TestDatabase } from "../src/testing";
 
 /**
  * The SAMPLE catalogue script for a new Supabase project
@@ -62,7 +61,7 @@ describe("sample catalogue script", () => {
   });
 
   it("gives a storefront that can take a Cash on Delivery order", async () => {
-    const result = await placeCodOrder(target.db, ANON, {
+    const result = await placeCodOrder(target.db, await createShopper(target.db), {
       idempotencyKey: randomUUID(),
       country: "TZ",
       contact: { name: "Asha Mrema", email: "asha@example.test", phone: "+255712345678" },

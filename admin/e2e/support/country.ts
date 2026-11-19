@@ -1,9 +1,9 @@
 import { randomUUID } from "node:crypto";
 import { createServer, type Server } from "node:https";
 import { createMemoryReplayGuard, createServiceTokenVerifier } from "@tronic/api-contracts";
-import { ANON, placeCodOrder, type Db } from "@tronic/database";
+import { placeCodOrder, type Db } from "@tronic/database";
 import { handleCountryAdminRequest } from "@tronic/database/country-admin";
-import { createTestDatabase } from "@tronic/database/testing";
+import { createShopper, createTestDatabase } from "@tronic/database/testing";
 
 /**
  * TEST ONLY: a stand-in for Tanzania's backend, for the admin browser tests
@@ -57,7 +57,8 @@ export async function startCountryStandIn(options: {
 
   const orderNumbers: string[] = [];
   for (const customer of CUSTOMERS) {
-    const placed = await placeCodOrder(db, ANON, {
+    // Orders need an account (migration 0015): each sample customer is registered.
+    const placed = await placeCodOrder(db, await createShopper(db, customer.email), {
       idempotencyKey: randomUUID(),
       country: "TZ",
       contact: { name: customer.name, email: customer.email, phone: customer.phone },

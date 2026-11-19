@@ -256,11 +256,14 @@ test("another customer gets the same 404 for that order as for an unknown number
   await expect(david.getByText(carolOrders[0]!)).toHaveCount(0);
 });
 
-test("an order placed before signing in shows in the account of its verified email", async ({ browser }) => {
+test("a guest order from before accounts were required shows in the account of its verified email", async ({ browser }) => {
   // Owner report 2026-11-19: a guest order reached the shop and a rider, but the customer's account showed 0 orders.
+  // Guests can no longer order (migration 0015), so the old guest order is made as one: placed, then unlinked.
   const ERIN: Customer = ["erin.portal@example.test", "Erin-Portal-Test-1"];
-  const guest = await (await browser.newContext()).newPage();
-  await placeOrder(guest, "Erin.Portal@Example.test", [{ productId: "sample-led-panel", quantity: 1 }]);
+  const placer = await (await browser.newContext()).newPage();
+  await signIn(placer, DAVID);
+  await placeOrder(placer, "Erin.Portal@Example.test", [{ productId: "sample-led-panel", quantity: 1 }]);
+  await sql(`update orders set user_id = null where contact_email = $1`, [ERIN[0]]);
   const [number] = await orderNumbers(ERIN[0]);
   expect(number).toBeTruthy();
   expect(await sql<{ user_id: string | null }>(`select user_id from orders where order_number = $1`, [number])).toEqual([{ user_id: null }]);

@@ -122,4 +122,13 @@ export async function createAuthUser(db: Db, email: string): Promise<string> {
   return row.id;
 }
 
+/**
+ * A registered customer who can place orders (migration 0015: no order
+ * without an account): a fresh auth user with a confirmed email, as the
+ * access the storefront uses for a signed-in customer.
+ */
+export async function createShopper(db: Db, email = `shopper.${crypto.randomUUID()}@example.test`): Promise<{ role: "authenticated"; userId: string }> {
+  return { role: "authenticated", userId: await createAdminAuthUser(db, email, true) };
+}
+
 export { seedCatalog, type SeedOptions } from "./seed";

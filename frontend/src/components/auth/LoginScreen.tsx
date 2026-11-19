@@ -5,6 +5,7 @@ import { useActionState, type CSSProperties, type ReactNode } from "react";
 import { Mail, ShoppingBag, UserRound } from "lucide-react";
 import { PASSWORD_POLICY, validateLogin, type LoginValues } from "@/features/auth/rules";
 import { signInAction } from "@/features/auth/actions";
+import { CHECKOUT_SIGN_IN_NOTICE, fromCheckout, withNext } from "@/features/auth/next";
 import { AUTH_REGISTERED_NOTICE } from "@/features/auth/service";
 import { IDLE } from "@/features/auth/state";
 import { useAuthForm } from "@/features/auth/useAuthForm";
@@ -140,7 +141,7 @@ export function AuthLink({ href, children }: { href: string; children: ReactNode
  * Supabase Auth is configured; `registered` is true when the customer has
  * just come from the registration form.
  */
-export function LoginScreen({ authEnabled, registered = false }: { authEnabled: boolean; registered?: boolean }) {
+export function LoginScreen({ authEnabled, registered = false, next = null }: { authEnabled: boolean; registered?: boolean; next?: string | null }) {
   return (
     <AuthScreen
       icon={<UserRound size={28} strokeWidth={1.9} aria-hidden="true" />}
@@ -152,11 +153,11 @@ export function LoginScreen({ authEnabled, registered = false }: { authEnabled: 
       subtitle="Sign in to your TRONIC account and continue shopping."
       footer={
         <>
-          New to TRONIC? <AuthLink href="/register">Create an account</AuthLink>
+          New to TRONIC? <AuthLink href={withNext("/register", next)}>Create an account</AuthLink>
         </>
       }
     >
-      <LoginForm enabled={authEnabled} registered={registered} />
+      <LoginForm enabled={authEnabled} registered={registered} next={next} />
     </AuthScreen>
   );
 }
@@ -169,8 +170,10 @@ export function LoginScreen({ authEnabled, registered = false }: { authEnabled: 
  *
  * `registered`: the customer has just registered, so the form opens with
  * the confirm-by-email note. Any answer of the form's own replaces it.
+ * `next`: where to go after signing in (a same-site path; the server checks
+ * it again); from checkout the form says why an account is needed.
  */
-export function LoginForm({ enabled, registered = false }: { enabled: boolean; registered?: boolean }) {
+export function LoginForm({ enabled, registered = false, next = null }: { enabled: boolean; registered?: boolean; next?: string | null }) {
   const [state, action, pending] = useActionState(signInAction, IDLE);
   const form = useAuthForm<LoginValues & { remember: boolean }>({
     initial: { email: "", password: "", remember: false },
@@ -179,10 +182,17 @@ export function LoginForm({ enabled, registered = false }: { enabled: boolean; r
     enabled,
   });
   const { values, errors } = form;
-  const message = form.message ?? (registered ? { tone: "info" as const, text: AUTH_REGISTERED_NOTICE } : null);
+  const message =
+    form.message ??
+    (registered
+      ? { tone: "info" as const, text: AUTH_REGISTERED_NOTICE }
+      : fromCheckout(next)
+        ? { tone: "info" as const, text: CHECKOUT_SIGN_IN_NOTICE }
+        : null);
 
   return (
     <form ref={form.formRef} action={action} noValidate onSubmit={form.onSubmit} className="login-form space-y-3.5">
+      {next ? <input type="hidden" name="next" value={next} /> : null}
       <IconField
         label="Email address"
         name="email"

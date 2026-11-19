@@ -139,9 +139,27 @@ describe("login form", () => {
   });
 });
 
+describe("sent from checkout (no order without an account)", () => {
+  it("sign-in and registration say why, keep where to go back to, and link to each other with it", async () => {
+    const next = "/checkout?buy=sample-led-panel&qty=2";
+    const { container, unmount } = render(<LoginForm enabled next={next} />);
+    expect(screen.getByRole("status")).toHaveTextContent("Sign in or create an account to place your order.");
+    expect(container.querySelector<HTMLInputElement>('input[type="hidden"][name="next"]')?.value).toBe(next);
+    unmount();
+    const register = render(<AuthLayout>{await RegisterPage({ searchParams: Promise.resolve({ next }) })}</AuthLayout>);
+    expect(register.container.querySelector<HTMLInputElement>('input[type="hidden"][name="next"]')?.value).toBe(next);
+    expect(screen.getByRole("link", { name: "Sign in" })).toHaveAttribute("href", `/login?next=${encodeURIComponent(next)}`);
+    register.unmount();
+    // Another site is never kept.
+    const other = render(<AuthLayout>{await RegisterPage({ searchParams: Promise.resolve({ next: "//evil.example" }) })}</AuthLayout>);
+    expect(other.container.querySelector('input[name="next"]')).toBeNull();
+    expect(screen.getByRole("link", { name: "Sign in" })).toHaveAttribute("href", "/login");
+  });
+});
+
 describe("account screens share one design", () => {
   it("register and forgot password use the same showroom shell", async () => {
-    const { container, unmount } = render(<AuthLayout>{await RegisterPage()}</AuthLayout>);
+    const { container, unmount } = render(<AuthLayout>{await RegisterPage({ searchParams: Promise.resolve({}) })}</AuthLayout>);
     expect(container.querySelector("[data-auth-screen]")).not.toBeNull();
     expect(container.querySelector("[data-long]")).not.toBeNull();
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Create your Account");

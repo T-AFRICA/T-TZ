@@ -3,7 +3,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { ACTIVE_COUNTRY, COUNTRIES, formatMoney } from "@tronic/country-config";
 import { ANON, withAccess, type Access } from "../src/db";
 import { claimGuestOrders, listCustomerOrders, placeCodOrder, trackOrder, type PlaceCodOrderInput } from "../src/orders";
-import { createAdminAuthUser, createAuthUser, createTestDatabase, type TestDatabase } from "../src/testing";
+import { createAdminAuthUser, createAuthUser, createShopper, createTestDatabase, type TestDatabase } from "../src/testing";
 
 /**
  * Cash on Delivery orders (migration 0004) on a disposable PGlite database.
@@ -15,6 +15,16 @@ import { createAdminAuthUser, createAuthUser, createTestDatabase, type TestDatab
 let t: TestDatabase;
 let alice: string;
 let bob: string;
+/** The registered customer placing most orders here (migration 0015: no order without an account). */
+let shopper: Access;
+
+/** An order placed as a guest before migration 0015: placed by a customer, then unlinked as the owner. */
+async function legacyGuestOrder(input: PlaceCodOrderInput): Promise<string> {
+  const placed = await placeCodOrder(t.db, shopper, input);
+  if (!placed.ok) throw new Error("order failed");
+  await t.db.query(`update orders set user_id = null where order_number = $1`, [placed.orderNumber]);
+  return placed.orderNumber;
+}
 
 const PANEL = "sample-led-panel";
 const PLUG = "sample-top-plug";
@@ -53,6 +63,7 @@ beforeAll(async () => {
   t = await createTestDatabase();
   alice = await createAuthUser(t.db, "alice@example.test");
   bob = await createAuthUser(t.db, "bob@example.test");
+  shopper = await createShopper(t.db, "asha@example.test");
   await t.db.query(`create table stock_snapshot as select product_id, country_code, available from stock_levels`);
 }, 60_000);
 
@@ -74,8 +85,14 @@ beforeEach(async () => {
 });
 
 describe("placing a Cash on Delivery order", () => {
-  it("guest checkout: reprices from the catalogue, saves the order and reserves stock in one go", async () => {
-    const result = await placeCodOrder(t.db, ANON, order());
+  it("nobody orders without an account: a guest (anon) cannot call it at all, and nothing is written", async () => {
+    await expect(placeCodOrder(t.db, ANON, order())).rejects.toThrow(/permission denied/);
+    expect(await orderCount()).toBe(0);
+    expect(await stock(PANEL)).toBe(25);
+  });
+
+  it("a registered customer's order: reprices from the catalogue, saves the order and reserves stock in one go", async () => {
+    const result = await placeCodOrder(t.db, shopper, order());
     expect(result).toMatchObject({ ok: true, replayed: false, currency: "TZS", itemCount: 3 });
     if (!result.ok) return;
     // 2 × TZS 28,000 + TZS 18,500 = TZS 74,500, stored as 7,450,000 minor units.
@@ -87,7 +104,7 @@ describe("placing a Cash on Delivery order", () => {
       `select user_id, status, payment_status, total_minor from orders where order_number = $1`,
       [result.orderNumber],
     );
-    expect(saved).toMatchObject({ user_id: null, status: "pending_payment", payment_status: "pending" });
+    expect(saved).toMatchObject({ user_id: (shopper as { userId: string }).userId, status: "pending_payment", payment_status: "pending" });
     expect(Number(saved!.total_minor)).toBe(7_450_000);
     const lines = await t.db.query<{ product_slug: string; unit_price_minor: unknown; line_total_minor: unknown }>(
       `select product_slug, unit_price_minor, line_total_minor from order_lines l join orders o on o.id = l.order_id
@@ -108,7 +125,7 @@ describe("placing a Cash on Delivery order", () => {
       ...request,
       lines: request.lines.map((line) => ({ ...line, unitPriceMinor: 1, price: 1 })),
     } as PlaceCodOrderInput;
-    const result = await placeCodOrder(t.db, ANON, tampered);
+    const result = await placeCodOrder(t.db, shopper, tampered);
     expect(result).toMatchObject({ ok: true, totalMinor: 7_450_000 });
   });
 
@@ -124,9 +141,9 @@ describe("placing a Cash on Delivery order", () => {
 describe("duplicate submissions", () => {
   it("the same idempotency key returns the same order and writes it once", async () => {
     const request = order();
-    const first = await placeCodOrder(t.db, ANON, request);
-    const second = await placeCodOrder(t.db, ANON, request);
-    const third = await placeCodOrder(t.db, ANON, request);
+    const first = await placeCodOrder(t.db, shopper, request);
+    const second = await placeCodOrder(t.db, shopper, request);
+    const third = await placeCodOrder(t.db, shopper, request);
     expect(first.ok && second.ok && third.ok).toBe(true);
     if (!first.ok || !second.ok || !third.ok) return;
     expect(second).toMatchObject({ replayed: true, orderNumber: first.orderNumber, totalMinor: first.totalMinor });
@@ -137,7 +154,7 @@ describe("duplicate submissions", () => {
 
   it("concurrent retries with one key still create one order", async () => {
     const request = order();
-    const results = await Promise.all([1, 2, 3, 4].map(() => placeCodOrder(t.db, ANON, request)));
+    const results = await Promise.all([1, 2, 3, 4].map(() => placeCodOrder(t.db, shopper, request)));
     const numbers = new Set(results.map((r) => (r.ok ? r.orderNumber : r.code)));
     expect(numbers.size).toBe(1);
     expect(await orderCount()).toBe(1);
@@ -146,8 +163,8 @@ describe("duplicate submissions", () => {
 
   it("the same key with a different request is refused", async () => {
     const request = order();
-    await placeCodOrder(t.db, ANON, request);
-    const changed = await placeCodOrder(t.db, ANON, { ...request, lines: [{ product: PLUG, color: null, variant: null, quantity: 5 }], expectedTotalMinor: null });
+    await placeCodOrder(t.db, shopper, request);
+    const changed = await placeCodOrder(t.db, shopper, { ...request, lines: [{ product: PLUG, color: null, variant: null, quantity: 5 }], expectedTotalMinor: null });
     expect(changed).toEqual({ ok: false, code: "idempotency_conflict" });
     const otherUser = await placeCodOrder(t.db, { role: "authenticated", userId: bob }, request);
     expect(otherUser).toEqual({ ok: false, code: "idempotency_conflict" });
@@ -161,13 +178,13 @@ describe("price changes", () => {
       `update product_country_prices set price_minor = 3000000 where product_id = (select id from products where slug = $1)`,
       [PANEL],
     );
-    const result = await placeCodOrder(t.db, ANON, order());
+    const result = await placeCodOrder(t.db, shopper, order());
     expect(result).toEqual({ ok: false, code: "price_changed", totalMinor: 2 * 3_000_000 + 1_850_000, currency: "TZS" });
     expect(await orderCount()).toBe(0);
     expect(await stock(PANEL)).toBe(25);
 
     // Confirming the new total goes through at the new price.
-    const confirmed = await placeCodOrder(t.db, ANON, order({ expectedTotalMinor: 7_850_000 }));
+    const confirmed = await placeCodOrder(t.db, shopper, order({ expectedTotalMinor: 7_850_000 }));
     expect(confirmed).toMatchObject({ ok: true, totalMinor: 7_850_000 });
   });
 });
@@ -176,7 +193,7 @@ describe("stock", () => {
   it("refuses out-of-stock and over-quantity lines without writing anything", async () => {
     const result = await placeCodOrder(
       t.db,
-      ANON,
+      shopper,
       order({
         lines: [
           { product: CABLE, color: null, variant: null, quantity: 1 },
@@ -199,20 +216,20 @@ describe("stock", () => {
 
   it("selling the last units marks the product out of stock for the storefront", async () => {
     await t.db.query(`update stock_levels set available = 2 where product_id = (select id from products where slug = $1)`, [PANEL]);
-    const result = await placeCodOrder(t.db, ANON, order({ lines: [{ product: PANEL, color: null, variant: null, quantity: 2 }], expectedTotalMinor: 5_600_000 }));
+    const result = await placeCodOrder(t.db, shopper, order({ lines: [{ product: PANEL, color: null, variant: null, quantity: 2 }], expectedTotalMinor: 5_600_000 }));
     expect(result.ok).toBe(true);
     const [row] = await withAccess(t.db, ANON, (tx) =>
       tx.query<{ in_stock: boolean }>(`select in_stock from storefront_products where slug = $1 and country_code = 'TZ'`, [PANEL]),
     );
     expect(row!.in_stock).toBe(false);
-    const again = await placeCodOrder(t.db, ANON, order({ lines: [{ product: PANEL, color: null, variant: null, quantity: 1 }], expectedTotalMinor: null }));
+    const again = await placeCodOrder(t.db, shopper, order({ lines: [{ product: PANEL, color: null, variant: null, quantity: 1 }], expectedTotalMinor: null }));
     expect(again).toMatchObject({ ok: false, code: "lines_unavailable" });
   });
 
   it("checks product options and unknown products", async () => {
     const result = await placeCodOrder(
       t.db,
-      ANON,
+      shopper,
       order({
         lines: [
           { product: EXTENSION, color: "Purple", variant: "4-way", quantity: 1 },
@@ -231,7 +248,7 @@ describe("stock", () => {
     });
     const valid = await placeCodOrder(
       t.db,
-      ANON,
+      shopper,
       order({ lines: [{ product: EXTENSION, color: "White", variant: "4-way", quantity: 1 }], expectedTotalMinor: 2_200_000 }),
     );
     expect(valid).toMatchObject({ ok: true, totalMinor: 2_200_000 });
@@ -259,7 +276,7 @@ describe("request validation", () => {
       { expectedTotalMinor: -1 },
     ];
     for (const overrides of bad) {
-      const result = await placeCodOrder(t.db, ANON, order(overrides));
+      const result = await placeCodOrder(t.db, shopper, order(overrides));
       expect(result, JSON.stringify(overrides)).toEqual({ ok: false, code: "invalid_request" });
     }
     expect(await orderCount()).toBe(0);
@@ -270,7 +287,7 @@ describe("reading orders", () => {
   it("a customer sees only their own orders; another customer and anon see none of them", async () => {
     const a = await placeCodOrder(t.db, { role: "authenticated", userId: alice }, order());
     const b = await placeCodOrder(t.db, { role: "authenticated", userId: bob }, order({ contact: { name: "Baraka", email: "baraka@example.test", phone: "+255765432109" } }));
-    await placeCodOrder(t.db, ANON, order());
+    await placeCodOrder(t.db, shopper, order());
     expect(a.ok && b.ok).toBe(true);
     if (!a.ok || !b.ok) return;
 
@@ -295,8 +312,8 @@ describe("reading orders", () => {
     ).rejects.toThrow(/permission denied/);
   });
 
-  it("guest tracking needs the order number and the checkout email or phone", async () => {
-    const placed = await placeCodOrder(t.db, ANON, order());
+  it("tracking without signing in needs the order number and the checkout email or phone", async () => {
+    const placed = await placeCodOrder(t.db, shopper, order());
     if (!placed.ok) throw new Error("order failed");
     expect(await trackOrder(t.db, placed.orderNumber, "asha@example.test")).toMatchObject({
       found: true,
@@ -313,28 +330,27 @@ describe("reading orders", () => {
 describe("guest orders joining the account (migration 0014)", () => {
   it("a customer with a verified email takes over the guest orders placed with it, and nothing else", async () => {
     const asha = await createAdminAuthUser(t.db, "asha.claim@example.test", true);
-    const guest = await placeCodOrder(t.db, ANON, order({ contact: { name: "Asha", email: "Asha.Claim@Example.test", phone: "+255712345678" } }));
-    const stranger = await placeCodOrder(t.db, ANON, order({ contact: { name: "Neema", email: "neema@example.test", phone: "+255712345670" } }));
+    const guest = await legacyGuestOrder(order({ contact: { name: "Asha", email: "Asha.Claim@Example.test", phone: "+255712345678" } }));
+    const stranger = await legacyGuestOrder(order({ contact: { name: "Neema", email: "neema@example.test", phone: "+255712345670" } }));
     const bobs = await placeCodOrder(t.db, { role: "authenticated", userId: bob }, order({ contact: { name: "Bob", email: "asha.claim@example.test", phone: "+255712345671" } }));
-    if (!guest.ok || !stranger.ok || !bobs.ok) throw new Error("order failed");
+    if (!bobs.ok) throw new Error("order failed");
     const access: Access = { role: "authenticated", userId: asha };
 
     expect(await listCustomerOrders(t.db, access)).toEqual([]);
     expect(await claimGuestOrders(t.db, access)).toBe(1);
-    expect((await listCustomerOrders(t.db, access)).map((o) => o.orderNumber)).toEqual([guest.orderNumber]);
+    expect((await listCustomerOrders(t.db, access)).map((o) => o.orderNumber)).toEqual([guest]);
     // Running it again changes nothing; another account's order and another address's guest order stay where they are.
     expect(await claimGuestOrders(t.db, access)).toBe(0);
     expect((await listCustomerOrders(t.db, { role: "authenticated", userId: bob })).map((o) => o.orderNumber)).toEqual([bobs.orderNumber]);
-    const [left] = await t.db.query<{ user_id: string | null }>(`select user_id from orders where order_number = $1`, [stranger.orderNumber]);
+    const [left] = await t.db.query<{ user_id: string | null }>(`select user_id from orders where order_number = $1`, [stranger]);
     expect(left!.user_id).toBeNull();
   });
 
   it("an unverified address takes over nothing, and a guest session cannot call it", async () => {
     const unverified = await createAdminAuthUser(t.db, "pending.claim@example.test", false);
-    const guest = await placeCodOrder(t.db, ANON, order({ contact: { name: "Pending", email: "pending.claim@example.test", phone: "+255712345678" } }));
-    if (!guest.ok) throw new Error("order failed");
+    const guest = await legacyGuestOrder(order({ contact: { name: "Pending", email: "pending.claim@example.test", phone: "+255712345678" } }));
     expect(await claimGuestOrders(t.db, { role: "authenticated", userId: unverified })).toBe(0);
-    const [row] = await t.db.query<{ user_id: string | null }>(`select user_id from orders where order_number = $1`, [guest.orderNumber]);
+    const [row] = await t.db.query<{ user_id: string | null }>(`select user_id from orders where order_number = $1`, [guest]);
     expect(row!.user_id).toBeNull();
     await expect(withAccess(t.db, ANON, (tx) => tx.query(`select customer_claim_guest_orders()`))).rejects.toThrow(/permission denied/);
   });
@@ -352,7 +368,7 @@ describe("currency scaling across countries", () => {
       await t.db.query(`insert into stock_levels (product_id, country_code, available) select id, 'KE', 10 from products where slug = $1`, [PLUG]);
       const result = await placeCodOrder(
         t.db,
-        ANON,
+        shopper,
         order({
           country: "KE",
           lines: [{ product: PLUG, color: null, variant: null, quantity: 3 }],

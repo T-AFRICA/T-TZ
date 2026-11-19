@@ -12,10 +12,10 @@ import {
   riderDeliveryResponseSchema,
   type ServiceTokenSigner,
 } from "@tronic/api-contracts";
-import { ANON, withAccess } from "../src/db";
+import { ANON, withAccess, type Access } from "../src/db";
 import { handleCountryAdminRequest, type CountryAdminResponse, type CountryAdminService } from "../src/country-admin";
 import { getCustomerTracking, placeCodOrder, setDeliveryPoint } from "../src/orders";
-import { createAuthUser, createTestDatabase, type TestDatabase } from "../src/testing";
+import { createAuthUser, createShopper, createTestDatabase, type TestDatabase } from "../src/testing";
 
 /**
  * Deliveries by TRONIC's riders (migration 0008) through the country admin
@@ -27,6 +27,8 @@ import { createAuthUser, createTestDatabase, type TestDatabase } from "../src/te
 let t: TestDatabase;
 let signer: ServiceTokenSigner;
 let service: CountryAdminService;
+/** Orders need an account (migration 0015). */
+let shopper: Access;
 
 const MANAGER = "0b6f3a52-7c1e-4f0a-9a57-3d0a5d6b9e11";
 const RIDER = "6a1d2c3b-4e5f-4a60-8b71-9c8d7e6f5a41";
@@ -52,7 +54,7 @@ const asRider = (method: "GET" | "POST", path: string, body?: unknown, rider = R
 const moveTo = (orderNumber: string, status: string) => send("POST", `/orders/${orderNumber}/status`, "orders.update", MANAGER, { status });
 
 async function placeOrder(): Promise<{ orderNumber: string; totalMinor: number }> {
-  const result = await placeCodOrder(t.db, ANON, {
+  const result = await placeCodOrder(t.db, shopper, {
     idempotencyKey: randomUUID(),
     country: "TZ",
     contact: { name: "Neema Said", email: "neema@example.test", phone: PHONE },
@@ -82,6 +84,7 @@ const assign = (orderNumber: string, riderId = RIDER, riderName = "Juma Rider") 
 beforeAll(async () => {
   t = await createTestDatabase();
   await createAuthUser(t.db, "someone@example.test");
+  shopper = await createShopper(t.db);
   const keys = await generateKeyPair("ES256", { extractable: true });
   signer = await createServiceTokenSigner({ privateKeyPem: await exportPKCS8(keys.privateKey), keyId: "k1" });
   const verifier = await createServiceTokenVerifier({ countryCode: "TZ", publicKeysPem: { k1: await exportSPKI(keys.publicKey) } });

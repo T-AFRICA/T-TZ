@@ -18,8 +18,13 @@ re-validates the form, then calls `place_cod_order` (database/migrations
 stock, reserves stock and writes the order in one transaction. The browser
 sends an idempotency key per distinct submission, so retries return the same
 order. The page shows the confirmation only after the order is saved; the
-order number is never put in a URL. Guest checkout stays allowed; a signed-in
-customer's order is linked from the verified session.
+order number is never put in a URL. The order is linked to the customer from
+the verified session.
+
+Since 2026-11-19 (owner decision) there is no guest checkout: signed out,
+`/checkout` redirects to `/login?next=/checkout…` (register from there keeps
+`next`), the action answers `sign_in_required` without a session, and
+migration 0015 revokes `place_cod_order` from `anon`.
 
 ## Payment methods (2026-11-18)
 
