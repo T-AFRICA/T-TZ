@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { KeyFormatError } from "@tronic/api-contracts";
+import { COUNTRY_ADMIN_API_PREFIX, DELIVERY_PROOF_MAX_BYTES, KeyFormatError } from "@tronic/api-contracts";
 import { handleCountryAdminRequest } from "@tronic/database/country-admin";
 import { countryAdminService } from "@/features/admin-api/service";
 import { clientKey, createRateLimiter } from "@/features/search/rate-limit";
@@ -20,6 +20,13 @@ import { clientKey, createRateLimiter } from "@/features/search/rate-limit";
 export const dynamic = "force-dynamic";
 
 const MAX_BODY_BYTES = 16 * 1024;
+/**
+ * A rider's "delivered" step carries the photo and the signature (each at
+ * most DELIVERY_PROOF_MAX_BYTES, base64 in JSON). Only that endpoint may
+ * send this much; Vercel's own request limit is 4.5 MB.
+ */
+const DELIVER_PATH = new RegExp(`^${COUNTRY_ADMIN_API_PREFIX}/deliveries/[A-Za-z0-9-]{1,40}/deliver$`);
+const MAX_DELIVER_BODY_BYTES = Math.ceil((2 * Math.ceil(DELIVERY_PROOF_MAX_BYTES / 3) * 4) * 1.05) + 16 * 1024;
 const limiter = createRateLimiter({ limit: 240, windowMs: 60_000 });
 
 function json(body: unknown, status: number) {
@@ -33,9 +40,10 @@ async function handle(request: NextRequest) {
 
   let body = "";
   if (request.method === "POST") {
-    if (Number(request.headers.get("content-length") ?? 0) > MAX_BODY_BYTES) return json({ ok: false, code: "too_large" }, 413);
+    const limit = DELIVER_PATH.test(request.nextUrl.pathname) ? MAX_DELIVER_BODY_BYTES : MAX_BODY_BYTES;
+    if (Number(request.headers.get("content-length") ?? 0) > limit) return json({ ok: false, code: "too_large" }, 413);
     body = await request.text();
-    if (Buffer.byteLength(body, "utf8") > MAX_BODY_BYTES) return json({ ok: false, code: "too_large" }, 413);
+    if (Buffer.byteLength(body, "utf8") > limit) return json({ ok: false, code: "too_large" }, 413);
   }
 
   try {

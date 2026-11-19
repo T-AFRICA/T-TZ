@@ -108,6 +108,7 @@ export const SERVICE_UNAVAILABLE_TEXT: Record<CountryUnavailableReason, string> 
   unreachable: "The country service could not be reached.",
   timeout: "The country service did not answer in time.",
   rejected: "The country service refused the request.",
+  too_large: "The country service refused the request as too large. Nothing was saved. Take the photo again, or update the country's deployment.",
   not_found: "The country service has no admin API at that address.",
   server_error: "The country service answered with an error.",
   invalid_response: "The country service answered, but not in the agreed format.",

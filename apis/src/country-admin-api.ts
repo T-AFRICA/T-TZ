@@ -321,6 +321,7 @@ export type CountryUnavailableReason =
   | "unreachable" // no connection
   | "timeout"
   | "rejected" // the country refused the request (401/403)
+  | "too_large" // the country refused the request's size (413)
   | "not_found" // the country has no such endpoint (404)
   | "server_error" // the country answered 5xx
   | "invalid_response"; // answered, but not with what the contract says
@@ -378,6 +379,7 @@ export interface CountryAdminApiOptions {
 function statusReason(status: number): CountryUnavailableReason {
   if (status === 401 || status === 403) return "rejected";
   if (status === 404) return "not_found";
+  if (status === 413) return "too_large";
   if (status >= 500) return "server_error";
   return "invalid_response";
 }
