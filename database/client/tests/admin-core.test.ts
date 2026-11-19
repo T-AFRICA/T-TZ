@@ -14,6 +14,7 @@ import {
   listCountryServices,
   listPendingInvitations,
   listRiders,
+  setRiderContact,
   listSecurityEvents,
   recordCountryHealthCheck,
   recordSecurityEvent,
@@ -161,6 +162,9 @@ describe("grants and exposure", () => {
       "public.admin_country_endpoint",
       "public.admin_list_riders",
       "public.admin_session",
+      "public.admin_set_rider_contact",
+      // Two: with and without the person's name and phone (0004).
+      "public.invite_admin",
       "public.invite_admin",
       "public.record_country_action",
       "public.record_country_health_check",
@@ -598,9 +602,41 @@ describe("riders", () => {
   it("lists a country's active riders for whoever may assign deliveries, and nothing for a rider", async () => {
     await onboard(mfa("master"), "rider-one", "rider", "tz");
     const riders = await listRiders(t.db, mfa("master"), "tz");
-    expect(riders).toContainEqual({ userId: users["rider-one"], email: "rider-one@example.test", name: null });
+    expect(riders).toContainEqual({ userId: users["rider-one"], email: "rider-one@example.test", name: null, phone: null });
     expect(await listRiders(t.db, password("rider-one"), "tz")).toEqual([]);
     expect(await listRiders(t.db, mfa("master"), "ke")).toEqual([]);
+  });
+
+  it("keeps a rider's name and phone, set by whoever may assign deliveries there, and audits it", async () => {
+    const rider = users["rider-one"]!;
+    const set = (access: AdminAccess, countryId: string, name: string, phone: string | null) => setRiderContact(t.db, access, { countryId, riderId: rider, name, phone });
+    expect(await set(mfa("master"), "tz", "  Juma   Rider ", "+255712000111")).toEqual({ ok: true });
+    expect((await listRiders(t.db, mfa("master"), "tz")).find((r) => r.userId === rider)).toMatchObject({ name: "Juma Rider", phone: "+255712000111" });
+    expect(await set(mfa("master"), "tz", "Juma", "0712000111")).toMatchObject({ ok: false, code: "invalid_request" });
+    expect(await set(mfa("master"), "tz", "J", null)).toMatchObject({ ok: false, code: "invalid_request" });
+    // Not a rider in Kenya, and a rider cannot change riders.
+    expect(await set(mfa("master"), "ke", "Juma", "+255712000111")).toMatchObject({ ok: false, code: "not_allowed" });
+    expect(await set(password("rider-one"), "tz", "Juma", null)).toMatchObject({ ok: false, code: "not_allowed" });
+    const [logged] = await t.db.query<{ action: string }>(`select action from audit_logs where action = 'rider.contact' order by id desc limit 1`);
+    expect(logged?.action).toBe("rider.contact");
+    expect(await set(mfa("master"), "tz", "Juma Rider", null)).toEqual({ ok: true });
+    expect((await listRiders(t.db, mfa("master"), "tz")).find((r) => r.userId === rider)?.phone).toBeNull();
+  });
+
+  it("a rider invited with a name and phone gets them at the first sign-in; an existing profile keeps its own", async () => {
+    const invited = await inviteAdmin(t.db, mfa("master"), { email: "new-rider@example.test", role: "rider", countryId: "tz", name: " Asha  Mwita ", phone: "+255713000222" });
+    expect(invited).toEqual({ ok: true, outcome: "invited", contactSaved: true });
+    const pending = (await listPendingInvitations(t.db, mfa("master"), { countryId: "tz" })).find((i) => i.email === "new-rider@example.test");
+    expect(pending).toMatchObject({ role: "rider", name: "Asha Mwita", phone: "+255713000222" });
+    expect(await inviteAdmin(t.db, mfa("master"), { email: "bad-phone@example.test", role: "rider", countryId: "tz", name: "Asha", phone: "0713" })).toMatchObject({ ok: false, code: "invalid_request" });
+
+    const id = await addUser("new-rider");
+    expect(await acceptAdminInvitations(t.db, password("new-rider"))).toEqual({ ok: true, accepted: 1 });
+    expect((await listRiders(t.db, mfa("master"), "tz")).find((r) => r.userId === id)).toMatchObject({ name: "Asha Mwita", phone: "+255713000222" });
+
+    // rider-one already has a name: a second invitation does not overwrite it.
+    expect(await inviteAdmin(t.db, mfa("master"), { email: "rider-one@example.test", role: "rider", countryId: "ke", name: "Someone Else", phone: "+255713000999" })).toMatchObject({ ok: true, outcome: "granted" });
+    expect((await listRiders(t.db, mfa("master"), "tz")).find((r) => r.userId === users["rider-one"])?.name).toBe("Juma Rider");
   });
 
   it("answers an empty list while the riders migration (0003) is missing, so order pages keep working", async () => {

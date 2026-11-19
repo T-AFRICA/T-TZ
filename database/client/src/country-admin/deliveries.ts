@@ -9,6 +9,8 @@ import {
   type OrderStatus,
   type RiderDeliveries,
   type RiderFigures,
+  type RiderLocation,
+  type RiderLocationResult,
   type RiderDeliveryList,
   type RiderDeliveryResponse,
   type RiderDeliveryUpdate,
@@ -119,15 +121,29 @@ export function deliveryFunctions(withServiceAccess: ServiceAccess) {
       };
     },
 
-    async assign(db: Db, country: string, orderNumber: string, rider: { riderId: string; riderName: string }, actorId: string): Promise<DeliveryAssignResult> {
+    async assign(
+      db: Db,
+      country: string,
+      orderNumber: string,
+      rider: { riderId: string; riderName: string; riderPhone?: string | undefined },
+      actorId: string,
+    ): Promise<DeliveryAssignResult> {
+      // With the rider's phone once migration 0012 is in; without it before, so assigning keeps working.
+      const [has] = await withServiceAccess(db, (tx) =>
+        tx.query<Row>(`select to_regprocedure('public.admin_assign_delivery(character,text,uuid,text,uuid,text)') is not null as ok`),
+      );
+      const withPhone = has?.ok === true;
       const result = object(
-        await call(withServiceAccess, db, `select admin_assign_delivery($1::char(2), $2, $3::uuid, $4, $5::uuid) as result`, [
-          country,
-          orderNumber,
-          rider.riderId,
-          rider.riderName,
-          actorId,
-        ]),
+        await call(
+          withServiceAccess,
+          db,
+          withPhone
+            ? `select admin_assign_delivery($1::char(2), $2, $3::uuid, $4, $5::uuid, $6) as result`
+            : `select admin_assign_delivery($1::char(2), $2, $3::uuid, $4, $5::uuid) as result`,
+          withPhone
+            ? [country, orderNumber, rider.riderId, rider.riderName, actorId, rider.riderPhone ?? null]
+            : [country, orderNumber, rider.riderId, rider.riderName, actorId],
+        ),
       );
       if (!result) throw new Error("admin_assign_delivery returned nothing");
       if (result.ok === true) return { ok: true, riderId: String(result.rider_id), riderName: String(result.rider_name) };
@@ -173,6 +189,23 @@ export function deliveryFunctions(withServiceAccess: ServiceAccess) {
           createdAt: iso(p.created_at),
         },
       };
+    },
+
+    async reportLocation(db: Db, country: string, orderNumber: string, riderId: string, location: RiderLocation): Promise<RiderLocationResult> {
+      const r = object(
+        await call(withServiceAccess, db, `select rider_report_location($1::char(2), $2, $3::uuid, $4, $5, $6) as result`, [
+          country,
+          orderNumber,
+          riderId,
+          location.lat,
+          location.lng,
+          location.accuracy ?? null,
+        ]),
+      );
+      if (!r) throw new Error("rider_report_location returned nothing");
+      if (r.ok === true) return { ok: true, saved: r.saved === true };
+      const code = r.code === "not_found" || r.code === "not_on_the_way" ? r.code : "invalid_request";
+      return { ok: false, code };
     },
 
     async listForRider(db: Db, country: string, riderId: string): Promise<RiderDeliveryList> {

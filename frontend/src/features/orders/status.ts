@@ -5,7 +5,7 @@ export const ORDER_STATUS_LABELS: Record<string, string> = {
   processing: "Processing",
   packed: "Packed",
   dispatched: "Dispatched",
-  in_transit: "In transit",
+  in_transit: "Out for delivery",
   delivered: "Delivered",
   cancelled: "Cancelled",
 };

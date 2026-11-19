@@ -14,7 +14,7 @@ import {
 } from "@tronic/api-contracts";
 import { ANON, withAccess } from "../src/db";
 import { handleCountryAdminRequest, type CountryAdminResponse, type CountryAdminService } from "../src/country-admin";
-import { placeCodOrder } from "../src/orders";
+import { getCustomerTracking, placeCodOrder } from "../src/orders";
 import { createAuthUser, createTestDatabase, type TestDatabase } from "../src/testing";
 
 /**
@@ -254,3 +254,51 @@ describe("riders' figures", () => {
     expect((await asManager("GET", "/riders/not-a-uuid")).status).toBe(400);
   });
 });
+
+describe("live tracking", () => {
+  it("takes the rider's location only while the order is on its way, and shows the customer the step times, the rider and the path", async () => {
+    const { orderNumber } = await packedOrder();
+    expect((await asManager("POST", `/orders/${orderNumber}/delivery`, { riderId: RIDER, riderName: "Juma Rider", riderPhone: "+255712000222" })).body).toMatchObject({ ok: true });
+    const point = { lat: -6.8161, lng: 39.2803, accuracy: 12 };
+
+    // Not yet picked up: no location is taken, and the customer sees the steps only.
+    expect((await asRider("POST", `/deliveries/${orderNumber}/location`, point)).body).toEqual({ ok: false, code: "not_on_the_way" });
+    const before = await customerTracking(orderNumber, PHONE);
+    expect(before).toMatchObject({ status: "packed", rider: null, path: [] });
+    expect(before!.events.map((e) => e.status)).toEqual(["confirmed", "processing", "packed"]);
+
+    await asRider("POST", `/deliveries/${orderNumber}/pickup`, {});
+    expect((await asRider("POST", `/deliveries/${orderNumber}/location`, point)).body).toEqual({ ok: true, saved: true });
+    // A second point within 10 seconds is not kept.
+    expect((await asRider("POST", `/deliveries/${orderNumber}/location`, { ...point, lat: -6.81 })).body).toEqual({ ok: true, saved: false });
+    // Another rider's phone, nonsense and a missing order are refused.
+    expect((await asRider("POST", `/deliveries/${orderNumber}/location`, point, OTHER_RIDER)).body).toEqual({ ok: false, code: "not_found" });
+    expect((await asRider("POST", `/deliveries/${orderNumber}/location`, { lat: 120, lng: 39 })).body).toEqual({ ok: false, code: "invalid_request" });
+
+    const on = await customerTracking(orderNumber, PHONE);
+    expect(on).toMatchObject({ status: "dispatched", rider: { name: "Juma", phone: "+255712000222" } });
+    expect(on!.path).toEqual([expect.objectContaining({ lat: -6.8161, lng: 39.2803, accuracy: 12 })]);
+    expect(on!.events.at(-1)).toMatchObject({ status: "dispatched" });
+    // Someone with the wrong contact sees nothing at all.
+    expect(await customerTracking(orderNumber, "+255700000001")).toBeNull();
+
+    // Delivered: the rider and the path are no longer shown.
+    await asRider("POST", `/deliveries/${orderNumber}/start`, {});
+    const code = await customerCode(orderNumber, PHONE);
+    const total = (await t.db.query<{ total_minor: number }>(`select total_minor from orders where order_number = $1`, [orderNumber]))[0]!.total_minor;
+    await asRider("POST", `/deliveries/${orderNumber}/deliver`, { code, cashCollectedMinor: Number(total), photo: image(), signature: image() });
+    expect(await customerTracking(orderNumber, PHONE)).toMatchObject({ status: "delivered", rider: null, path: [] });
+    expect((await asRider("POST", `/deliveries/${orderNumber}/location`, point)).body).toEqual({ ok: false, code: "not_on_the_way" });
+  });
+
+  it("keeps the location table private", async () => {
+    await expect(withAccess(t.db, ANON, (tx) => tx.query(`select * from delivery_locations`))).rejects.toThrow(/permission denied/);
+    await expect(
+      withAccess(t.db, ANON, (tx) => tx.query(`select rider_report_location('TZ', 'x', gen_random_uuid(), 0, 0, null)`)),
+    ).rejects.toThrow(/permission denied/);
+  });
+});
+
+async function customerTracking(orderNumber: string, contact: string) {
+  return getCustomerTracking(t.db, ANON, orderNumber, contact);
+}

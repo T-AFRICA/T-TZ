@@ -135,6 +135,28 @@ by the hygiene check).
 4. Until step 2 is done, the delivery pages say the country's database
    does not have deliveries yet; orders keep working.
 
+## Live order tracking (owner)
+
+While an order is on its way, the rider's delivery page shares the phone's
+location (the browser asks the rider once; at most every 15 seconds, only
+while that page is open). The customer's tracking page on the storefront
+shows the rider's first name, a Call button with the rider's phone, and
+the rider's position and path on an OpenFreeMap map (free, no key).
+Arrival time and distance say "Not available": there are no store or
+delivery-address coordinates yet.
+
+1. Central Admin project: `database/admin-migrations/0004_admin_phone.sql`
+   (after 0003). Riders → "Add a rider" takes the email the rider signs in
+   with, their name and phone (also offered, optional, in Staff → "Give a
+   role"); the name and phone reach the rider's profile at their first
+   sign-in. An existing rider's are edited on their page under "Name and
+   phone". The customer sees the first name and calls that phone.
+2. The country's project: `database/migrations/0012_live_tracking.sql`
+   (after 0008). An order assigned after this carries the rider's phone.
+3. Deploy both apps. Until step 2, the rider's page says the country does
+   not have live tracking yet and the customer's map says the live
+   location is not available; everything else keeps working.
+
 ## Customers (owner)
 
 "Customers" (for whoever holds `customers.read`: Order Manager, Customer

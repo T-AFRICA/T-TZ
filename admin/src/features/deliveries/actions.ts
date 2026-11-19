@@ -9,12 +9,12 @@ import {
   type CountryUnavailableReason,
   type RiderDeliveryUpdate,
 } from "@tronic/api-contracts";
-import { listRiders, recordCountryAction, type CountryAction } from "@tronic/database/admin";
+import { listRiders, recordCountryAction, setRiderContact, type CountryAction } from "@tronic/database/admin";
 import { can } from "@tronic/permissions";
 import type { FormState } from "@/features/form-state";
 import { SERVICE_UNAVAILABLE_TEXT } from "@/features/labels";
 import { ORDER_STATUS_LABEL } from "@/features/orders/labels";
-import { fieldErrors, formText } from "@/features/rules";
+import { fieldErrors, formText, riderContactSchema } from "@/features/rules";
 import { denied, done } from "@/server/action-results";
 import { countryApiFor } from "@/server/country-api";
 import { getAdminDb } from "@/server/db";
@@ -73,7 +73,7 @@ export async function assignRiderAction(_previous: FormState, form: FormData): P
   const riderName = (rider.name ?? rider.email).slice(0, 80);
 
   const api = await countryApiFor(admin, country);
-  const result = await api.assignDelivery(admin.actor.userId, orderNumber, { riderId, riderName });
+  const result = await api.assignDelivery(admin.actor.userId, orderNumber, { riderId, riderName, ...(rider.phone ? { riderPhone: rider.phone } : {}) });
   if (!result.available) return unavailable(result.reason);
   const answer = result.data;
   if (!answer.ok) {
@@ -84,6 +84,52 @@ export async function assignRiderAction(_previous: FormState, form: FormData): P
   }
   await audit(admin, { countryId: country.id, action: "delivery.assign", targetId: orderNumber, summary: { rider: riderId } });
   return done(`Order ${orderNumber} is now with ${riderName}.`);
+}
+
+// ---------------------------------------------------- rider name and phone --
+
+export async function setRiderContactAction(_previous: FormState, form: FormData): Promise<FormState> {
+  const admin = await requireAdmin();
+  const parsed = riderContactSchema.safeParse({
+    countryId: formText(form, "countryId"),
+    riderId: formText(form, "riderId"),
+    name: formText(form, "name"),
+    phone: formText(form, "phone"),
+  });
+  if (!parsed.success) return { status: "error", fieldErrors: fieldErrors(parsed.error) };
+  const country = await countryFor(admin, parsed.data.countryId, "deliveries.assign");
+  if (!country) return denied(admin, parsed.data.countryId, "deliveries.assign");
+  let result: Awaited<ReturnType<typeof setRiderContact>>;
+  try {
+    result = await setRiderContact(getAdminDb(), admin.access, { countryId: country.id, riderId: parsed.data.riderId, name: parsed.data.name, phone: parsed.data.phone });
+  } catch (error) {
+    if ((error as { code?: unknown } | null)?.code !== "42883") throw error;
+    return { status: "error", message: "The Central Admin database needs database/admin-migrations/0004_admin_phone.sql before a rider's name and phone can be saved." };
+  }
+  if (!result.ok) return { status: "error", message: result.code === "not_allowed" ? "That person is not a rider you can manage here." : "That name or phone number was not accepted." };
+  return done("Saved. The customer sees this name and phone with this rider's next orders.");
+}
+
+// ---------------------------------------------------------- rider location --
+
+/** The rider's phone reports where it is, while an order is on its way. Quiet: no audit entry, no page refresh. */
+export async function riderLocationAction(input: { countryId: string; orderNumber: string; lat: number; lng: number; accuracy: number | null }): Promise<"saved" | "skipped" | "stopped" | "missing" | "unavailable"> {
+  const admin = await requireAdmin();
+  const parsed = z
+    .object({ ...target, lat: z.number().min(-90).max(90), lng: z.number().min(-180).max(180), accuracy: z.number().nonnegative().max(100_000).nullable() })
+    .safeParse(input);
+  if (!parsed.success) return "stopped";
+  const country = await countryFor(admin, parsed.data.countryId, "deliveries.perform");
+  if (!country) return "stopped";
+  const api = await countryApiFor(admin, country);
+  const result = await api.reportLocation(admin.actor.userId, parsed.data.orderNumber, {
+    lat: parsed.data.lat,
+    lng: parsed.data.lng,
+    ...(parsed.data.accuracy !== null ? { accuracy: Math.round(parsed.data.accuracy) } : {}),
+  });
+  if (!result.available) return result.reason === "country_tracking_missing" ? "missing" : "unavailable";
+  if (!result.data.ok) return "stopped";
+  return result.data.saved ? "saved" : "skipped";
 }
 
 // ------------------------------------------------------------ rider steps --

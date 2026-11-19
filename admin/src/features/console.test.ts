@@ -140,6 +140,15 @@ describe("form rules", () => {
     expect(inviteSchema.safeParse({ email: "a@example.test", role: "order_manager", countryId: "TZ; drop" }).success).toBe(false);
   });
 
+  it("a rider needs a name and a phone; a Tanzanian 07xx number gets +255", () => {
+    const rider = { email: "r@example.test", role: "rider", countryId: "tz" };
+    expect(inviteSchema.safeParse({ ...rider, name: "", phone: "" }).success).toBe(false);
+    expect(inviteSchema.parse({ ...rider, name: "  Asha   Mwita ", phone: "0713 000-222" })).toMatchObject({ name: "Asha Mwita", phone: "+255713000222" });
+    expect(inviteSchema.safeParse({ ...rider, name: "Asha", phone: "0713" }).success).toBe(false);
+    // Other roles may leave both empty.
+    expect(inviteSchema.parse({ email: "a@example.test", role: "order_manager", countryId: "tz", name: "", phone: "" })).toMatchObject({ name: null, phone: null });
+  });
+
   it("clear empty country fields and check the rest", () => {
     const base = { countryId: "congo", name: "Congo", isoCode: "", currency: "", timezone: "", websiteDomain: "", status: "pending_confirmation" };
     expect(countrySchema.parse(base)).toMatchObject({ isoCode: null, currency: null, timezone: null, websiteDomain: null });

@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { listRiders } from "@tronic/database/admin";
 import { can } from "@tronic/permissions";
+import { RiderContactForm } from "@/components/deliveries";
 import { Cell, DataTable, EmptyRow, Notice, PageHeader, Panel, StatCard, StatusPill, buttonClass } from "@/components/ui";
 import { FAILURE_REASON_LABEL } from "@/features/deliveries/labels";
 import { SERVICE_UNAVAILABLE_TEXT, formatDateTime } from "@/features/labels";
@@ -75,6 +76,10 @@ export default async function RiderPage({ params }: { params: Promise<{ country:
         <StatCard label="Cash collected today" value={amount(f?.cashTodayMinor ?? 0)} hint="Cash on Delivery, confirmed at the door" />
         <StatCard label="Failed attempts" value={f?.failed7Days ?? 0} hint="In the last 7 days" />
       </div>
+
+      <Panel title="Name and phone" description="What the customer sees while this rider brings their order.">
+        <RiderContactForm countryId={country.id} riderId={rider.userId} name={rider.name} phone={rider.phone} />
+      </Panel>
 
       <Panel title="With them now" flush>
         {open.length === 0 ? (

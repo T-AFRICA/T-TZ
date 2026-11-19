@@ -21,7 +21,11 @@ const contentSecurityPolicy = [
   "style-src 'self' 'unsafe-inline' https://use.typekit.net https://p.typekit.net",
   "img-src 'self' data: blob:",
   "font-src 'self' https://use.typekit.net",
-  "connect-src 'self'",
+  // Order tracking map (owner decision 2026-11-19): OpenFreeMap's style,
+  // vector tiles, sprites and glyphs, fetched by MapLibre GL from its worker,
+  // which it starts from a blob: URL.
+  "connect-src 'self' https://tiles.openfreemap.org",
+  "worker-src 'self' blob:",
   "frame-ancestors 'none'",
   "form-action 'self'",
   "base-uri 'self'",

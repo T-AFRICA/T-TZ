@@ -197,27 +197,72 @@ export function InviteForm({
   countries,
   roles,
   fixedCountryId,
+  fixedRole,
 }: {
   countries: { id: string; name: string }[];
   roles: { key: string; name: string }[];
   /** On a country's staff page the country is not a choice. */
   fixedCountryId?: string;
+  /** On the Riders page the role is Rider: name and phone are then required. */
+  fixedRole?: "rider";
 }) {
+  const rider = fixedRole === "rider";
+  // Email, name and phone, then the role and the country when they are choices, then the button.
+  const fields = 3 + (rider ? 0 : 1) + (fixedCountryId ? 0 : 1);
+  const columns =
+    fields === 3
+      ? "xl:grid-cols-[minmax(0,1.4fr)_minmax(0,1.2fr)_minmax(0,1fr)_auto]"
+      : fields === 4
+        ? "xl:grid-cols-[minmax(0,1.4fr)_minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,1fr)_auto]"
+        : "xl:grid-cols-[minmax(0,1.4fr)_minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto]";
   return (
-    <ActionForm action={inviteAdminAction} resetOnSuccess className="grid items-start gap-4 md:grid-cols-[minmax(0,2fr)_minmax(0,1.4fr)_minmax(0,1.2fr)_auto]">
+    <ActionForm action={inviteAdminAction} resetOnSuccess className={`grid items-start gap-4 sm:grid-cols-2 ${columns}`}>
       {(state, pending) => (
         <>
-          <TextField name="email" label="Email address" type="email" autoComplete="off" inputMode="email" required error={state.fieldErrors?.email} />
-          <SelectField name="role" label="Role" required defaultValue="" error={state.fieldErrors?.role}>
-            <option value="" disabled>
-              Choose a role
-            </option>
-            {roles.map((role) => (
-              <option key={role.key} value={role.key}>
-                {role.name}
+          <TextField
+            name="email"
+            label="Email address"
+            type="email"
+            autoComplete="off"
+            inputMode="email"
+            required
+            hint={rider ? "The rider signs in with this address." : undefined}
+            error={state.fieldErrors?.email}
+          />
+          <TextField
+            name="name"
+            label={rider ? "Name" : "Name (optional)"}
+            autoComplete="off"
+            maxLength={80}
+            required={rider}
+            hint={rider ? "The customer sees the first name." : undefined}
+            error={state.fieldErrors?.name}
+          />
+          <TextField
+            name="phone"
+            label={rider ? "Phone number" : "Phone (optional)"}
+            type="tel"
+            inputMode="tel"
+            autoComplete="off"
+            placeholder="0712 345 678"
+            required={rider}
+            hint={rider ? "The customer can call it on the way." : "Needed for the Rider role."}
+            error={state.fieldErrors?.phone}
+          />
+          {rider ? (
+            <input type="hidden" name="role" value="rider" />
+          ) : (
+            <SelectField name="role" label="Role" required defaultValue="" error={state.fieldErrors?.role}>
+              <option value="" disabled>
+                Choose a role
               </option>
-            ))}
-          </SelectField>
+              {roles.map((role) => (
+                <option key={role.key} value={role.key}>
+                  {role.name}
+                </option>
+              ))}
+            </SelectField>
+          )}
           {fixedCountryId ? (
             <input type="hidden" name="countryId" value={fixedCountryId} />
           ) : (
@@ -232,12 +277,12 @@ export function InviteForm({
               ))}
             </SelectField>
           )}
-          <div className="md:pt-[1.625rem]">
+          <div className="xl:pt-[1.625rem]">
             <SubmitButton pending={pending} pendingLabel="Saving…">
-              Give role
+              {rider ? "Add rider" : "Give role"}
             </SubmitButton>
           </div>
-          <div className="md:col-span-full">
+          <div className="col-span-full">
             <FormMessage state={state} />
           </div>
         </>

@@ -1,7 +1,9 @@
 import {
   countCustomerOrdersByStatus,
   getCustomerOrder,
+  getCustomerTracking,
   getDeliveryCode,
+  type CustomerTracking,
   listCustomerOrderPage,
   type CustomerOrderDetail,
   type CustomerOrderPage,
@@ -103,7 +105,9 @@ export interface AccountService {
   listOrders(query?: CustomerOrderQuery): Promise<ServiceResult<CustomerOrderPage>>;
   /** null inside `ok` means "no such order for this customer". */
   getOrder(orderNumber: string): Promise<ServiceResult<CustomerOrderDetail | null>>;
-  getTracking(order: TrackableOrder): OrderTracking;
+  getTracking(order: TrackableOrder, events?: readonly { status: string; at: string }[]): OrderTracking;
+  /** Live tracking of one of the customer's orders (migration 0012); null when unavailable. */
+  getLiveTracking(orderNumber: string): Promise<CustomerTracking | null>;
   /** The code the customer gives the rider, while the order is on its way; null otherwise. */
   getDeliveryCode(order: { orderNumber: string; status: string }): Promise<string | null>;
   listPayments(query?: Pick<CustomerOrderQuery, "page" | "pageSize">): Promise<ServiceResult<{ items: PaymentRecord[]; page: number; pageCount: number; total: number }>>;
@@ -145,7 +149,9 @@ export function createAccountService(user: SessionUser): AccountService {
 
     getOrder: (orderNumber) => withOrders(() => getCustomerOrder(getDb(), access, orderNumber)),
 
-    getTracking: (order) => buildTracking(order),
+    getTracking: (order, events) => buildTracking(order, events),
+
+    getLiveTracking: async (orderNumber) => (ordersEnabled() ? getCustomerTracking(getDb(), access, orderNumber, null) : null),
 
     getDeliveryCode: async (order) =>
       ordersEnabled() && (order.status === "dispatched" || order.status === "in_transit")

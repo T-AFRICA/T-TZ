@@ -385,13 +385,18 @@ export interface AdminInvitation {
   createdAt: string;
   expiresAt: string;
   expired: boolean;
+  /** The name and phone typed with the invitation (admin migration 0004); null otherwise. */
+  name: string | null;
+  phone: string | null;
 }
 
 /** Invitations still waiting, in the countries whose staff the caller may see. */
 export async function listPendingInvitations(db: Db, access: AdminAccess, options: { countryId?: string } = {}): Promise<AdminInvitation[]> {
   const rows = await withAdminAccess(db, access, (tx) =>
     tx.query(
-      `select i.id, i.email, i.role_key, i.country_id, i.created_at, i.expires_at, i.expires_at <= now() as expired
+      // to_jsonb: the name and phone columns exist only from admin migration 0004 on.
+      `select i.id, i.email, i.role_key, i.country_id, i.created_at, i.expires_at, i.expires_at <= now() as expired,
+              to_jsonb(i) ->> 'full_name' as full_name, to_jsonb(i) ->> 'phone' as phone
          from admin_invitations i
         where i.accepted_at is null and i.revoked_at is null
           and ($1::text is null or i.country_id = $1)
@@ -407,17 +412,35 @@ export async function listPendingInvitations(db: Db, access: AdminAccess, option
     createdAt: iso(row.created_at),
     expiresAt: iso(row.expires_at),
     expired: row.expired === true,
+    name: nullableText(row.full_name),
+    phone: nullableText(row.phone),
   }));
 }
 
-/** Gives a role to an email address: assigned at once to an existing administrator, otherwise an invitation. */
+/**
+ * Gives a role to an email address: assigned at once to an existing
+ * administrator, otherwise an invitation. A name or phone (admin migration
+ * 0004) goes with it; without either the 0001 function is used, so inviting
+ * keeps working before 0004 is applied.
+ */
 export async function inviteAdmin(
   db: Db,
   access: AdminAccess,
-  input: { email: string; role: string; countryId: string },
-): Promise<AdminResult<{ outcome: "granted" | "invited" }>> {
-  const result = await callFunction(db, access, `select invite_admin($1, $2, $3) as result`, [input.email, input.role, input.countryId]);
-  return result.ok === true ? { ok: true, outcome: result.outcome === "granted" ? "granted" : "invited" } : failure(result);
+  input: { email: string; role: string; countryId: string; name?: string | null; phone?: string | null },
+): Promise<AdminResult<{ outcome: "granted" | "invited"; contactSaved: boolean }>> {
+  let contactSaved = Boolean(input.name || input.phone);
+  let result: Json | null = null;
+  if (contactSaved) {
+    try {
+      result = await callFunction(db, access, `select invite_admin($1, $2, $3, $4, $5) as result`, [input.email, input.role, input.countryId, input.name ?? null, input.phone ?? null]);
+    } catch (error) {
+      // Before admin migration 0004: give the role without the name and phone, and say so.
+      if ((error as { code?: unknown } | null)?.code !== "42883") throw error;
+      contactSaved = false;
+    }
+  }
+  result ??= await callFunction(db, access, `select invite_admin($1, $2, $3) as result`, [input.email, input.role, input.countryId]);
+  return result.ok === true ? { ok: true, outcome: result.outcome === "granted" ? "granted" : "invited", contactSaved } : failure(result);
 }
 
 export async function revokeAdminInvitation(db: Db, access: AdminAccess, invitationId: string): Promise<AdminResult> {
@@ -636,6 +659,23 @@ export interface Rider {
   userId: string;
   email: string;
   name: string | null;
+  /** +<country><number>; null until set (admin migration 0004). */
+  phone: string | null;
+}
+
+/** Sets a rider's name and phone (null clears the phone), for whoever may assign deliveries in that country. */
+export async function setRiderContact(
+  db: Db,
+  access: AdminAccess,
+  entry: { countryId: string; riderId: string; name: string; phone: string | null },
+): Promise<AdminResult> {
+  const result = await callFunction(db, access, `select admin_set_rider_contact($1, $2::uuid, $3, $4) as result`, [
+    entry.countryId,
+    entry.riderId,
+    entry.name,
+    entry.phone,
+  ]);
+  return result.ok === true ? { ok: true } : failure(result);
 }
 
 /**
@@ -653,7 +693,12 @@ export async function listRiders(db: Db, access: AdminAccess, countryId: string)
   }
   const raw: unknown = typeof row?.result === "string" ? JSON.parse(row.result) : row?.result;
   if (!Array.isArray(raw)) return [];
-  return (raw as Json[]).map((rider) => ({ userId: text(rider.user_id), email: text(rider.email), name: nullableText(rider.name) }));
+  return (raw as Json[]).map((rider) => ({
+    userId: text(rider.user_id),
+    email: text(rider.email),
+    name: nullableText(rider.name),
+    phone: nullableText(rider.phone),
+  }));
 }
 
 /** The audit entry for a change made in a country's own system through this console. */

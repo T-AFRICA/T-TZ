@@ -14,7 +14,7 @@ export const ORDER_STATUSES = [
   { label: "Processing", text: "Your items are being prepared." },
   { label: "Packed", text: "Packed and ready to leave." },
   { label: "Dispatched", text: "Handed to the delivery team." },
-  { label: "In transit", text: "On the way to your address." },
+  { label: "Out for delivery", text: "On the way to your address." },
   { label: "Delivered", text: "Delivered to your address." },
 ] as const;
 

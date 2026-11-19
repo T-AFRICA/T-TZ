@@ -45,6 +45,28 @@ describe("buildTracking", () => {
     expect(tracking.steps.slice(1).every((step) => step.at === null)).toBe(true);
   });
 
+  it("takes each reached step's time from the order's history, never for a step not reached", () => {
+    const events = [
+      { status: "confirmed", at: "2026-11-01T08:05:00.000Z" },
+      { status: "dispatched", at: "2026-11-01T10:00:00.000Z" },
+      { status: "in_transit", at: "2026-11-01T10:20:00.000Z" },
+      // A later return to a status keeps the first time it was reached.
+      { status: "dispatched", at: "2026-11-01T11:00:00.000Z" },
+      { status: "delivered", at: "2026-11-01T12:00:00.000Z" },
+    ];
+    const tracking = buildTracking({ ...base, status: "in_transit" }, events);
+    expect(tracking.steps.map((step) => [step.key, step.at])).toEqual([
+      ["placed", base.createdAt],
+      ["confirmed", "2026-11-01T08:05:00.000Z"],
+      ["processing", null],
+      ["packed", null],
+      ["dispatched", "2026-11-01T10:00:00.000Z"],
+      ["in_transit", "2026-11-01T10:20:00.000Z"],
+      ["delivered", null],
+    ]);
+    expect(tracking.currentTitle).toBe("Out for delivery");
+  });
+
   it("pickup orders have no dispatch or transit steps", () => {
     const tracking = buildTracking({ ...base, deliveryMethod: "pickup", status: "packed" });
     expect(tracking.steps.map((step) => step.key)).toEqual(["placed", "confirmed", "processing", "ready", "collected"]);

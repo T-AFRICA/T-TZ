@@ -42,17 +42,28 @@ import { requireAdmin } from "@/server/session";
 
 export async function inviteAdminAction(_previous: FormState, form: FormData): Promise<FormState> {
   const admin = await requireAdmin();
-  const parsed = inviteSchema.safeParse({ email: formText(form, "email"), role: formText(form, "role"), countryId: formText(form, "countryId") });
+  const parsed = inviteSchema.safeParse({
+    email: formText(form, "email"),
+    role: formText(form, "role"),
+    countryId: formText(form, "countryId"),
+    name: formText(form, "name"),
+    phone: formText(form, "phone"),
+  });
   if (!parsed.success) return { status: "error", fieldErrors: fieldErrors(parsed.error) };
-  const { email, role, countryId } = parsed.data;
+  const { email, role, countryId, name, phone } = parsed.data;
   if (!isRoleKey(role) || grantRefusal(admin.actor, role, countryId, null) !== null) return denied(admin, countryId, `invite:${role}`);
 
-  const result = await inviteAdmin(getAdminDb(), admin.access, { email, role, countryId });
+  const result = await inviteAdmin(getAdminDb(), admin.access, { email, role, countryId, name, phone });
   if (!result.ok) return refused(result.code);
-  return done(
+  const who = name ?? email;
+  const message =
     result.outcome === "granted"
-      ? `${email} now has the ${roleName(role)} role.`
-      : `Invitation recorded. ${email} gets the ${roleName(role)} role when they first sign in with that address.`,
+      ? `${who} now has the ${roleName(role)} role.`
+      : `Invitation recorded. ${who} gets the ${roleName(role)} role when they first sign in with ${email}.`;
+  return done(
+    (name || phone) && !result.contactSaved
+      ? `${message} The name and phone were not saved: the Central Admin database needs database/admin-migrations/0004_admin_phone.sql.`
+      : message,
   );
 }
 
