@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { Actor } from "@tronic/permissions";
 import { decideGate, gatePath, type AdminRecord, type VerifiedIdentity } from "./auth/gate";
 import { auditSummaryText, initials, roleName, serviceState } from "./labels";
-import { buildNav, countryIdFromPath, isCountryModule, isCurrentNavItem } from "./nav";
+import { buildNav, countryIdFromPath, isCountryModule, isCurrentNavItem, isRiderOnly } from "./nav";
 import { countrySchema, countryServiceSchema, fieldErrors, inviteSchema, signInSchema, totpSchema } from "./rules";
 import { nextTheme, parseTheme } from "./theme";
 
@@ -93,6 +93,13 @@ describe("navigation", () => {
       ["Tanzania", ["Dashboard", "My deliveries"]],
     ]);
     expect(sections[1]!.items.find((item) => item.label === "My deliveries")?.href).toBe("/c/tz/deliveries");
+  });
+
+  it("gives the rider dashboard only to someone whose one role in the country is Rider", () => {
+    expect(isRiderOnly(actor([{ role: "rider", countryId: "tz" }], false), "tz")).toBe(true);
+    expect(isRiderOnly(actor([{ role: "rider", countryId: "tz" }, { role: "order_manager", countryId: "tz" }], false), "tz")).toBe(false);
+    expect(isRiderOnly(actor([{ role: "rider", countryId: "ke" }], false), "tz")).toBe(false);
+    expect(isRiderOnly(actor([{ role: "master_super_admin", countryId: null }]), "tz")).toBe(false);
   });
 
   it("shows nothing of a country the administrator has no role in", () => {

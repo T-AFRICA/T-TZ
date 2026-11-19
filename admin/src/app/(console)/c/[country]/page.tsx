@@ -2,7 +2,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { listAdministrators, listAuditLog, listCountryServices } from "@tronic/database/admin";
 import { can } from "@tronic/permissions";
+import { RiderDashboard } from "@/components/rider-dashboard";
 import { Cell, DataTable, EmptyRow, Notice, PageHeader, Panel, StatCard, StatusPill, UnavailableStat } from "@/components/ui";
+import { isRiderOnly } from "@/features/nav";
 import { COUNTRY_STATUS_LABEL, COUNTRY_STATUS_TONE, auditActionLabel, auditSummaryText, formatDateTime, serviceState } from "@/features/labels";
 import { getAdminDb } from "@/server/db";
 import { requireCountry } from "@/server/session";
@@ -13,6 +15,10 @@ const BUSINESS_FIGURES = ["Orders", "Pending orders", "Sales", "Customers", "Pro
 
 export default async function CountryDashboardPage({ params }: { params: Promise<{ country: string }> }) {
   const { admin, country } = await requireCountry((await params).country);
+  // A rider's dashboard is about their own deliveries.
+  if (isRiderOnly(admin.actor, country.id) && can(admin.actor, "deliveries.perform", country.id)) {
+    return <RiderDashboard admin={admin} country={country} />;
+  }
   const db = getAdminDb();
   const seesSettings = can(admin.actor, "settings.read", country.id);
   const seesStaff = can(admin.actor, "staff.read", country.id);

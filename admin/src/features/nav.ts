@@ -87,6 +87,17 @@ export function buildNav(actor: Actor, country: { id: string; name: string } | n
   return sections;
 }
 
+/**
+ * True when the administrator's only role in the country is Rider: their
+ * country dashboard is about their deliveries. Decides what is shown only;
+ * every page and the country check access again.
+ */
+export function isRiderOnly(actor: Actor, countryId: string): boolean {
+  if (isMaster(actor)) return false;
+  const here = actor.assignments.filter((assignment) => assignment.countryId === countryId);
+  return here.length > 0 && here.every((assignment) => assignment.role === "rider");
+}
+
 /** The country id in a console path ("/c/tz/orders" -> "tz"), or null. */
 export function countryIdFromPath(pathname: string | null): string | null {
   const match = /^\/c\/([a-z][a-z0-9_]{1,23})(?:\/|$)/.exec(pathname ?? "");
