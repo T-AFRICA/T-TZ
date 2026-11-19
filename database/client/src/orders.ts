@@ -150,6 +150,54 @@ export async function getDeliveryCode(db: Db, access: Access, orderNumber: strin
   }
 }
 
+export interface CustomerTrackingPoint {
+  lat: number;
+  lng: number;
+  accuracy: number | null;
+  at: string;
+}
+
+export interface CustomerTracking {
+  status: string;
+  /** When the order reached each status, from the order's history (oldest first). */
+  events: { status: string; at: string }[];
+  /** While the order is on its way: the rider's first name and phone. */
+  rider: { name: string; phone: string | null } | null;
+  /** While the order is on its way: the rider's path so far, oldest first. */
+  path: CustomerTrackingPoint[];
+}
+
+/**
+ * Live tracking of one order for its customer (migration 0012): the signed-in
+ * owner, or a guest with the checkout email or phone. Null for an order the
+ * caller may not see, and null while the database does not have tracking yet,
+ * so the page keeps working before the migration is applied.
+ */
+export async function getCustomerTracking(db: Db, access: Access, orderNumber: string, contact: string | null): Promise<CustomerTracking | null> {
+  let raw: unknown;
+  try {
+    const [row] = await withAccess(db, access, (tx) =>
+      tx.query<{ result: unknown }>(`select customer_order_tracking($1, $2) as result`, [orderNumber, contact]),
+    );
+    raw = typeof row?.result === "string" ? JSON.parse(row.result) : row?.result;
+  } catch (error) {
+    if ((error as { code?: unknown } | null)?.code === "42883") return null;
+    throw error;
+  }
+  if (!raw || typeof raw !== "object") return null;
+  const t = raw as Json;
+  const list = (value: unknown): Json[] => (Array.isArray(value) ? (value as Json[]) : []);
+  const rider = t.rider && typeof t.rider === "object" ? (t.rider as Json) : null;
+  return {
+    status: String(t.status),
+    events: list(t.events).map((e) => ({ status: String(e.status), at: iso(e.at) })),
+    rider: rider ? { name: String(rider.name ?? ""), phone: nullableText(rider.phone) } : null,
+    path: list(t.path)
+      .map((p) => ({ lat: Number(p.lat), lng: Number(p.lng), accuracy: p.accuracy === null || p.accuracy === undefined ? null : Number(p.accuracy), at: iso(p.at) }))
+      .filter((p) => Number.isFinite(p.lat) && Number.isFinite(p.lng)),
+  };
+}
+
 export interface CustomerOrder {
   orderNumber: string;
   status: string;

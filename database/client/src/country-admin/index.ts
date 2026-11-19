@@ -5,6 +5,7 @@ import {
   DELIVERY_PROOF_KINDS,
   LOW_STOCK_THRESHOLD,
   customerListQuerySchema,
+  riderLocationBodySchema,
   type CountrySummary,
   deliveryAssignBodySchema,
   deliveryUpdateBodySchema,
@@ -424,6 +425,11 @@ export async function handleCountryAdminRequest(service: CountryAdminService, re
       if (!rider.success) return { status: 200, body: { ok: false, code: "invalid_request" } };
       return { status: 200, body: await deliveries.assign(db, countryCode, orderNumber, rider.data, verified.actorId) };
     }
+    if (matched.endpoint === "reportLocation") {
+      const location = riderLocationBodySchema.safeParse(json);
+      if (!location.success) return { status: 200, body: { ok: false, code: "invalid_request" } };
+      return { status: 200, body: await deliveries.reportLocation(db, countryCode, orderNumber, verified.actorId, location.data) };
+    }
     if (matched.endpoint === "updateMyDelivery") {
       const action = DELIVERY_ACTIONS.find((candidate) => candidate === matched.params.action);
       const update = deliveryUpdateBodySchema.safeParse(json);
@@ -445,6 +451,7 @@ export async function handleCountryAdminRequest(service: CountryAdminService, re
     const code = typeof (error as { code?: unknown } | null)?.code === "string" ? (error as { code: string }).code : "";
     if (code === "42883" || code === "42P01") {
       if (matched.endpoint === "summary") return refuse(503, "summary_missing");
+      if (matched.endpoint === "reportLocation") return refuse(503, "tracking_missing");
       if (matched.endpoint === "riderFigures" || matched.endpoint === "riderDeliveries") return refuse(503, "rider_figures_missing");
       if (matched.endpoint === "listCustomers" || matched.endpoint === "getCustomer") return refuse(503, "customers_missing");
       const deliveryEndpoint = COUNTRY_ADMIN_ENDPOINTS[matched.endpoint].permission.startsWith("deliveries.");

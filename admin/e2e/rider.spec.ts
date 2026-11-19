@@ -160,6 +160,35 @@ test("the Riders page lists the country's riders with their figures; a rider's p
   expect(await sideways(page)).toBeLessThanOrEqual(1);
   await page.screenshot({ path: path.join(SHOTS, "rider-page.png"), fullPage: true });
 
+  // The rider's name and phone, which the customer sees on the way.
+  const contact = page.getByRole("region", { name: "Name and phone" });
+  await contact.getByLabel("Rider's name").fill("Baraka  Mushi");
+  await contact.getByLabel("Rider's phone").fill("0712 000 333");
+  await contact.getByRole("button", { name: "Save" }).click();
+  await expect(page.getByText(/^Saved\. The customer sees this name and phone/).first()).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1, name: "Baraka Mushi" })).toBeVisible();
+
+  // A new rider is added here with the email they sign in with, their name and phone
+  // (one sign-in for both: sign-ins per address are limited).
+  await page.goto("/c/tz/riders");
+  const add = page.getByRole("region", { name: "Add a rider" });
+  // Name and phone are needed for a rider: the customer sees and calls them.
+  await add.getByLabel("Email address").fill("new.rider@example.test");
+  await add.getByRole("button", { name: "Add rider" }).click();
+  await expect(add.getByText("Enter the rider's name; the customer sees it")).toBeVisible();
+  await expect(add.getByText("Enter the rider's phone; the customer calls it")).toBeVisible();
+
+  await add.getByLabel("Email address").fill("new.rider@example.test");
+  await add.getByLabel("Name").fill("Asha Mwita");
+  await add.getByLabel("Phone number").fill("0713 000 222");
+  await add.getByRole("button", { name: "Add rider" }).click();
+  await expect(page.getByText(/Invitation recorded\. Asha Mwita gets the Rider role when they first sign in with new\.rider@example\.test\./).first()).toBeVisible();
+  const waiting = page.getByRole("table", { name: "Riders waiting for their first sign-in" }).getByRole("row").filter({ hasText: "Asha Mwita" });
+  await expect(waiting).toContainText("+255713000222");
+  await expect(waiting).toContainText("new.rider@example.test");
+  expect(await sideways(page)).toBeLessThanOrEqual(1);
+  await page.screenshot({ path: path.join(SHOTS, "riders-add.png"), fullPage: true });
+
   // A rider cannot open the Riders pages.
   const rider = await newSession(page.context().browser()!);
   await signIn(rider, ACCOUNTS.tzRider);

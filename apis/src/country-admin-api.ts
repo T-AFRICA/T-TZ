@@ -32,6 +32,8 @@ export const COUNTRY_ADMIN_ENDPOINTS = {
   getDeliveryProof: { method: "GET", path: "/orders/:orderNumber/delivery/proofs/:kind", permission: "deliveries.assign" },
   listMyDeliveries: { method: "GET", path: "/deliveries", permission: "deliveries.perform" },
   getMyDelivery: { method: "GET", path: "/deliveries/:orderNumber", permission: "deliveries.perform" },
+  // Before updateMyDelivery: "/location" would otherwise match its ":action".
+  reportLocation: { method: "POST", path: "/deliveries/:orderNumber/location", permission: "deliveries.perform" },
   updateMyDelivery: { method: "POST", path: "/deliveries/:orderNumber/:action", permission: "deliveries.perform" },
   // Riders' figures for whoever assigns deliveries (migration 0010).
   riderFigures: { method: "GET", path: "/riders", permission: "deliveries.assign" },
@@ -293,7 +295,28 @@ const proofImage = z.object({
   data: z.string().regex(/^[A-Za-z0-9+/]+={0,2}$/).max(Math.ceil(DELIVERY_PROOF_MAX_BYTES / 3) * 4),
 });
 
-export const deliveryAssignBodySchema = z.object({ riderId: z.string().uuid(), riderName: z.string().trim().min(1).max(80) });
+export const deliveryAssignBodySchema = z.object({
+  riderId: z.string().uuid(),
+  riderName: z.string().trim().min(1).max(80),
+  /** The rider's phone from the Central Admin's records (+<country><number>); shown to the customer while the order is on its way. */
+  riderPhone: z.string().regex(/^\+[0-9]{9,15}$/).optional(),
+});
+
+/** Where the rider's phone is, as its browser reports it. */
+export const riderLocationBodySchema = z.object({
+  lat: z.number().min(-90).max(90),
+  lng: z.number().min(-180).max(180),
+  accuracy: z.number().int().min(0).max(100_000).optional(),
+});
+
+export const riderLocationResponseSchema = z.discriminatedUnion("ok", [
+  /** saved is false when the last point is under 10 seconds old. */
+  z.object({ ok: z.literal(true), saved: z.boolean() }),
+  z.object({ ok: z.literal(false), code: z.enum(["not_found", "invalid_request", "not_on_the_way"]) }),
+]);
+
+export type RiderLocation = z.infer<typeof riderLocationBodySchema>;
+export type RiderLocationResult = z.infer<typeof riderLocationResponseSchema>;
 export const deliveryUpdateBodySchema = z.object({
   code: z.string().regex(/^[0-9]{6}$/).optional(),
   cashCollectedMinor: minor.optional(),
@@ -463,6 +486,7 @@ export type CountryUnavailableReason =
   | "country_summary_missing" // the country's database lacks the dashboard figures (migration 0009)
   | "country_rider_figures_missing" // the country's database lacks riders' figures (migration 0010)
   | "country_customers_missing" // the country's database lacks the customer directory (migration 0011)
+  | "country_tracking_missing" // the country's database lacks live tracking (migration 0012)
   | "unreachable" // no connection
   | "timeout"
   | "rejected" // the country refused the request (401/403)
@@ -483,7 +507,8 @@ export interface CountryAdminApi {
   getOrder(actorId: string, orderNumber: string): Promise<CountryApiResult<OrderDetailResponse>>;
   updateOrderStatus(actorId: string, orderNumber: string, change: { status: OrderStatus; note?: string }): Promise<CountryApiResult<OrderStatusChange>>;
   addOrderNote(actorId: string, orderNumber: string, body: string): Promise<CountryApiResult<OrderNoteResult>>;
-  assignDelivery(actorId: string, orderNumber: string, rider: { riderId: string; riderName: string }): Promise<CountryApiResult<DeliveryAssignResult>>;
+  assignDelivery(actorId: string, orderNumber: string, rider: { riderId: string; riderName: string; riderPhone?: string }): Promise<CountryApiResult<DeliveryAssignResult>>;
+  reportLocation(actorId: string, orderNumber: string, location: RiderLocation): Promise<CountryApiResult<RiderLocationResult>>;
   getDelivery(actorId: string, orderNumber: string): Promise<CountryApiResult<DeliveryInfoResponse>>;
   getDeliveryProof(actorId: string, orderNumber: string, kind: DeliveryProofKind): Promise<CountryApiResult<DeliveryProofResponse>>;
   /** The deliveries of the rider making the call (actorId). */
@@ -507,6 +532,7 @@ export function unavailableCountryApi(reason: CountryUnavailableReason): Country
     updateOrderStatus: answer,
     addOrderNote: answer,
     assignDelivery: answer,
+    reportLocation: answer,
     getDelivery: answer,
     getDeliveryProof: answer,
     listMyDeliveries: answer,
@@ -601,6 +627,7 @@ export function createCountryAdminApi(options: CountryAdminApiOptions): CountryA
         else if (code === "summary_missing") reason = "country_summary_missing";
         else if (code === "rider_figures_missing") reason = "country_rider_figures_missing";
         else if (code === "customers_missing") reason = "country_customers_missing";
+        else if (code === "tracking_missing") reason = "country_tracking_missing";
       }
       return { available: false, reason, statusCode: response.status, latencyMs: elapsed() };
     }
@@ -646,6 +673,9 @@ export function createCountryAdminApi(options: CountryAdminApiOptions): CountryA
     },
     assignDelivery(actorId, orderNumber, rider) {
       return call("assignDelivery", deliveryAssignResponseSchema, actorId, { params: { orderNumber }, body: rider });
+    },
+    reportLocation(actorId, orderNumber, location) {
+      return call("reportLocation", riderLocationResponseSchema, actorId, { params: { orderNumber }, body: location });
     },
     getDelivery(actorId, orderNumber) {
       return call("getDelivery", deliveryInfoResponseSchema, actorId, { params: { orderNumber } });

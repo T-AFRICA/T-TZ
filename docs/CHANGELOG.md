@@ -3,6 +3,38 @@
 Meaningful implementation changes, newest first. Dates are work dates;
 nothing below is released.
 
+## 2026-11-19 — Live order tracking
+
+- Owner brief: premium live tracking page for desktop and phone. Owner
+  decisions: OpenFreeMap map (MapLibre GL 5.24.0, no key), live GPS from
+  the rider's phone now, no address geocoding (the address stays text),
+  the Call button rings the rider's own phone.
+- Country migration `0012_live_tracking.sql` (draft) and Central Admin
+  migration `0004_admin_phone.sql` (draft); signed
+  `POST /deliveries/<order>/location` (`deliveries.perform`); assigning a
+  rider sends the rider's phone.
+- Admin: Riders → "Add a rider" (owner request): the email invitation that
+  already existed, with the rider's name and phone (required for a rider,
+  optional for other roles in Staff → "Give a role"); riders waiting for
+  their first sign-in are listed with them. A rider's page edits the name
+  and phone. Admin `0004` adds `invite_admin(email, role, country, name,
+  phone)`, `admin_set_rider_contact()`, and the first sign-in copies the
+  invitation's name and phone to the profile (never over existing ones).
+- Admin: the rider's delivery page shares the phone's location while the
+  order is on its way (`Permissions-Policy: geolocation=(self)` on the
+  admin only).
+- Storefront: `/account/orders/<order>/tracking` rebuilt: status card
+  (green while on the way, "Live" while positions are fresh), rider card
+  with Call, delivery code, progress with times from the order's history,
+  the map (rider marker, red path, zoom, recentre) with Arrival, Distance
+  ("Not available") and Updated, order summary and delivery details. On
+  phones the progress sits in a sheet under the map that folds and opens
+  (tap or drag the handle). The page asks for news every 15 seconds while
+  the order is on its way and visible. "In transit" is now called "Out for
+  delivery". CSP allows `tiles.openfreemap.org` and blob: workers.
+- Not done: store and address coordinates (needed for arrival time,
+  distance and a destination pin); the guest tracking page has no map.
+
 ## 2026-11-19 — Customers
 
 - Country migration `0011_customer_admin.sql` (draft) and signed

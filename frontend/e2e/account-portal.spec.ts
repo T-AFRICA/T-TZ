@@ -67,6 +67,11 @@ async function placeOrder(page: Page, email: string, lines: { productId: string;
   await expect(page.getByText("Order placed")).toBeVisible();
 }
 
+/** The tracking map's tiles come from OpenFreeMap; the tests stay on this machine and the map shows its plain background. */
+async function offlineMap(page: Page) {
+  await page.route("https://tiles.openfreemap.org/**", (route) => route.abort());
+}
+
 async function orderNumbers(email: string): Promise<string[]> {
   const rows = await sql<{ order_number: string }>(`select order_number from orders where contact_email = $1 order by created_at`, [email]);
   return rows.map((row) => row.order_number);
@@ -130,21 +135,77 @@ test("the dashboard and order pages show the signed-in customer's own records", 
   await expect(page.getByText("Plot 12, Mwai Kibaki Road")).toBeVisible();
   await expect(page.getByText("Pay on delivery")).toBeVisible();
 
-  // Tracking: the timeline is at the recorded status, and says it is not live.
+  // Tracking: the timeline is at the recorded status. No rider has the order
+  // yet, so there is no rider and no position, and no guessed arrival time.
   // Exact: the header and the sidebar have "Track Order" links of their own.
+  await offlineMap(page);
   await page.getByRole("link", { name: "Track order", exact: true }).click();
   await expect(page).toHaveURL(`${BASE}/account/orders/${carolOrders[0]}/tracking`);
   const progress = page.getByRole("list", { name: "Order progress" });
   await expect(progress.locator('[aria-current="step"]')).toContainText("Dispatched");
   await expect(progress.getByText("Order placed")).toBeVisible();
-  await expect(page.getByText(/not live\s+courier tracking/)).toBeVisible();
-  await expect(page.getByText("Not available yet").first()).toBeVisible();
+  await expect(page.getByRole("heading", { name: "On its way" })).toBeVisible();
+  await expect(page.getByText("Your rider's details will appear here shortly.")).toBeVisible();
+  await expect(page.getByRole("link", { name: /^Call / })).toHaveCount(0);
+  await expect(page.getByText("Not available", { exact: true })).toHaveCount(2);
 
   // Tracking overview and payments use the same records.
   await page.goto(`${BASE}/account/tracking`);
   await expect(page.getByRole("list", { name: "Orders in progress" }).getByRole("listitem").filter({ hasText: "TZ-" })).toHaveCount(2);
   await page.goto(`${BASE}/account/payments`);
   await expect(page.getByText("Payment pending").first()).toBeVisible();
+});
+
+test("live tracking shows the rider, a call link to the rider's phone and the latest position, and stops once delivered", async ({ page }) => {
+  // A rider has the order and is on the way (done as the database owner, as fulfilment would).
+  const number = carolOrders[0]!;
+  await sql(
+    `insert into deliveries (order_id, rider_id, rider_name, rider_phone, assigned_by, code)
+     select id, gen_random_uuid(), 'Juma Rider', '+255712000111', gen_random_uuid(), '123456' from orders where order_number = $1`,
+    [number],
+  );
+  await sql(`update orders set status = 'in_transit' where order_number = $1`, [number]);
+  await sql(
+    `insert into delivery_locations (order_id, lat, lng, accuracy_m, recorded_at)
+     select id, p.lat, p.lng, 12, now() - p.age from orders,
+       (values (-6.7700, 39.2400, interval '40 seconds'), (-6.7712, 39.2421, interval '20 seconds')) as p(lat, lng, age)
+     where order_number = $1`,
+    [number],
+  );
+
+  await signIn(page, CAROL);
+  await offlineMap(page);
+  await page.goto(`${BASE}/account/orders/${number}/tracking`);
+  await expect(page.getByRole("heading", { name: "Out for delivery" })).toBeVisible();
+  await expect(page.getByText("Juma is bringing your order to you.")).toBeVisible();
+  // First name only, and the phone the admin saved for the rider.
+  await expect(page.getByText("Juma Rider")).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "Call Juma" })).toHaveAttribute("href", "tel:+255712000111");
+  await expect(page.getByText("Live", { exact: true })).toBeVisible();
+  await expect(page.getByText("Just now")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Your delivery code" })).toBeVisible();
+  await expect(page.getByRole("list", { name: "Order progress" }).locator('[aria-current="step"]')).toContainText("Out for delivery");
+
+  // On a phone the progress folds away under the map and opens again.
+  await page.setViewportSize({ width: 390, height: 844 });
+  const handle = page.getByRole("button", { name: /Hide progress/ });
+  await handle.click();
+  await expect(page.getByRole("button", { name: /Show progress/ })).toHaveAttribute("aria-expanded", "false");
+  await expect(page.getByRole("list", { name: "Order progress" })).not.toBeInViewport();
+  await page.getByRole("button", { name: /Show progress/ }).click();
+  await expect(page.getByRole("button", { name: /Hide progress/ })).toHaveAttribute("aria-expanded", "true");
+  await page.setViewportSize({ width: 1280, height: 720 });
+
+  // Delivered: no rider, no position, no code.
+  await sql(`update orders set status = 'delivered' where order_number = $1`, [number]);
+  await page.reload();
+  await expect(page.getByRole("heading", { name: "Order delivered" })).toBeVisible();
+  await expect(page.getByRole("link", { name: /^Call / })).toHaveCount(0);
+  await expect(page.getByText("Live", { exact: true })).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "Your delivery code" })).toHaveCount(0);
+
+  // Back on its way for the layout sweep below, which then shows a rider on the map.
+  await sql(`update orders set status = 'in_transit' where order_number = $1`, [number]);
 });
 
 test("another customer gets the same 404 for that order as for an unknown number", async ({ browser }) => {
@@ -288,6 +349,7 @@ test("no portal page overflows sideways from 320px to 1920px", async ({ page }) 
   test.setTimeout(240_000);
   mkdirSync(SHOTS, { recursive: true });
   await signIn(page, CAROL);
+  await offlineMap(page);
   const routes = [...PORTAL_PAGES, `/account/orders/${carolOrders[0]}`, `/account/orders/${carolOrders[0]}/tracking`];
   for (const width of [320, 390, 768, 1024, 1440, 1920]) {
     await page.setViewportSize({ width, height: width < 768 ? 844 : 900 });

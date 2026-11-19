@@ -24,11 +24,54 @@ export const totpSchema = z.object({
     .pipe(z.string().regex(/^\d{6}$/, "Enter the 6-digit code from your authenticator app")),
 });
 
-export const inviteSchema = z.object({
-  email,
-  role: z.enum(COUNTRY_ROLE_KEYS as [string, ...string[]], { message: "Choose a role" }),
-  countryId,
-});
+/**
+ * A phone number as people type it: spaces, dashes and brackets are dropped,
+ * a Tanzanian 06xx/07xx number gets +255, anything else needs its country
+ * code. Empty means none.
+ */
+export function normalizePhone(value: string): string | null {
+  const raw = value.replace(/[\s\-().]/g, "");
+  if (raw === "") return null;
+  if (/^0[67]\d{8}$/.test(raw)) return `+255${raw.slice(1)}`;
+  return raw.startsWith("+") ? raw : `+${raw}`;
+}
+
+const PHONE_MESSAGE = "Enter a phone number like 0712 345 678 or +255 712 345 678";
+const personName = z
+  .string()
+  .trim()
+  .transform((value) => value.replace(/\s+/g, " "))
+  .pipe(z.string().min(2, "Enter the person's name").max(80, "Keep the name under 80 characters"));
+const phone = z
+  .string()
+  .optional()
+  .transform((value) => normalizePhone(value ?? ""))
+  .pipe(z.string().regex(/^\+[0-9]{9,15}$/, PHONE_MESSAGE).nullable());
+
+/**
+ * Giving a role, optionally with the person's name and phone. A rider needs
+ * both: the customer sees the rider's name and calls that phone.
+ */
+export const inviteSchema = z
+  .object({
+    email,
+    role: z.enum(COUNTRY_ROLE_KEYS as [string, ...string[]], { message: "Choose a role" }),
+    countryId,
+    name: z
+      .string()
+      .optional()
+      .transform((value) => (value ?? "").trim() || null)
+      .pipe(personName.nullable()),
+    phone,
+  })
+  .superRefine((value, context) => {
+    if (value.role !== "rider") return;
+    if (!value.name) context.addIssue({ code: "custom", path: ["name"], message: "Enter the rider's name; the customer sees it" });
+    if (!value.phone) context.addIssue({ code: "custom", path: ["phone"], message: "Enter the rider's phone; the customer calls it" });
+  });
+
+/** A rider's name and phone, edited on the rider's page. */
+export const riderContactSchema = z.object({ countryId, riderId: z.string().uuid(), name: personName, phone });
 
 export const idSchema = z.object({ id: uuid });
 

@@ -57,7 +57,7 @@ const HOME_STEPS: readonly StepDefinition[] = [
   { key: "processing", title: "Processing", description: "We are preparing your items.", statuses: ["processing"] },
   { key: "packed", title: "Packed", description: "Your order is packed and ready for dispatch.", statuses: ["packed"] },
   { key: "dispatched", title: "Dispatched", description: "Your order has left our store.", statuses: ["dispatched"] },
-  { key: "in_transit", title: "In transit", description: "Your order is on its way to you.", statuses: ["in_transit"] },
+  { key: "in_transit", title: "Out for delivery", description: "Your order is on its way to you.", statuses: ["in_transit"] },
   { key: "delivered", title: "Delivered", description: "Your order has been delivered.", statuses: ["delivered"] },
 ];
 
@@ -70,7 +70,12 @@ const PICKUP_STEPS: readonly StepDefinition[] = [
   { key: "collected", title: "Collected", description: "Your order has been collected.", statuses: ["delivered"] },
 ];
 
-export function buildTracking(order: TrackableOrder): OrderTracking {
+/**
+ * `events` is the order's history (migration 0012: when it reached each
+ * status). A step's time is the first time the order reached one of its
+ * statuses; without a history entry the step has no time.
+ */
+export function buildTracking(order: TrackableOrder, events: readonly { status: string; at: string }[] = []): OrderTracking {
   const definitions = order.deliveryMethod === "pickup" ? PICKUP_STEPS : HOME_STEPS;
   const cancelled = order.status === "cancelled";
   const currentIndex = definitions.findIndex((step) => step.statuses.includes(order.status));
@@ -95,7 +100,7 @@ export function buildTracking(order: TrackableOrder): OrderTracking {
       title: step.title,
       description: step.description,
       state,
-      at: index === 0 ? order.createdAt : null,
+      at: index === 0 ? order.createdAt : state === "upcoming" ? null : (events.find((event) => step.statuses.includes(event.status))?.at ?? null),
     };
   });
 

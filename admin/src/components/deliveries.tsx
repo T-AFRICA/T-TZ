@@ -9,6 +9,7 @@ import {
   assignRiderAction,
   riderDeliverAction,
   riderFailAction,
+  setRiderContactAction,
 } from "@/features/deliveries/actions";
 import { FAILURE_REASON_LABEL } from "@/features/deliveries/labels";
 import { ActionForm, FormMessage, SelectField, SubmitButton, TextField } from "./forms";
@@ -70,6 +71,49 @@ export function AssignRiderForm({
             {currentRiderId ? "Reassign" : "Assign rider"}
           </SubmitButton>
           <div className="sm:basis-full">
+            <FormMessage state={state} />
+          </div>
+        </>
+      )}
+    </ActionForm>
+  );
+}
+
+/** A rider's name and phone, given to the customer with the rider's orders while they are on the way. */
+export function RiderContactForm({ countryId, riderId, name, phone }: { countryId: string; riderId: string; name: string | null; phone: string | null }) {
+  return (
+    <ActionForm action={setRiderContactAction} className="grid items-start gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]">
+      {(state, pending) => (
+        <>
+          <input type="hidden" name="countryId" value={countryId} />
+          <input type="hidden" name="riderId" value={riderId} />
+          <TextField
+            name="name"
+            label="Rider's name"
+            autoComplete="off"
+            defaultValue={name ?? ""}
+            maxLength={80}
+            required
+            hint="The customer sees the first name."
+            error={state.fieldErrors?.name}
+          />
+          <TextField
+            name="phone"
+            label="Rider's phone"
+            type="tel"
+            inputMode="tel"
+            autoComplete="off"
+            defaultValue={phone ?? ""}
+            placeholder="0712 345 678"
+            hint="The customer can call it while the order is on its way."
+            error={state.fieldErrors?.phone}
+          />
+          <div className="sm:pt-[1.625rem]">
+            <SubmitButton pending={pending} variant="secondary" pendingLabel="Saving…">
+              Save
+            </SubmitButton>
+          </div>
+          <div className="sm:col-span-full">
             <FormMessage state={state} />
           </div>
         </>

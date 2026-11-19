@@ -114,6 +114,8 @@ export const SERVICE_UNAVAILABLE_TEXT: Record<CountryUnavailableReason, string> 
     "The country's database does not have the dashboard figures yet. An owner has to run database/migrations/0009_admin_summary.sql in that country's Supabase SQL editor.",
   country_rider_figures_missing:
     "The country's database does not have riders' figures yet. An owner has to run database/migrations/0010_rider_figures.sql in that country's Supabase SQL editor.",
+  country_tracking_missing:
+    "The country's database does not have live tracking yet. An owner has to run database/migrations/0012_live_tracking.sql in that country's Supabase SQL editor.",
   country_customers_missing:
     "The country's database does not have the customer directory yet. An owner has to run database/migrations/0011_customer_admin.sql in that country's Supabase SQL editor.",
   country_deliveries_missing:

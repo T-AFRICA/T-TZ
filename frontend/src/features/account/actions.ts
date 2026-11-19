@@ -1,9 +1,12 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import type { CustomerTracking } from "@tronic/database";
 import { NAME_MAX } from "@/features/auth/rules";
 import { authConfigured, currentUser, supabaseServer } from "@/features/auth/server";
 import { normalizeTzPhone } from "@/features/checkout/validation";
+import { ORDER_NUMBER_PATTERN } from "@/features/orders/status";
+import { createAccountService } from "./service";
 import { AVATAR_BUCKET, AVATAR_MAX_BYTES, avatarObjectPath, sniffImageType } from "./avatar";
 
 /**
@@ -103,4 +106,18 @@ export async function photoAction(_previous: PhotoFormState, form: FormData): Pr
   // The sidebar and the profile page show the photo.
   revalidatePath("/account", "layout");
   return { status: "saved" };
+}
+
+/**
+ * Live tracking refresh for the tracking page (polled while the order is on
+ * its way). Answers only for the signed-in customer's own order: the
+ * database function checks the owner (migration 0012). Null when the
+ * session has ended, the number is malformed, the order is not theirs or
+ * tracking is not available.
+ */
+export async function refreshTrackingAction(orderNumber: string): Promise<CustomerTracking | null> {
+  if (typeof orderNumber !== "string" || !ORDER_NUMBER_PATTERN.test(orderNumber)) return null;
+  const user = await currentUser();
+  if (!user) return null;
+  return createAccountService(user).getLiveTracking(orderNumber);
 }
