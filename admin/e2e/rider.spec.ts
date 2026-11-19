@@ -50,6 +50,16 @@ test("an order manager gives a packed order to a rider; the rider delivers it wi
   // The rider, on a phone.
   const rider = await newSession(browser, 375, 812);
   await signIn(rider, ACCOUNTS.tzRider);
+  // A rider of one country starts on their own dashboard, counted from their deliveries.
+  await rider.goto("/");
+  await expect(rider).toHaveURL(/\/c\/tz$/);
+  await expect(rider.getByRole("heading", { level: 1, name: "Your deliveries today" })).toBeVisible();
+  await expect(rider.getByText("Unavailable", { exact: true })).toHaveCount(0);
+  await expect(rider.getByRole("link", { name: /Ready to pick up\s*1/ })).toBeVisible();
+  await expect(rider.getByRole("link", { name: /Cash to collect\s*TZS 22,000/ })).toBeVisible();
+  await expect(rider.getByRole("list", { name: "Next deliveries" })).toContainText("Juma Said");
+  expect(await sideways(rider)).toBeLessThanOrEqual(1);
+  await rider.screenshot({ path: path.join(SHOTS, "375-rider-dashboard.png"), fullPage: true });
   await rider.goto("/c/tz/deliveries");
   await expect(rider.getByRole("heading", { level: 1, name: "My deliveries" })).toBeVisible();
   const card = rider.getByRole("list", { name: "Deliveries to make" }).getByRole("link").filter({ hasText: "Juma Said" });
