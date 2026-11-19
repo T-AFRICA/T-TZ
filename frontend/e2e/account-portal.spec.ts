@@ -147,7 +147,8 @@ test("the dashboard and order pages show the signed-in customer's own records", 
   await expect(page.getByRole("heading", { name: "On its way" })).toBeVisible();
   await expect(page.getByText("Your rider's details will appear here shortly.")).toBeVisible();
   await expect(page.getByRole("link", { name: /^Call / })).toHaveCount(0);
-  await expect(page.getByText("Not available", { exact: true })).toHaveCount(2);
+  // No guessed arrival: that needs the rider on the way and the customer's shared location.
+  await expect(page.getByRole("region", { name: "Map", exact: true }).getByText("Share location")).toHaveCount(2);
 
   // Tracking overview and payments use the same records.
   await page.goto(`${BASE}/account/tracking`);
@@ -181,8 +182,34 @@ test("live tracking shows the rider, a call link to the rider's phone and the la
   // First name only, and the phone the admin saved for the rider.
   await expect(page.getByText("Juma Rider")).toHaveCount(0);
   await expect(page.getByRole("link", { name: "Call Juma" })).toHaveAttribute("href", "tel:+255712000111");
-  await expect(page.getByText("Live", { exact: true })).toBeVisible();
+  await expect(page.getByRole("link", { name: "WhatsApp Juma" })).toHaveAttribute("href", "https://wa.me/255712000111");
+  await expect(page.getByText("+255 712 000 111")).toBeVisible();
+  // Owner request: no "Live" label.
+  await expect(page.getByText("Live", { exact: true })).toHaveCount(0);
   await expect(page.getByText("Just now")).toBeVisible();
+
+  // Arrival and distance need the customer's location, shared from their phone.
+  const strip = page.getByRole("region", { name: "Map", exact: true });
+  await expect(strip.getByText("Share location")).toHaveCount(2);
+  await page.context().grantPermissions(["geolocation"], { origin: BASE });
+  await page.context().setGeolocation({ latitude: -6.78, longitude: 39.25 });
+  await page.getByRole("button", { name: "Share my location" }).click();
+  await expect(page.getByText("Location shared. The rider can now get directions to you.")).toBeVisible();
+  // About 1.3 km in a straight line from the rider's last point.
+  await expect(strip.getByText(/^1\.\d km$/)).toBeVisible();
+  await expect(strip.getByText(/^about \d+ min$/)).toBeVisible();
+  await expect(page.getByRole("button", { name: "Update location" })).toBeVisible();
+  // Kept: a reload shows the same.
+  await page.reload();
+  await expect(strip.getByText(/^1\.\d km$/)).toBeVisible();
+
+  // A rider given without a name carried their email address; the customer never sees it.
+  await sql(`update deliveries set rider_name = 'rider.person@example.test' where order_id = (select id from orders where order_number = $1)`, [number]);
+  await page.reload();
+  await expect(page.getByText("Your TRONIC rider is bringing your order to you.")).toBeVisible();
+  await expect(page.getByText(/@example\.test/).filter({ hasNotText: "carol" })).toHaveCount(0);
+  await sql(`update deliveries set rider_name = 'Juma Rider' where order_id = (select id from orders where order_number = $1)`, [number]);
+  await page.reload();
   await expect(page.getByRole("heading", { name: "Your delivery code" })).toBeVisible();
   await expect(page.getByRole("list", { name: "Order progress" }).locator('[aria-current="step"]')).toContainText("Out for delivery");
 
@@ -201,7 +228,8 @@ test("live tracking shows the rider, a call link to the rider's phone and the la
   await page.reload();
   await expect(page.getByRole("heading", { name: "Order delivered" })).toBeVisible();
   await expect(page.getByRole("link", { name: /^Call / })).toHaveCount(0);
-  await expect(page.getByText("Live", { exact: true })).toHaveCount(0);
+  await expect(page.getByRole("link", { name: /^WhatsApp / })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: /location/ })).toHaveCount(0);
   await expect(page.getByRole("heading", { name: "Your delivery code" })).toHaveCount(0);
 
   // Back on its way for the layout sweep below, which then shows a rider on the map.

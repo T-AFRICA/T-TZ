@@ -3,6 +3,26 @@
 Meaningful implementation changes, newest first. Dates are work dates;
 nothing below is released.
 
+## 2026-11-19 — Tracking: rider privacy, WhatsApp, arrival and distance
+
+- Owner report: the tracking page showed a rider's email address (a rider
+  without a name was assigned with their email). The customer now never
+  gets anything with an "@": "Your TRONIC rider" instead, in the database
+  function (migration `0013_delivery_point.sql`, draft) and again in the
+  storefront's reader.
+- The rider card shows the rider's first name and phone number, with Call
+  and WhatsApp (`wa.me`) buttons.
+- Owner decision: the customer shares their phone's location for the
+  order ("Share my location"; asked only on that button; storefront
+  `Permissions-Policy: geolocation=(self)`). With it the map shows a home
+  pin, the distance (straight line) and an arrival estimate (road about
+  1.4 times the straight line at 20 km/h), labelled as estimates. The
+  rider's delivery page gets "Directions to the customer's pin" (Google
+  Maps link).
+- Owner requests: the status card is grey, not green; the rider marker is
+  a lorry; no "Live" label. Phone positions less precise than 100 m are
+  left off the drawn path (they made it zigzag).
+
 ## 2026-11-19 — Live order tracking
 
 - Owner brief: premium live tracking page for desktop and phone. Owner

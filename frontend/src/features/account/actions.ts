@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import type { CustomerTracking } from "@tronic/database";
+import type { CustomerTracking, DeliveryPointResult } from "@tronic/database";
 import { NAME_MAX } from "@/features/auth/rules";
 import { authConfigured, currentUser, supabaseServer } from "@/features/auth/server";
 import { normalizeTzPhone } from "@/features/checkout/validation";
@@ -120,4 +120,30 @@ export async function refreshTrackingAction(orderNumber: string): Promise<Custom
   const user = await currentUser();
   if (!user) return null;
   return createAccountService(user).getLiveTracking(orderNumber);
+}
+
+/**
+ * The tracking page's "Share my location": the signed-in customer's phone
+ * position becomes where their own order should go (migration 0013), for
+ * the arrival time, the distance and the rider's directions.
+ */
+export async function shareDeliveryPointAction(input: {
+  orderNumber: string;
+  lat: number;
+  lng: number;
+  accuracy: number | null;
+}): Promise<DeliveryPointResult> {
+  const valid =
+    typeof input?.orderNumber === "string" &&
+    ORDER_NUMBER_PATTERN.test(input.orderNumber) &&
+    Number.isFinite(input.lat) &&
+    Math.abs(input.lat) <= 90 &&
+    Number.isFinite(input.lng) &&
+    Math.abs(input.lng) <= 180 &&
+    (input.accuracy === null || (Number.isFinite(input.accuracy) && input.accuracy >= 0));
+  if (!valid) return "invalid_request";
+  const user = await currentUser();
+  if (!user) return "not_found";
+  const accuracy = input.accuracy === null ? null : Math.min(100_000, Math.round(input.accuracy));
+  return createAccountService(user).setDeliveryPoint(input.orderNumber, { lat: input.lat, lng: input.lng, accuracy });
 }

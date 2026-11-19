@@ -14,6 +14,8 @@ export {
   listCustomerOrderPage,
   listCustomerOrders,
   getCustomerTracking,
+  setDeliveryPoint,
+  type DeliveryPointResult,
   getDeliveryCode,
   placeCodOrder,
   trackOrder,

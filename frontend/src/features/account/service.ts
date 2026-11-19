@@ -3,7 +3,9 @@ import {
   getCustomerOrder,
   getCustomerTracking,
   getDeliveryCode,
+  setDeliveryPoint,
   type CustomerTracking,
+  type DeliveryPointResult,
   listCustomerOrderPage,
   type CustomerOrderDetail,
   type CustomerOrderPage,
@@ -108,6 +110,8 @@ export interface AccountService {
   getTracking(order: TrackableOrder, events?: readonly { status: string; at: string }[]): OrderTracking;
   /** Live tracking of one of the customer's orders (migration 0012); null when unavailable. */
   getLiveTracking(orderNumber: string): Promise<CustomerTracking | null>;
+  /** Where the customer's own order should go: their phone's position (migration 0013). */
+  setDeliveryPoint(orderNumber: string, point: { lat: number; lng: number; accuracy: number | null }): Promise<DeliveryPointResult>;
   /** The code the customer gives the rider, while the order is on its way; null otherwise. */
   getDeliveryCode(order: { orderNumber: string; status: string }): Promise<string | null>;
   listPayments(query?: Pick<CustomerOrderQuery, "page" | "pageSize">): Promise<ServiceResult<{ items: PaymentRecord[]; page: number; pageCount: number; total: number }>>;
@@ -152,6 +156,8 @@ export function createAccountService(user: SessionUser): AccountService {
     getTracking: (order, events) => buildTracking(order, events),
 
     getLiveTracking: async (orderNumber) => (ordersEnabled() ? getCustomerTracking(getDb(), access, orderNumber, null) : null),
+
+    setDeliveryPoint: async (orderNumber, point) => (ordersEnabled() ? setDeliveryPoint(getDb(), access, orderNumber, point) : "unavailable"),
 
     getDeliveryCode: async (order) =>
       ordersEnabled() && (order.status === "dispatched" || order.status === "in_transit")

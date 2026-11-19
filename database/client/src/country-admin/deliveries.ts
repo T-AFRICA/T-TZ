@@ -37,6 +37,14 @@ const int = (value: unknown): number => {
 };
 const list = (value: unknown): Json[] => (Array.isArray(value) ? (value as Json[]) : []);
 
+/** The customer's point for the rider's directions (migration 0013); null without one or before 0013. */
+function destinationOf(value: unknown): { lat: number; lng: number } | null {
+  if (!value || typeof value !== "object") return null;
+  const lat = Number((value as Json).lat);
+  const lng = Number((value as Json).lng);
+  return Number.isFinite(lat) && Number.isFinite(lng) ? { lat, lng } : null;
+}
+
 function parse(value: unknown): unknown {
   return typeof value === "string" ? (JSON.parse(value) as unknown) : value;
 }
@@ -267,6 +275,7 @@ export function deliveryFunctions(withServiceAccess: ServiceAccess) {
           deliveredAt: isoOrNull(d.delivered_at),
           codeLockedUntil: isoOrNull(d.code_locked_until),
           attempts: list(d.attempts).map((a) => ({ reason: String(a.reason) as DeliveryFailureReason, note: text(a.note), createdAt: iso(a.created_at) })),
+          destination: destinationOf(d.destination),
         },
       };
     },
