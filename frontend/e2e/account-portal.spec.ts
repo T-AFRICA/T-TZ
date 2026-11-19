@@ -256,6 +256,25 @@ test("another customer gets the same 404 for that order as for an unknown number
   await expect(david.getByText(carolOrders[0]!)).toHaveCount(0);
 });
 
+test("an order placed before signing in shows in the account of its verified email", async ({ browser }) => {
+  // Owner report 2026-11-19: a guest order reached the shop and a rider, but the customer's account showed 0 orders.
+  const ERIN: Customer = ["erin.portal@example.test", "Erin-Portal-Test-1"];
+  const guest = await (await browser.newContext()).newPage();
+  await placeOrder(guest, "Erin.Portal@Example.test", [{ productId: "sample-led-panel", quantity: 1 }]);
+  const [number] = await orderNumbers(ERIN[0]);
+  expect(number).toBeTruthy();
+  expect(await sql<{ user_id: string | null }>(`select user_id from orders where order_number = $1`, [number])).toEqual([{ user_id: null }]);
+
+  await createCustomer(...ERIN);
+  const erin = await (await browser.newContext()).newPage();
+  await signIn(erin, ERIN);
+  await expect(erin.getByRole("link", { name: /Total orders/ })).toContainText("1");
+  await erin.goto(`${BASE}/account/orders`);
+  await expect(erin.getByText(number!)).toBeVisible();
+  await erin.goto(`${BASE}/account/orders/${number}`);
+  await expect(erin.getByText("24W LED Panel Light").first()).toBeVisible();
+});
+
 test("the profile form saves the customer's own name and phone", async ({ page }) => {
   await signIn(page, CAROL);
   await page.goto(`${BASE}/account/profile`);

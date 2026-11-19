@@ -215,6 +215,23 @@ export async function setDeliveryPoint(
 }
 
 /**
+ * Links the guest orders placed with the signed-in customer's verified
+ * email address to their account (migration 0014), so an order placed
+ * before signing in shows in the account. Returns how many orders it
+ * linked: 0 for an unverified address, and 0 before the migration is
+ * applied (the account keeps working without it).
+ */
+export async function claimGuestOrders(db: Db, access: Authenticated): Promise<number> {
+  try {
+    const [row] = await withAccess(db, access, (tx) => tx.query<{ linked: unknown }>(`select customer_claim_guest_orders() as linked`));
+    return row ? toSafeInteger(row.linked, "linked") : 0;
+  } catch (error) {
+    if ((error as { code?: unknown } | null)?.code === "42883") return 0;
+    throw error;
+  }
+}
+
+/**
  * Live tracking of one order for its customer (migration 0012): the signed-in
  * owner, or a guest with the checkout email or phone. Null for an order the
  * caller may not see, and null while the database does not have tracking yet,
