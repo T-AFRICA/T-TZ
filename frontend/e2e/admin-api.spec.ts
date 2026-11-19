@@ -1,4 +1,4 @@
-import { randomUUID } from "node:crypto";
+import { randomBytes, randomUUID } from "node:crypto";
 import { expect, test, type APIRequestContext } from "@playwright/test";
 import { createServiceTokenSigner, type ServiceTokenSigner } from "@tronic/api-contracts";
 import { PORTS } from "./ports";
@@ -128,4 +128,55 @@ test("an order changed through the admin API is what the customer sees when trac
     { to_status: "processing", actor_id: ADMIN },
     { to_status: "cancelled", actor_id: ADMIN },
   ]);
+});
+
+test("a rider's delivery goes through this route with a full-size photo and signature; the customer sees the code while it is on its way", async ({ request, page }) => {
+  const stockBefore = await stockOf("sample-top-plug");
+  const [placed] = await sql<{ result: { ok: boolean; order_number: string; total_minor: number } }>(
+    `select place_cod_order($1::uuid, 'TZ',
+       $2::text::jsonb,
+       '{"method":"home","region":"Dar es Salaam","district":"Ilala","ward":"Upanga","street":"Plot 4, Example Rd","extra":"","notes":""}'::jsonb,
+       '[{"product":"sample-top-plug","color":null,"variant":null,"quantity":1}]'::jsonb, null) as result`,
+    [randomUUID(), JSON.stringify({ name: "Rider Route Test", email: "rider.route@example.test", phone: "+255712345001" })],
+  );
+  const number = placed!.result.order_number;
+  for (const status of ["confirmed", "processing", "packed"]) {
+    expect(await (await call(request, "POST", `/orders/${number}/status`, "orders.update", { status })).json()).toMatchObject({ ok: true, status });
+  }
+  expect(await (await call(request, "POST", `/orders/${number}/delivery`, "deliveries.assign", { riderId: ADMIN, riderName: "Route Rider" })).json()).toMatchObject({ ok: true });
+  expect(await (await call(request, "POST", `/deliveries/${number}/pickup`, "deliveries.perform", {})).json()).toMatchObject({ ok: true, status: "dispatched" });
+  expect(await (await call(request, "POST", `/deliveries/${number}/start`, "deliveries.perform", {})).json()).toMatchObject({ ok: true, status: "in_transit" });
+
+  // The customer, tracking as a guest, sees the code now.
+  const [{ code }] = (await sql<{ code: string }>(`select d.code from deliveries d join orders o on o.id = d.order_id where o.order_number = $1`, [number])) as [{ code: string }];
+  await page.goto(`${CONNECTED}/track-order`);
+  await page.getByLabel(/Order number/).fill(number);
+  await page.getByLabel(/Phone or email/).fill("rider.route@example.test");
+  await page.getByRole("button", { name: "Track order" }).click();
+  await expect(page.getByRole("heading", { name: "Your delivery code" })).toBeVisible();
+  await expect(page.getByText(code, { exact: true })).toBeVisible();
+
+  // Other endpoints keep the small limit; only "delivered" may carry the proofs.
+  // (A body over the delivery limit is refused from its length before it is
+  // read, and the server closes the connection; that is not asserted here.)
+  expect((await call(request, "POST", `/orders/${number}/notes`, "orders.update", { body: "x".repeat(20_000) })).status()).toBe(413);
+
+  // A phone photo near the 1 MB limit and a signature, as the admin sends them.
+  const proofs = {
+    code,
+    cashCollectedMinor: placed!.result.total_minor,
+    photo: { contentType: "image/jpeg", data: randomBytes(1_000_000).toString("base64") },
+    signature: { contentType: "image/png", data: randomBytes(60_000).toString("base64") },
+  };
+  const delivered = await call(request, "POST", `/deliveries/${number}/deliver`, "deliveries.perform", proofs);
+  expect(delivered.status()).toBe(200);
+  expect(await delivered.json()).toEqual({ ok: true, replayed: false, status: "delivered", paymentStatus: "paid" });
+  expect(await sql(`select p.kind, octet_length(p.bytes) as size from delivery_proofs p join orders o on o.id = p.order_id where o.order_number = $1 order by p.kind`, [number])).toEqual([
+    { kind: "photo", size: 1_000_000 },
+    { kind: "signature", size: 60_000 },
+  ]);
+
+  // The delivered unit is gone from stock; put it back for the other tests.
+  await sql(`update stock_levels s set available = available + 1 from products p where p.id = s.product_id and p.slug = 'sample-top-plug' and s.country_code = 'TZ'`);
+  expect(await stockOf("sample-top-plug")).toBe(stockBefore);
 });
