@@ -3,6 +3,7 @@ import { exportPKCS8, exportSPKI, generateKeyPair } from "jose";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import {
   COUNTRY_ADMIN_API_PREFIX,
+  countrySummarySchema,
   createServiceTokenSigner,
   createServiceTokenVerifier,
   orderDetailResponseSchema,
@@ -347,6 +348,9 @@ describe("a country database that is not set up for the admin", () => {
       await bare.db.query(`drop function admin_list_orders(char, text, text, integer, integer)`);
       expect((await ask("GET", "/health", "settings.read")).body).toMatchObject({ ok: true, database: true, orderAdmin: false });
       expect(await ask("GET", "/orders", "orders.read")).toEqual({ status: 503, body: { ok: false, code: "order_admin_missing" } });
+      // As if migration 0009 had not been run.
+      await bare.db.query(`drop function admin_country_summary(char, integer)`);
+      expect(await ask("GET", "/summary", "reports.read")).toEqual({ status: 503, body: { ok: false, code: "summary_missing" } });
       // As if the role the functions run as could not execute them.
       await bare.db.query(`revoke execute on function admin_get_order(char, text) from service_role`);
       expect(await ask("GET", "/orders/TZ-000000-ABCDEF12", "orders.read")).toEqual({ status: 503, body: { ok: false, code: "database_permission" } });
@@ -355,6 +359,46 @@ describe("a country database that is not set up for the admin", () => {
     }
     // Builds a database of its own, like the other tests that do (CI took over 5 s).
   }, 60_000);
+});
+
+describe("dashboard figures", () => {
+  it("counts the country's own records, needs reports.read, and puts nothing estimated in", async () => {
+    expect((await send("GET", "/summary", "orders.read")).status).toBe(401);
+    const answer = await send("GET", "/summary", "reports.read");
+    expect(answer.status).toBe(200);
+    const summary = countrySummarySchema.parse(answer.body);
+
+    const [expected] = await t.db.query<{ total: number; open: number; paid: number; accounts: number; products: number; pending: number }>(
+      `select (select count(*)::int from orders where country_code = 'TZ') as total,
+              (select count(*)::int from orders where country_code = 'TZ' and status not in ('delivered', 'cancelled')) as open,
+              (select coalesce(sum(total_minor), 0)::int from orders where country_code = 'TZ' and payment_status = 'paid' and created_at >= now() - interval '30 days') as paid,
+              (select count(*)::int from auth.users) as accounts,
+              (select count(*)::int from products p join product_country_prices c on c.product_id = p.id and c.country_code = 'TZ' and c.active where p.active) as products,
+              (select count(*)::int from orders where country_code = 'TZ' and status = 'pending_payment') as pending`,
+    );
+    expect(summary).toMatchObject({
+      currency: "TZS",
+      currencyExponent: 2,
+      ordersTotal: expected!.total,
+      ordersOpen: expected!.open,
+      sales30DaysMinor: expected!.paid,
+      customerAccounts: expected!.accounts,
+      productsActive: expected!.products,
+      lowStockThreshold: 5,
+    });
+    expect(summary.ordersTotal).toBeGreaterThan(0);
+    expect(summary.ordersToday).toBe(summary.ordersTotal);
+    expect(summary.ordersByStatus.pending_payment ?? 0).toBe(expected!.pending);
+    // Earlier tests delivered a Cash on Delivery order: it is paid, so it is in the sales.
+    expect(summary.sales30DaysMinor).toBeGreaterThan(0);
+
+    // A product down to its last units is counted as low, one at zero as out of stock.
+    await t.db.query(`update stock_levels s set available = 3 from products p where p.id = s.product_id and p.slug = 'sample-extension' and s.country_code = 'TZ'`);
+    await t.db.query(`update stock_levels s set available = 0 from products p where p.id = s.product_id and p.slug = 'sample-led-bulb' and s.country_code = 'TZ'`);
+    const after = countrySummarySchema.parse((await send("GET", "/summary", "reports.read")).body);
+    expect(after.productsLowStock).toBeGreaterThanOrEqual(1);
+    expect(after.productsOutOfStock).toBeGreaterThanOrEqual(1);
+  });
 });
 
 describe("health and the sample catalogue", () => {

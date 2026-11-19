@@ -3,6 +3,8 @@ import {
   COUNTRY_ADMIN_ENDPOINTS,
   DELIVERY_ACTIONS,
   DELIVERY_PROOF_KINDS,
+  LOW_STOCK_THRESHOLD,
+  type CountrySummary,
   deliveryAssignBodySchema,
   deliveryUpdateBodySchema,
   ORDER_NUMBER_PATTERN,
@@ -320,6 +322,32 @@ export async function handleCountryAdminRequest(service: CountryAdminService, re
 
     // Everything below works on orders, which exist only in the database.
     if (!db) return refuse(503, "orders_not_connected");
+
+    if (matched.endpoint === "summary") {
+      const [row] = await withServiceAccess(db, (tx) =>
+        tx.query<Row>(`select admin_country_summary($1::char(2), $2) as result`, [countryCode, LOW_STOCK_THRESHOLD]),
+      );
+      const s = parseJson(row?.result);
+      if (!s) throw new Error("admin_country_summary returned nothing");
+      const statuses = parseJson(s.orders_by_status) ?? {};
+      const body: CountrySummary = {
+        ok: true,
+        currency: String(s.currency),
+        currencyExponent: int(s.currency_exponent),
+        ordersTotal: int(s.orders_total),
+        ordersToday: int(s.orders_today),
+        ordersOpen: int(s.orders_open),
+        ordersByStatus: Object.fromEntries(Object.entries(statuses).map(([status, n]) => [status, int(n)])),
+        sales30DaysMinor: int(s.sales_30_days_minor),
+        customerAccounts: int(s.customer_accounts),
+        productsActive: int(s.products_active),
+        productsOutOfStock: int(s.products_out_of_stock),
+        productsLowStock: int(s.products_low_stock),
+        lowStockThreshold: int(s.low_stock_threshold),
+      };
+      return { status: 200, body };
+    }
+
     const orderNumber = (matched.params.orderNumber ?? "").toUpperCase();
     if (matched.endpoint !== "listOrders" && matched.endpoint !== "listMyDeliveries" && !ORDER_NUMBER_PATTERN.test(orderNumber)) {
       return { status: 200, body: { ok: false, code: "not_found" } };
@@ -394,6 +422,7 @@ export async function handleCountryAdminRequest(service: CountryAdminService, re
     // the role they run as. The answer carries the code, never the message.
     const code = typeof (error as { code?: unknown } | null)?.code === "string" ? (error as { code: string }).code : "";
     if (code === "42883" || code === "42P01") {
+      if (matched.endpoint === "summary") return refuse(503, "summary_missing");
       const deliveryEndpoint = COUNTRY_ADMIN_ENDPOINTS[matched.endpoint].permission.startsWith("deliveries.");
       return refuse(503, deliveryEndpoint ? "delivery_admin_missing" : "order_admin_missing");
     }

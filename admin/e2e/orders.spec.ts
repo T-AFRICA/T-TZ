@@ -243,3 +243,25 @@ test("orders fit a phone screen", async ({ browser }) => {
   await page.screenshot({ path: path.join(SHOTS, "375-order.png"), fullPage: true });
   await page.context().close();
 });
+
+test("the country dashboard counts Tanzania's own orders, sales and stock for a Country Super Admin", async ({ page }) => {
+  await signInWithCode(page, ACCOUNTS.tzSuper);
+  await page.goto("/c/tz");
+  await expect(page.getByRole("heading", { level: 1, name: "Tanzania" })).toBeVisible();
+  await expect(page.getByText("Unavailable", { exact: true })).toHaveCount(0);
+  // From the earlier tests: four orders, Asha's delivered and paid (TZS 56,000), Baraka's cancelled.
+  await expect(page.getByRole("link", { name: /^Orders\s*4\b/ })).toBeVisible();
+  await expect(page.getByRole("link", { name: /^Open orders\s*2\b/ })).toBeVisible();
+  await expect(page.getByText("TZS 56,000", { exact: true })).toBeVisible();
+  await expect(page.getByText("Products on sale")).toBeVisible();
+  await expect(page.getByText("Stock to refill")).toBeVisible();
+  await page.screenshot({ path: path.join(SHOTS, "country-dashboard.png"), fullPage: true });
+
+  // Customer Support has no reports: the figures say so instead of showing numbers.
+  // (Not the Order Manager: sign-ins per address are limited, and later tests need theirs.)
+  const manager = await newSession(page.context().browser()!);
+  await signIn(manager, ACCOUNTS.stranger);
+  await manager.goto("/c/tz");
+  await expect(manager.getByText("Your role does not include the country's reports.").first()).toBeVisible();
+  await manager.context().close();
+});

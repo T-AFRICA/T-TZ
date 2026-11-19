@@ -20,6 +20,8 @@ export const COUNTRY_ADMIN_API_PREFIX = "/api/admin/v1";
 
 export const COUNTRY_ADMIN_ENDPOINTS = {
   health: { method: "GET", path: "/health", permission: "settings.read" },
+  // Figures for the country dashboard (migration 0009).
+  summary: { method: "GET", path: "/summary", permission: "reports.read" },
   listOrders: { method: "GET", path: "/orders", permission: "orders.read" },
   getOrder: { method: "GET", path: "/orders/:orderNumber", permission: "orders.read" },
   updateOrderStatus: { method: "POST", path: "/orders/:orderNumber/status", permission: "orders.update" },
@@ -56,6 +58,33 @@ export const healthResponseSchema = z.object({
 });
 
 export type CountryHealth = z.infer<typeof healthResponseSchema>;
+
+// ----------------------------------------------------------------- summary --
+
+/** Units at or below which an in-stock product counts as low on stock (a display threshold, not a business rule). */
+export const LOW_STOCK_THRESHOLD = 5;
+
+/** What the country's own records say, counted when asked. Nothing is estimated. */
+export const countrySummarySchema = z.object({
+  ok: z.literal(true),
+  currency: z.string().regex(/^[A-Z]{3}$/),
+  currencyExponent: z.number().int().min(0).max(3),
+  ordersTotal: z.number().int().nonnegative(),
+  /** Placed today, in the country's time zone. */
+  ordersToday: z.number().int().nonnegative(),
+  /** Not delivered and not cancelled. */
+  ordersOpen: z.number().int().nonnegative(),
+  ordersByStatus: z.record(z.string(), z.number().int().nonnegative()),
+  /** Total of paid orders placed in the last 30 days, minor units. */
+  sales30DaysMinor: z.number().int().nonnegative(),
+  customerAccounts: z.number().int().nonnegative(),
+  productsActive: z.number().int().nonnegative(),
+  productsOutOfStock: z.number().int().nonnegative(),
+  productsLowStock: z.number().int().nonnegative(),
+  lowStockThreshold: z.number().int().positive(),
+});
+
+export type CountrySummary = z.infer<typeof countrySummarySchema>;
 
 // ------------------------------------------------------------------ orders --
 
@@ -318,6 +347,7 @@ export type CountryUnavailableReason =
   | "country_orders_missing" // the country's database lacks the order administration (migration 0006)
   | "country_database_denied" // the country's database refused the admin role (service_role)
   | "country_deliveries_missing" // the country's database lacks deliveries (migration 0008)
+  | "country_summary_missing" // the country's database lacks the dashboard figures (migration 0009)
   | "unreachable" // no connection
   | "timeout"
   | "rejected" // the country refused the request (401/403)
@@ -333,6 +363,7 @@ export type CountryApiResult<T> =
 /** Every call names the administrator it is made for (their Central Admin user id). */
 export interface CountryAdminApi {
   health(actorId: string): Promise<CountryApiResult<CountryHealth>>;
+  summary(actorId: string): Promise<CountryApiResult<CountrySummary>>;
   listOrders(actorId: string, query?: OrderListQuery): Promise<CountryApiResult<OrderList>>;
   getOrder(actorId: string, orderNumber: string): Promise<CountryApiResult<OrderDetailResponse>>;
   updateOrderStatus(actorId: string, orderNumber: string, change: { status: OrderStatus; note?: string }): Promise<CountryApiResult<OrderStatusChange>>;
@@ -351,6 +382,7 @@ export function unavailableCountryApi(reason: CountryUnavailableReason): Country
   const answer = async () => ({ available: false as const, reason, statusCode: null, latencyMs: null });
   return {
     health: answer,
+    summary: answer,
     listOrders: answer,
     getOrder: answer,
     updateOrderStatus: answer,
@@ -443,6 +475,7 @@ export function createCountryAdminApi(options: CountryAdminApiOptions): CountryA
         else if (code === "order_admin_missing") reason = "country_orders_missing";
         else if (code === "database_permission") reason = "country_database_denied";
         else if (code === "delivery_admin_missing") reason = "country_deliveries_missing";
+        else if (code === "summary_missing") reason = "country_summary_missing";
       }
       return { available: false, reason, statusCode: response.status, latencyMs: elapsed() };
     }
@@ -465,6 +498,9 @@ export function createCountryAdminApi(options: CountryAdminApiOptions): CountryA
         return { available: false, reason: "invalid_response", statusCode: result.statusCode, latencyMs: result.latencyMs };
       }
       return result;
+    },
+    summary(actorId) {
+      return call("summary", countrySummarySchema, actorId);
     },
     listOrders(actorId, query = {}) {
       return call("listOrders", orderListResponseSchema, actorId, {

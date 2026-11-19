@@ -2,16 +2,15 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { listAdministrators, listAuditLog, listCountryServices } from "@tronic/database/admin";
 import { can } from "@tronic/permissions";
+import { CountryFigures } from "@/components/country-figures";
 import { RiderDashboard } from "@/components/rider-dashboard";
-import { Cell, DataTable, EmptyRow, Notice, PageHeader, Panel, StatCard, StatusPill, UnavailableStat } from "@/components/ui";
+import { Cell, DataTable, EmptyRow, Notice, PageHeader, Panel, StatCard, StatusPill } from "@/components/ui";
 import { isRiderOnly } from "@/features/nav";
 import { COUNTRY_STATUS_LABEL, COUNTRY_STATUS_TONE, auditActionLabel, auditSummaryText, formatDateTime, serviceState } from "@/features/labels";
 import { getAdminDb } from "@/server/db";
 import { requireCountry } from "@/server/session";
 
 export const metadata: Metadata = { title: "Country dashboard" };
-
-const BUSINESS_FIGURES = ["Orders", "Pending orders", "Sales", "Customers", "Products", "Low-stock items"];
 
 export default async function CountryDashboardPage({ params }: { params: Promise<{ country: string }> }) {
   const { admin, country } = await requireCountry((await params).country);
@@ -31,9 +30,6 @@ export default async function CountryDashboardPage({ params }: { params: Promise
   ]);
   const service = services?.find((candidate) => candidate.countryId === country.id) ?? null;
   const state = serviceState(service);
-  const reason = state.connected
-    ? "Reporting is not part of the country API yet."
-    : `Comes from ${country.name}'s own service, which is not connected to this console yet.`;
 
   return (
     <>
@@ -54,11 +50,7 @@ export default async function CountryDashboardPage({ params }: { params: Promise
         </Notice>
       ) : null}
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-        {BUSINESS_FIGURES.map((label) => (
-          <UnavailableStat key={label} label={label} reason={reason} />
-        ))}
-      </div>
+      <CountryFigures admin={admin} country={country} connected={state.connected} />
 
       <div className="grid gap-6 xl:grid-cols-2">
         {seesSettings ? (

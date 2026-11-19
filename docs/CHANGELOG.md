@@ -3,6 +3,19 @@
 Meaningful implementation changes, newest first. Dates are work dates;
 nothing below is released.
 
+## 2026-11-19 — Country dashboard figures
+
+- Owner report: the Country Super Admin's dashboard showed six
+  "Unavailable" figures although Tanzania is connected.
+- Country migration `0009_admin_summary.sql` (draft) and a signed
+  `GET /api/admin/v1/summary` (`reports.read`): orders, open orders, paid
+  sales of the last 30 days, customer accounts, products on sale, out of
+  stock and low stock, counted from the country's own records.
+- The dashboard shows them, with links to the orders where the viewer may
+  see them; a role without reports, or a country without 0009, gets the
+  reason instead of a number. Audit entries for orders and deliveries now
+  read as sentences.
+
 ## 2026-11-18 — Deliveries by TRONIC's riders
 
 - Owner decisions: TRONIC's own riders deliver; customers get status

@@ -135,6 +135,16 @@ by the hygiene check).
 4. Until step 2 is done, the delivery pages say the country's database
    does not have deliveries yet; orders keep working.
 
+## Country dashboard figures (owner)
+
+Run `database/migrations/0009_admin_summary.sql` in the country's Supabase
+SQL editor. The country dashboard then shows orders, open orders, paid
+sales of the last 30 days, customer accounts, products on sale and stock
+to refill, counted by the country when the page opens, to everyone who
+holds `reports.read` there (Country Super Admin, Finance / Reporting
+Viewer). Before that, the cards say the migration is missing. A rider's
+dashboard shows their own deliveries instead.
+
 ## Security notes
 
 - Every page and every server action resolves the administrator from the

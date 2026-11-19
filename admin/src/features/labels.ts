@@ -28,6 +28,13 @@ const AUDIT_ACTION_LABEL: Record<string, string> = {
   "invitation.create": "Invitation sent",
   "invitation.accept": "Invitation accepted",
   "invitation.revoke": "Invitation withdrawn",
+  "order.status_change": "Order status changed",
+  "order.note_add": "Order note added",
+  "delivery.assign": "Rider assigned",
+  "delivery.pickup": "Order picked up by rider",
+  "delivery.start": "Delivery started",
+  "delivery.deliver": "Order delivered",
+  "delivery.fail": "Delivery attempt failed",
   "role.grant": "Role assigned",
   "role.revoke": "Role removed",
   "admin.suspend": "Account suspended",
@@ -103,6 +110,8 @@ export const SERVICE_UNAVAILABLE_TEXT: Record<CountryUnavailableReason, string> 
     "The country's database does not have the order administration yet. An owner has to run database/migrations/0006_order_admin.sql in that country's Supabase SQL editor.",
   country_database_denied:
     "The country's database refused the role the admin requests run as (service_role). The country's DATABASE_URL must be the project's own pooler connection string.",
+  country_summary_missing:
+    "The country's database does not have the dashboard figures yet. An owner has to run database/migrations/0009_admin_summary.sql in that country's Supabase SQL editor.",
   country_deliveries_missing:
     "The country's database does not have deliveries yet. An owner has to run database/migrations/0008_deliveries.sql in that country's Supabase SQL editor.",
   unreachable: "The country service could not be reached.",
