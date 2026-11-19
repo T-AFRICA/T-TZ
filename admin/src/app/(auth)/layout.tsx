@@ -1,17 +1,37 @@
-import { BrandMark } from "@tronic/ui";
+import { WhiteMark } from "@/components/brand";
 
-/** Sign-in, second factor and the no-access notice: one centred card, no console chrome. */
+/**
+ * Sign-in, second factor and the no-access notice, in the TRONIC sign-in
+ * style (owner request 2026-11-19, after the token desk): a red brand panel
+ * with the white wordmark and rings radiating from the sun, and the form
+ * on a white sheet. Desktop: panel and form side by side. Phones: a short
+ * red header, the form on a sheet that overlaps it, and a red band below.
+ * No notes (owner request): the wordmark, "Admin" and the form only. The
+ * rings and the entrance are decoration and stop under reduced motion.
+ */
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
-    <main id="main-content" className="grid min-h-screen place-items-center px-4 py-10">
-      <div className="w-full max-w-md">
-        <div className="mb-6 flex items-center justify-center gap-3">
-          <BrandMark />
-          <span className="border-l border-line-strong pl-3 text-xs font-semibold uppercase tracking-[0.16em] text-muted">Central Admin</span>
+    <main id="main-content" className="auth-split">
+      <section className="auth-brand">
+        <div className="auth-wordmark">
+          <WhiteMark className="auth-logo" />
+          <span>Admin</span>
         </div>
-        <div className="rounded-2xl border border-line bg-surface p-6 shadow-panel sm:p-8">{children}</div>
-        <p className="mt-6 text-center text-xs text-muted">Authorised administrators only. Activity in this console is recorded.</p>
-      </div>
+        <div className="auth-foot">
+          <span>Tronic Tanzania · Dar es Salaam</span>
+        </div>
+        <div className="auth-radiate" aria-hidden="true">
+          <i />
+          <i />
+          <i />
+        </div>
+      </section>
+
+      <section className="auth-form-wrap">
+        <div className="auth-card">{children}</div>
+      </section>
+
+      <footer className="auth-band">Tronic Tanzania · Dar es Salaam</footer>
     </main>
   );
 }

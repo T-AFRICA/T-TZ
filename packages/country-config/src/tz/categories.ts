@@ -331,11 +331,15 @@ export const CATEGORY_SECTIONS: readonly CategorySection[] = [
 ] as const;
 
 /**
- * Dedicated Meter navbar item (SRS FR-003). Exactly one customer-facing page
- * at /meter; it must never carry payment UI (FR-035/FR-043).
+ * Dedicated Meter navbar item (SRS FR-003). Owner decision 2026-11-19: it
+ * opens TRONIC's own meter token site, a separate application; this
+ * storefront carries no token or payment UI for meters (FR-035/FR-043).
+ * The informational page at /meter stays.
  */
+export const METER_SITE_URL = "https://metertokentz.vercel.app/";
+
 export const METER_NAV_ITEM: NavLink = {
-  href: "/meter",
+  href: METER_SITE_URL,
   // Owner-approved label (Nov 2026): "Meter Token Issuer".
   label: "Meter Token Issuer",
 };

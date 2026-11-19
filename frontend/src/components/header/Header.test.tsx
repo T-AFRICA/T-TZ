@@ -19,8 +19,11 @@ describe("Header", () => {
     // Rendered twice: the desktop header action and the mobile drawer entry.
     const meterLinks = screen.getAllByRole("link", { name: /Meter/ });
     expect(meterLinks.length).toBeGreaterThan(0);
+    // Owner decision 2026-11-19: TRONIC's meter token site, in a new tab.
     for (const link of meterLinks) {
-      expect(link).toHaveAttribute("href", "/meter");
+      expect(link).toHaveAttribute("href", "https://metertokentz.vercel.app/");
+      expect(link).toHaveAttribute("target", "_blank");
+      expect(link).toHaveAttribute("rel", "noopener noreferrer");
     }
   });
 

@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
+import { LockIcon } from "@tronic/ui";
+import { AuthHead } from "@/components/auth-head";
 import { MfaChallengeForm } from "@/components/console-forms";
 import { signOutAction } from "@/features/auth/actions";
 import { GATE_PATHS } from "@/features/auth/gate";
@@ -15,13 +17,8 @@ export default async function MfaChallengePage() {
   if (session.state === "ok") redirect(GATE_PATHS.home);
 
   return (
-    <div className="flex flex-col gap-5">
-      <div>
-        <h1 className="font-display text-2xl text-ink">Second step</h1>
-        <p className="mt-1.5 text-sm text-muted">
-          Your role needs a second factor. Enter the code from your authenticator app to continue as <span className="font-medium text-ink">{session.email}</span>.
-        </p>
-      </div>
+    <div className="flex flex-col gap-6">
+      <AuthHead icon={<LockIcon size={24} />} title="Second" accent="step" step={2} />
       <MfaChallengeForm />
       <form action={signOutAction}>
         <button type="submit" className="text-sm font-medium text-muted underline underline-offset-4 hover:text-ink">

@@ -21,6 +21,7 @@ import {
   CHECK_WARRANTY_LINK,
   WISHLIST_LINK,
   TRACK_ORDER_LINK,
+  externalLinkProps,
 } from "@/config/site";
 
 /**
@@ -80,6 +81,7 @@ export function Header() {
           </Link>
           <Link
             href={METER_NAV_ITEM.href}
+            {...externalLinkProps(METER_NAV_ITEM.href)}
             className="group hidden items-center gap-2 text-sm font-medium transition-colors hover:text-[var(--color-action-red)] lg:flex"
           >
             <MeterIcon size={22} className="text-[var(--color-dark-grey)] transition-colors group-hover:text-[var(--color-action-red)]" />
