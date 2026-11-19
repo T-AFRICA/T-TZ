@@ -19,10 +19,29 @@ type State =
   | { kind: "unsupported" }
   | { kind: "error"; message: string };
 
-export function LocationSharing({ countryId, orderNumber }: { countryId: string; orderNumber: string }) {
+export interface SharedPosition {
+  lat: number;
+  lng: number;
+  accuracy: number | null;
+}
+
+export function LocationSharing({
+  countryId,
+  orderNumber,
+  onPosition,
+}: {
+  countryId: string;
+  orderNumber: string;
+  /** Every position the phone reports, also those not sent (the rider's own map). */
+  onPosition?: (position: SharedPosition) => void;
+}) {
   const [state, setState] = useState<State>({ kind: "asking" });
   const lastSent = useRef(0);
   const sending = useRef(false);
+  const listener = useRef(onPosition);
+  useEffect(() => {
+    listener.current = onPosition;
+  }, [onPosition]);
 
   useEffect(() => {
     if (!("geolocation" in navigator)) {
@@ -32,6 +51,11 @@ export function LocationSharing({ countryId, orderNumber }: { countryId: string;
     const watch = navigator.geolocation.watchPosition(
       (position) => {
         setState((current) => (current.kind === "sharing" ? current : { kind: "sharing", sentAt: null }));
+        listener.current?.({
+          lat: position.coords.latitude,
+          lng: position.coords.longitude,
+          accuracy: Number.isFinite(position.coords.accuracy) ? position.coords.accuracy : null,
+        });
         const now = Date.now();
         if (sending.current || now - lastSent.current < EVERY_MS) return;
         sending.current = true;

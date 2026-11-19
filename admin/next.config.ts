@@ -16,10 +16,15 @@ const contentSecurityPolicy = [
   `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""}`,
   // Adobe Fonts web project (Myriad Pro), as on the storefront.
   "style-src 'self' 'unsafe-inline' https://use.typekit.net https://p.typekit.net",
-  // data: carries the QR code Supabase Auth returns for authenticator set-up.
-  "img-src 'self' data:",
+  // data: carries the QR code Supabase Auth returns for authenticator set-up;
+  // blob: is the rider's delivery map (MapLibre draws its icons from blobs).
+  "img-src 'self' data: blob:",
   "font-src 'self' https://use.typekit.net",
-  "connect-src 'self'",
+  // The rider's delivery map: OpenFreeMap style, tiles and fonts (no key, no
+  // address sent: only map tiles are fetched). MapLibre runs a worker it
+  // starts from a blob: URL.
+  "connect-src 'self' https://tiles.openfreemap.org",
+  "worker-src 'self' blob:",
   "frame-ancestors 'none'",
   "form-action 'self'",
   "base-uri 'self'",
