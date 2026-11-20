@@ -16,6 +16,7 @@ import {
   orderStatusChangeBodySchema,
   PRODUCT_SLUG_PATTERN,
   brandSaveBodySchema,
+  reportPeriodQuerySchema,
   categoryBannerBodySchema,
   taxonomySaveBodySchema,
   inventoryListQuerySchema,
@@ -42,6 +43,7 @@ import { deliveryFunctions } from "./deliveries";
 import { categoryFunctions } from "./categories";
 import { inventoryFunctions } from "./inventory";
 import { productFunctions } from "./products";
+import { reportFunctions } from "./reports";
 
 /**
  * The country side of the country admin API (apis/src/country-admin-api.ts):
@@ -77,6 +79,8 @@ const inventory = inventoryFunctions(withServiceAccess);
 const INVENTORY_ENDPOINTS: ReadonlySet<CountryAdminEndpoint> = new Set(["listInventory", "getInventory", "adjustStock", "setLowStock"]);
 const categories = categoryFunctions(withServiceAccess);
 const CATEGORY_ENDPOINTS: ReadonlySet<CountryAdminEndpoint> = new Set(["categoryTree", "saveTaxonomy", "setCategoryBanner", "getCategoryBanner", "saveBrand"]);
+const reports = reportFunctions(withServiceAccess);
+const REPORT_ENDPOINTS: ReadonlySet<CountryAdminEndpoint> = new Set(["salesReport", "productsReport", "ordersReport", "stockReport"]);
 
 const PRODUCT_ENDPOINTS: ReadonlySet<CountryAdminEndpoint> = new Set([
   "catalogueOptions",
@@ -469,6 +473,21 @@ export async function handleCountryAdminRequest(service: CountryAdminService, re
       }
     }
 
+    // Reports (migration 0019), read only.
+    if (REPORT_ENDPOINTS.has(matched.endpoint)) {
+      const period = reportPeriodQuerySchema.safeParse(Object.fromEntries(url.searchParams));
+      if (!period.success) return refuse(400, "invalid_request");
+      const body =
+        matched.endpoint === "salesReport"
+          ? await reports.sales(db, countryCode, period.data)
+          : matched.endpoint === "productsReport"
+            ? await reports.products(db, countryCode, period.data)
+            : matched.endpoint === "ordersReport"
+              ? await reports.orders(db, countryCode, period.data)
+              : await reports.stock(db, countryCode, period.data);
+      return { status: 200, body };
+    }
+
     // Categories and brands (migration 0018).
     if (CATEGORY_ENDPOINTS.has(matched.endpoint)) {
       if (matched.endpoint === "categoryTree") return { status: 200, body: await categories.tree(db, countryCode) };
@@ -613,6 +632,7 @@ export async function handleCountryAdminRequest(service: CountryAdminService, re
       if (PRODUCT_ENDPOINTS.has(matched.endpoint)) return refuse(503, "products_missing");
       if (INVENTORY_ENDPOINTS.has(matched.endpoint)) return refuse(503, "inventory_missing");
       if (CATEGORY_ENDPOINTS.has(matched.endpoint)) return refuse(503, "categories_missing");
+      if (REPORT_ENDPOINTS.has(matched.endpoint)) return refuse(503, "reports_missing");
       const deliveryEndpoint = COUNTRY_ADMIN_ENDPOINTS[matched.endpoint].permission.startsWith("deliveries.");
       return refuse(503, deliveryEndpoint ? "delivery_admin_missing" : "order_admin_missing");
     }

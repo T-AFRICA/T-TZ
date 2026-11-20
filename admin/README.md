@@ -215,6 +215,42 @@ product counts and order, and the brands. Owner decisions 2026-11-20:
    (after 0006), for the audit log.
 3. Deploy both apps.
 
+## Reports (owner)
+
+"Reports" (for whoever holds `reports.read`: Finance / Reporting Viewer,
+Marketing Manager, Country Super Admin) shows four reports for a period of
+the country's own days (last 7, 30 or 90 days, last 12 months, or any
+dates up to 366 days), counted live by the country when the page opens.
+Owner decisions 2026-11-20:
+
+- **A sale is a paid order**, counted on the day it was placed; Cash on
+  Delivery is paid once delivered. Cancelled and still-open orders are
+  shown beside it, never added to it.
+- **Sales**: sales, average paid order, orders placed, paid share; columns
+  for sales and for orders a day (a week for periods over 62 days); by
+  payment method.
+- **Products & categories**: the top 10 products by sales (ranked bars) and
+  every category's share of the sales.
+- **Orders & delivery**: where the orders stand now (delivered, on the way,
+  awaiting confirmation, cancelled), orders by region, and each rider's
+  deliveries, failed attempts and cash collected.
+- **Stock**: units, value at today's prices, out and low now; units in and
+  out in the period by reason; the products that need stock.
+- **Download CSV** gives the report on the screen as a file for a
+  spreadsheet (amounts in the country's currency, never converted). No
+  report carries a customer's name, email, phone or address.
+
+Charts are drawn by the console itself (no chart library). The owner asked
+for pie charts; the parts of a whole are shown as one segmented bar with a
+legend and percentages, and rankings as bars, which read more exactly;
+every chart also opens as a table.
+
+1. Country project: `database/migrations/0019_reports.sql` (after 0018).
+   Until then the Reports page says the database does not have the reports
+   yet.
+2. Deploy both apps. No admin migration: reading reports is not an audited
+   action.
+
 ## Inventory (owner)
 
 "Inventory" (for whoever holds `inventory.read`) lists every product's

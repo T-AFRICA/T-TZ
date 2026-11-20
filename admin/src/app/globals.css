@@ -40,6 +40,16 @@
   --a-sidebar-line: #e2474c;
   --a-sidebar-hover: #c2161c;
   --a-sidebar-active: #a51217;
+  /* Report charts: categorical hues in a fixed order (checked for colour
+     blindness against this surface), and a grey for "Other". Every chart
+     also has labels and a table, so no figure is told by colour alone. */
+  --a-chart-1: #2a78d6;
+  --a-chart-2: #eb6834;
+  --a-chart-3: #1baf7a;
+  --a-chart-4: #eda100;
+  --a-chart-5: #e87ba4;
+  --a-chart-6: #008300;
+  --a-chart-other: #9aa0a8;
 }
 
 :root[data-theme="dark"] {
@@ -67,6 +77,13 @@
   --a-sidebar: #b3141a;
   --a-sidebar-line: #c63a3f;
   --focus-ring: 2px solid #ff6b72;
+  --a-chart-1: #3987e5;
+  --a-chart-2: #d95926;
+  --a-chart-3: #199e70;
+  --a-chart-4: #c98500;
+  --a-chart-5: #d55181;
+  --a-chart-6: #0ca30c;
+  --a-chart-other: #6b717b;
 }
 
 /* "System" (no stored choice): follow the device. Same values as the block above. */
@@ -96,6 +113,13 @@
     --a-sidebar: #b3141a;
     --a-sidebar-line: #c63a3f;
     --focus-ring: 2px solid #ff6b72;
+    --a-chart-1: #3987e5;
+    --a-chart-2: #d95926;
+    --a-chart-3: #199e70;
+    --a-chart-4: #c98500;
+    --a-chart-5: #d55181;
+    --a-chart-6: #0ca30c;
+    --a-chart-other: #6b717b;
   }
 }
 
@@ -126,6 +150,13 @@
   --color-sidebar-line: var(--a-sidebar-line);
   --color-sidebar-hover: var(--a-sidebar-hover);
   --color-sidebar-active: var(--a-sidebar-active);
+  --color-chart-1: var(--a-chart-1);
+  --color-chart-2: var(--a-chart-2);
+  --color-chart-3: var(--a-chart-3);
+  --color-chart-4: var(--a-chart-4);
+  --color-chart-5: var(--a-chart-5);
+  --color-chart-6: var(--a-chart-6);
+  --color-chart-other: var(--a-chart-other);
   --shadow-panel: var(--a-shadow);
 }
 
