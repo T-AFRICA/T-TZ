@@ -74,7 +74,7 @@ describe("sample catalogue script", () => {
 
   it("refuses a second run and changes nothing", async () => {
     const before = await count(target, "products");
-    await expect(target.pg.exec(script)).rejects.toThrow(/already has products, categories or brands/);
+    await expect(target.pg.exec(script)).rejects.toThrow(/already has products or brands/);
     await target.pg.exec("rollback");
     expect(await count(target, "products")).toBe(before);
   });

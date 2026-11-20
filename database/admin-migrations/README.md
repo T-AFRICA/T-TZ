@@ -13,6 +13,7 @@ project is an owner action; nothing in this repository connects to one.
 | `0004_admin_phone.sql` | A name and phone for riders, set at invitation or on the rider's page. |
 | `0005_product_actions.sql` | The product actions (`product.create`, `.update`, `.publish`, `.hide`, `.image_add`, `.image_arrange`, `.stock`) in `record_country_action()`, each with the permission it needs; the target id may be up to 80 characters (a product's web address). |
 | `0006_inventory_actions.sql` | `inventory.adjust` and `inventory.low_stock` in `record_country_action()`, both needing `inventory.adjust`. |
+| `0007_category_actions.sql` | `category.save`, `category.banner` and `brand.save` in `record_country_action()`, needing `categories.manage`. |
 
 Rules for every later file:
 

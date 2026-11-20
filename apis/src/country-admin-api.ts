@@ -57,6 +57,12 @@ export const COUNTRY_ADMIN_ENDPOINTS = {
   getInventory: { method: "GET", path: "/inventory/:slug", permission: "inventory.read" },
   adjustStock: { method: "POST", path: "/inventory/:slug/adjust", permission: "inventory.adjust" },
   setLowStock: { method: "POST", path: "/inventory/:slug/low-stock", permission: "inventory.adjust" },
+  // Categories and brands (migration 0018). Nothing is deleted: a category is hidden.
+  categoryTree: { method: "GET", path: "/categories", permission: "categories.manage" },
+  saveTaxonomy: { method: "POST", path: "/categories/save", permission: "categories.manage" },
+  setCategoryBanner: { method: "POST", path: "/categories/:categoryId/banner", permission: "categories.manage" },
+  getCategoryBanner: { method: "GET", path: "/categories/:categoryId/banner", permission: "categories.manage" },
+  saveBrand: { method: "POST", path: "/brands/save", permission: "categories.manage" },
 } as const;
 
 export type CountryAdminEndpoint = keyof typeof COUNTRY_ADMIN_ENDPOINTS;
@@ -817,6 +823,77 @@ export type StockAdjustment = z.infer<typeof stockAdjustBodySchema>;
 export type StockAdjustResult = z.infer<typeof stockAdjustResponseSchema>;
 export type LowStockResult = z.infer<typeof lowStockResponseSchema>;
 
+// -------------------------------------------------------------- categories --
+
+export const TAXONOMY_LEVELS = ["category", "group", "subcategory"] as const;
+export type TaxonomyLevel = (typeof TAXONOMY_LEVELS)[number];
+export const TAXONOMY_LIMITS = { name: 60, slug: 60, description: 200, sortOrder: 10_000, brandName: 60 } as const;
+/** The website's own section of use cases: never a category's address. */
+export const RESERVED_CATEGORY_SLUGS = ["shop-by-use"] as const;
+
+export const taxonomySaveBodySchema = z
+  .object({
+    level: z.enum(TAXONOMY_LEVELS),
+    /** The node to edit; absent to create one. */
+    id: z.string().uuid().optional(),
+    /** For a new group its category, for a new subcategory its group. */
+    parentId: z.string().uuid().optional(),
+    /** New nodes only: the web address, which never changes. */
+    slug: z.string().trim().toLowerCase().max(TAXONOMY_LIMITS.slug).regex(PRODUCT_SLUG_PATTERN).optional(),
+    name: z.string().trim().min(2).max(TAXONOMY_LIMITS.name),
+    /** Categories only: the line under the name on the website. */
+    description: z.string().trim().max(TAXONOMY_LIMITS.description).nullable(),
+    sortOrder: z.number().int().min(0).max(TAXONOMY_LIMITS.sortOrder),
+    active: z.boolean(),
+  })
+  .refine((body) => body.id !== undefined || body.slug !== undefined, { message: "A new one needs a web address", path: ["slug"] })
+  .refine((body) => body.id !== undefined || body.level === "category" || body.parentId !== undefined, { message: "A new one needs its parent", path: ["parentId"] })
+  .refine((body) => body.level === "category" || body.description === null, { message: "Only categories have a description", path: ["description"] });
+export const brandSaveBodySchema = z.object({ id: z.string().uuid().optional(), name: z.string().trim().min(1).max(TAXONOMY_LIMITS.brandName) });
+export const categoryBannerBodySchema = z.union([productImageBodySchema.pick({ contentType: true, data: true }), z.object({ remove: z.literal(true) })]);
+
+const counts = { products: z.number().int().nonnegative(), live: z.number().int().nonnegative() };
+const node = { id: z.string().uuid(), slug: z.string(), name: z.string(), sortOrder: z.number().int(), active: z.boolean(), ...counts };
+
+export const categoryTreeResponseSchema = z.object({
+  ok: z.literal(true),
+  categories: z.array(
+    z.object({
+      ...node,
+      description: z.string().nullable(),
+      /** The banner's version (null without one); it changes with every new photo. */
+      banner: z.object({ sha256: z.string(), updatedAt: z.string().datetime() }).nullable(),
+      groups: z.array(z.object({ ...node, subcategories: z.array(z.object(node)) })),
+    }),
+  ),
+  brands: z.array(z.object({ id: z.string().uuid(), slug: z.string(), name: z.string(), products: z.number().int().nonnegative() })),
+});
+
+export const taxonomySaveResponseSchema = z.discriminatedUnion("ok", [
+  z.object({ ok: z.literal(true), replayed: z.boolean(), id: z.string().uuid(), slug: z.string() }),
+  z.object({ ok: z.literal(false), code: z.enum(["invalid_request", "not_found", "slug_taken"]) }),
+]);
+export const brandSaveResponseSchema = z.discriminatedUnion("ok", [
+  z.object({ ok: z.literal(true), replayed: z.boolean(), id: z.string().uuid() }),
+  z.object({ ok: z.literal(false), code: z.enum(["invalid_request", "not_found", "name_taken"]) }),
+]);
+export const categoryBannerResponseSchema = z.discriminatedUnion("ok", [
+  z.object({ ok: z.literal(true), replayed: z.boolean() }),
+  z.object({ ok: z.literal(false), code: z.enum(["invalid_request", "not_found"]) }),
+]);
+export const categoryBannerFileResponseSchema = z.discriminatedUnion("ok", [
+  z.object({ ok: z.literal(true), file: productImageBodySchema.pick({ contentType: true, data: true }) }),
+  z.object({ ok: z.literal(false), code: z.literal("not_found") }),
+]);
+
+export type TaxonomySave = z.infer<typeof taxonomySaveBodySchema>;
+export type CategoryTree = z.infer<typeof categoryTreeResponseSchema>;
+export type TaxonomySaveResult = z.infer<typeof taxonomySaveResponseSchema>;
+export type BrandSaveResult = z.infer<typeof brandSaveResponseSchema>;
+export type CategoryBannerUpload = z.infer<typeof categoryBannerBodySchema>;
+export type CategoryBannerResult = z.infer<typeof categoryBannerResponseSchema>;
+export type CategoryBannerFile = z.infer<typeof categoryBannerFileResponseSchema>;
+
 // ----------------------------------------------------------------- adapter --
 
 /** Why a country could not be asked, or did not give a usable answer. */
@@ -836,6 +913,7 @@ export type CountryUnavailableReason =
   | "country_tracking_missing" // the country's database lacks live tracking (migration 0012)
   | "country_products_missing" // the country's database lacks the product administration (migration 0016)
   | "country_inventory_missing" // the country's database lacks the inventory (migration 0017)
+  | "country_categories_missing" // the country's database lacks the category administration (migration 0018)
   | "unreachable" // no connection
   | "timeout"
   | "rejected" // the country refused the request (401/403)
@@ -882,6 +960,11 @@ export interface CountryAdminApi {
   getInventory(actorId: string, slug: string): Promise<CountryApiResult<InventoryDetailResponse>>;
   adjustStock(actorId: string, slug: string, adjustment: StockAdjustment): Promise<CountryApiResult<StockAdjustResult>>;
   setLowStock(actorId: string, slug: string, level: number): Promise<CountryApiResult<LowStockResult>>;
+  categoryTree(actorId: string): Promise<CountryApiResult<CategoryTree>>;
+  saveTaxonomy(actorId: string, change: TaxonomySave): Promise<CountryApiResult<TaxonomySaveResult>>;
+  saveBrand(actorId: string, brand: { id?: string; name: string }): Promise<CountryApiResult<BrandSaveResult>>;
+  setCategoryBanner(actorId: string, categoryId: string, banner: CategoryBannerUpload): Promise<CountryApiResult<CategoryBannerResult>>;
+  getCategoryBanner(actorId: string, categoryId: string): Promise<CountryApiResult<CategoryBannerFile>>;
 }
 
 /** A country whose service cannot be called. Every request answers with the reason; nothing is sent anywhere. */
@@ -919,6 +1002,11 @@ export function unavailableCountryApi(reason: CountryUnavailableReason): Country
     getInventory: answer,
     adjustStock: answer,
     setLowStock: answer,
+    categoryTree: answer,
+    saveTaxonomy: answer,
+    saveBrand: answer,
+    setCategoryBanner: answer,
+    getCategoryBanner: answer,
   };
 }
 
@@ -1007,6 +1095,7 @@ export function createCountryAdminApi(options: CountryAdminApiOptions): CountryA
         else if (code === "tracking_missing") reason = "country_tracking_missing";
         else if (code === "products_missing") reason = "country_products_missing";
         else if (code === "inventory_missing") reason = "country_inventory_missing";
+        else if (code === "categories_missing") reason = "country_categories_missing";
       }
       return { available: false, reason, statusCode: response.status, latencyMs: elapsed() };
     }
@@ -1130,6 +1219,21 @@ export function createCountryAdminApi(options: CountryAdminApiOptions): CountryA
     },
     setLowStock(actorId, slug, level) {
       return call("setLowStock", lowStockResponseSchema, actorId, { params: { slug }, body: { level } });
+    },
+    categoryTree(actorId) {
+      return call("categoryTree", categoryTreeResponseSchema, actorId);
+    },
+    saveTaxonomy(actorId, change) {
+      return call("saveTaxonomy", taxonomySaveResponseSchema, actorId, { body: change });
+    },
+    saveBrand(actorId, brand) {
+      return call("saveBrand", brandSaveResponseSchema, actorId, { body: brand });
+    },
+    setCategoryBanner(actorId, categoryId, banner) {
+      return call("setCategoryBanner", categoryBannerResponseSchema, actorId, { params: { categoryId }, body: banner });
+    },
+    getCategoryBanner(actorId, categoryId) {
+      return call("getCategoryBanner", categoryBannerFileResponseSchema, actorId, { params: { categoryId } });
     },
   };
 }

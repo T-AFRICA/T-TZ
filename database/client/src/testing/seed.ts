@@ -46,8 +46,10 @@ export async function seedCatalog(db: Db, options: SeedOptions = {}): Promise<vo
   for (const [index, product] of products.entries()) {
     let categoryId = categories.get(product.categorySlug);
     if (!categoryId) {
+      // Migration 0018 has already written the storefront's category list: reuse its rows.
       const [row] = await db.query<{ id: string }>(
-        `insert into categories (slug, name, sort_order) values ($1, $2, $3) returning id`,
+        `insert into categories (slug, name, sort_order) values ($1, $2, $3)
+         on conflict (slug) do update set slug = excluded.slug returning id`,
         [product.categorySlug, product.categoryName, categories.size],
       );
       categoryId = row!.id;
@@ -59,7 +61,8 @@ export async function seedCatalog(db: Db, options: SeedOptions = {}): Promise<vo
       groupId = groups.get(key) ?? null;
       if (!groupId) {
         const [row] = await db.query<{ id: string }>(
-          `insert into category_groups (category_id, slug, name) values ($1, $2, $3) returning id`,
+          `insert into category_groups (category_id, slug, name) values ($1, $2, $3)
+           on conflict (category_id, slug) do update set slug = excluded.slug returning id`,
           [categoryId, product.groupSlug, titleCase(product.groupSlug)],
         );
         groupId = row!.id;
@@ -72,7 +75,8 @@ export async function seedCatalog(db: Db, options: SeedOptions = {}): Promise<vo
       subcategoryId = subcategories.get(key) ?? null;
       if (!subcategoryId) {
         const [row] = await db.query<{ id: string }>(
-          `insert into category_subcategories (group_id, slug, name) values ($1, $2, $3) returning id`,
+          `insert into category_subcategories (group_id, slug, name) values ($1, $2, $3)
+           on conflict (group_id, slug) do update set slug = excluded.slug returning id`,
           [groupId, product.subcategorySlug, titleCase(product.subcategorySlug)],
         );
         subcategoryId = row!.id;

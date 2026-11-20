@@ -44,6 +44,9 @@ const AUDIT_ACTION_LABEL: Record<string, string> = {
   "product.stock": "Stock set",
   "inventory.adjust": "Stock changed",
   "inventory.low_stock": "Low-stock level set",
+  "category.save": "Category saved",
+  "category.banner": "Category banner changed",
+  "brand.save": "Brand saved",
   "role.grant": "Role assigned",
   "role.revoke": "Role removed",
   "admin.suspend": "Account suspended",
@@ -129,6 +132,8 @@ export const SERVICE_UNAVAILABLE_TEXT: Record<CountryUnavailableReason, string> 
     "The country's database does not have the customer directory yet. An owner has to run database/migrations/0011_customer_admin.sql in that country's Supabase SQL editor.",
   country_deliveries_missing:
     "The country's database does not have deliveries yet. An owner has to run database/migrations/0008_deliveries.sql in that country's Supabase SQL editor.",
+  country_categories_missing:
+    "The country's database does not have the category administration yet. An owner has to run database/migrations/0018_category_admin.sql in that country's Supabase SQL editor.",
   country_inventory_missing:
     "The country's database does not have the inventory yet. An owner has to run database/migrations/0017_inventory_admin.sql in that country's Supabase SQL editor.",
   country_products_missing:

@@ -31,13 +31,17 @@ const MAX_DELIVER_BODY_BYTES = Math.ceil((2 * Math.ceil(DELIVERY_PROOF_MAX_BYTES
 /** A product photo (at most PRODUCT_IMAGE_MAX_BYTES, base64 in JSON). */
 const PRODUCT_IMAGE_PATH = new RegExp(`^${COUNTRY_ADMIN_API_PREFIX}/products/[a-z0-9-]{1,80}/images$`);
 const MAX_PRODUCT_IMAGE_BODY_BYTES = Math.ceil(PRODUCT_IMAGE_MAX_BYTES / 3) * 4 + 16 * 1024;
+/** A category's banner photo: the same size as a product photo. */
+const CATEGORY_BANNER_PATH = new RegExp(`^${COUNTRY_ADMIN_API_PREFIX}/categories/[0-9a-fA-F-]{36}/banner$`);
 /** A product's details: description, specifications and lists fit well within this. */
 const PRODUCT_PATH = new RegExp(`^${COUNTRY_ADMIN_API_PREFIX}/products(?:/|$)`);
 const MAX_PRODUCT_BODY_BYTES = 64 * 1024;
+/** Changes the website's catalogue (products, categories, brands): it is read again after one is accepted. */
+const CATALOGUE_PATH = new RegExp(`^${COUNTRY_ADMIN_API_PREFIX}/(?:products|categories|brands)(?:/|$)`);
 
 function bodyLimit(pathname: string): number {
   if (DELIVER_PATH.test(pathname)) return MAX_DELIVER_BODY_BYTES;
-  if (PRODUCT_IMAGE_PATH.test(pathname)) return MAX_PRODUCT_IMAGE_BODY_BYTES;
+  if (PRODUCT_IMAGE_PATH.test(pathname) || CATEGORY_BANNER_PATH.test(pathname)) return MAX_PRODUCT_IMAGE_BODY_BYTES;
   if (PRODUCT_PATH.test(pathname)) return MAX_PRODUCT_BODY_BYTES;
   return MAX_BODY_BYTES;
 }
@@ -67,9 +71,9 @@ async function handle(request: NextRequest) {
       authorization: request.headers.get("authorization"),
       body,
     });
-    // A product change the country accepted: the storefront's shared
+    // A catalogue change the country accepted: the storefront's shared
     // catalogue is read again on the next visit instead of after its minute.
-    if (request.method === "POST" && PRODUCT_PATH.test(request.nextUrl.pathname) && response.status === 200 && (response.body as { ok?: unknown } | null)?.ok === true) {
+    if (request.method === "POST" && CATALOGUE_PATH.test(request.nextUrl.pathname) && response.status === 200 && (response.body as { ok?: unknown } | null)?.ok === true) {
       revalidateTag("catalogue", { expire: 0 });
     }
     return json(response.body, response.status);

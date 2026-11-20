@@ -3,6 +3,41 @@
 Meaningful implementation changes, newest first. Dates are work dates;
 nothing below is released.
 
+## 2026-11-20 — Categories and brands from the Central Admin (part 2a)
+
+- Owner decisions: the website's categories will come from the database,
+  edited in the admin (the storefront change is part 2b); a category can
+  have a banner photo uploaded from the admin; nothing is deleted, a web
+  address never changes.
+- Country migration `0018_category_admin.sql` (draft) fills the database
+  with the storefront's list today (`packages/country-config`), names,
+  order, descriptions, every group and subcategory, so nothing changes on
+  day one. The rows are generated (`database/client/scripts/taxonomy-sql.ts`)
+  and a test fails when the list and the migration drift apart. New rows
+  get ids made from their slugs, so the SAMPLE catalogue script still
+  fits; it now keeps categories that are already there. Running the
+  migration again never overwrites a name an administrator changed.
+- Adds category descriptions, banners (`category_banners`), the visitor
+  reads `public_category_tree()` and `public_category_banner()`, and
+  service_role-only functions for the tree with product counts, saving a
+  category / group / subcategory (`shop-by-use` reserved), brands and
+  banners. Changes are logged in `catalogue_changes`.
+- Country admin API: `/categories`, `/categories/save`,
+  `/categories/:id/banner` (GET/POST), `/brands/save`. The storefront
+  route accepts a banner-sized body and reads its catalogue again after
+  every accepted product, category or brand change.
+- Admin: Categories page (table with groups, products and order; add a
+  category; brands with rename and add) and a category's page (its form,
+  banner upload/remove, each group and subcategory with its own form, add
+  group / subcategory). Hiding a category with live products warns before
+  saving. Admin migration `0007_category_actions.sql` adds the actions to
+  the audit log.
+- Tests: database (the list in the database, rerun keeps admin names,
+  permissions, create / rename / hide, products leave and return with
+  their category, replay, brands, banners), the generated list against the
+  migration, the postgres.js driver, admin browser
+  (`e2e/products-categories.spec.ts`).
+
 ## 2026-11-20 — Inventory from the Central Admin
 
 - Owner decisions: stock is added or removed with a reason, or set to a
