@@ -9,6 +9,9 @@ project is an owner action; nothing in this repository connects to one.
 | --- | --- |
 | `0001_admin_core.sql` | Country roster and service registry, roles and permissions (mirroring `packages/permissions`), administrators, role assignments, invitations, append-only audit log, security events, country health checks. Row Level Security on every table, no direct writes, ten functions that check the caller and write the audit log, and the owner-only provisioning of the Master Super Admin. |
 | `0002_country_actions.sql` | `admin_country_endpoint()`: a country's service address for any administrator with a role there (routing an Order Manager's request needs it). `record_country_action()`: the audit entry for a change made in a country through the console; the permission each action needs is decided in the function. |
+| `0003_riders.sql` | The Rider role's lists and the delivery actions in `record_country_action()`. |
+| `0004_admin_phone.sql` | A name and phone for riders, set at invitation or on the rider's page. |
+| `0005_product_actions.sql` | The product actions (`product.create`, `.update`, `.publish`, `.hide`, `.image_add`, `.image_arrange`, `.stock`) in `record_country_action()`, each with the permission it needs; the target id may be up to 80 characters (a product's web address). |
 
 Rules for every later file:
 

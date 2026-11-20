@@ -199,3 +199,22 @@ export function rowToProduct(
     ...(extra.specifications.length > 0 ? { specifications: extra.specifications } : {}),
   };
 }
+
+/**
+ * A photo uploaded from the admin (migration 0016), for the storefront to
+ * serve at /media/products/<id>. Read as the anon role through
+ * public_product_image, so only photos of live products are returned; null
+ * otherwise, and null while the migration is not applied.
+ */
+export async function getPublicProductImage(db: Db, imageId: string): Promise<{ contentType: string; bytes: Uint8Array } | null> {
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(imageId)) return null;
+  try {
+    const [row] = await withAccess(db, ANON, (tx) =>
+      tx.query<{ content_type: string; bytes: Uint8Array }>(`select content_type, bytes from public_product_image($1::uuid)`, [imageId]),
+    );
+    return row ? { contentType: row.content_type, bytes: row.bytes } : null;
+  } catch (error) {
+    if ((error as { code?: unknown } | null)?.code === "42883") return null;
+    throw error;
+  }
+}

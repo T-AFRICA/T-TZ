@@ -188,7 +188,7 @@ browser → admin server (session, role, country checked)
 | 5 Master Super Admin | Overview, countries, administrators, audit log, security events, country configuration and service registry | built |
 | 6 Country Super Admin | Country dashboard, staff, invitations, country-scoped access | built |
 | 7 Country API | Contract, signing, adapter, country-side handler, storefront route | built for health and orders; proven on this machine only (storefront test build, stand-in country for the admin) |
-| 8 Products, categories, inventory, orders, customers, CMS | Orders: list, search, detail, status changes, cancellation, internal notes | orders built; returns/refunds, products, categories, inventory, customers and CMS not built: their pages say so |
+| 8 Products, categories, inventory, orders, customers, CMS | Orders: list, search, detail, status changes, cancellation, internal notes. Products (2026-11-20, country `0016_product_admin.sql`, admin `0005_product_actions.sql`): list, search, create as draft, edit, photos stored in the country database, publish and hide, stock per product | orders and products built; categories and brands (part 2), inventory list, returns/refunds and CMS not built: their pages say so |
 | 8b Deliveries (owner request 2026-11-18) | Rider role, assign, rider's phone screens, customer code, photo, signature, cash, failed attempts (`0003_riders.sql`, `0008_deliveries.sql`) | built on this machine (database tests, admin browser test); not applied to any project; rider location and the customer's live map built 2026-11-19 (`0012_live_tracking.sql`, admin `0004_admin_phone.sql`), dispatch map for staff not built |
 | 9 Reports and monitoring | Audit log and health checks only | mostly not built |
 | 10 Deployment | — | not done; owner actions below |
@@ -203,8 +203,8 @@ browser → admin server (session, role, country checked)
 | 4 | Country administrators cannot create or promote Master Super Admins | unit, database and browser tests |
 | 5 | Changing the country id does not bypass authorization | browser test (address), database tests (function arguments), token tests (country API) |
 | 6 | Admin actions are in the audit log | database and browser tests |
-| 7 | Product changes land in the right country database | products not built. For orders: browser tests check the change in the country's own database |
-| 8 | Storefront shows published changes after revalidation | publishing not built. For orders: the storefront's tracking page shows the new status (storefront browser test) |
+| 7 | Product changes land in the right country database | database tests (signed requests, wrong country and permission refused); admin browser test checks each change in the stand-in country's database and the audit log |
+| 8 | Storefront shows published changes after revalidation | storefront browser test: a product published through the real admin route shows on its product page with its photo, and disappears when hidden (`revalidateTag("catalogue")` after each accepted product change) |
 | 9 | Authentication and sessions | browser tests against the stand-in; on the real project the owner signed in, set up an authenticator and opened the console (2026-11-16). Invitations, suspension and session expiry have not been tried there |
 | 10 | Suspended accounts stop at once | database and browser tests (same session, no new sign-in) |
 | 11 | Missing country connection shows an unavailable state | browser test |

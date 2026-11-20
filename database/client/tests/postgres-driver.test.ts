@@ -1,7 +1,9 @@
 import { randomUUID } from "node:crypto";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { PGLiteSocketServer } from "@electric-sql/pglite-socket";
-import { DatabaseCatalogClient } from "../src/catalog";
+import { DatabaseCatalogClient, getPublicProductImage } from "../src/catalog";
+import { withServiceAccess } from "../src/country-admin";
+import { productFunctions } from "../src/country-admin/products";
 import type { Db } from "../src/db";
 import { placeCodOrder, trackOrder } from "../src/orders";
 import { createPostgresDb } from "../src/postgres-db";
@@ -52,5 +54,41 @@ describe("postgres.js driver", () => {
     expect(result).toMatchObject({ ok: true, totalMinor: 2_800_000 });
     if (!result.ok) return;
     expect(await trackOrder(db, result.orderNumber, "driver@example.test")).toMatchObject({ found: true, totalMinor: 2_800_000 });
+  });
+
+  it("saves a product with its lists, adds and arranges photos, and serves a live product's photo (jsonb, bytea, uuid[])", async () => {
+    const products = productFunctions(withServiceAccess);
+    const actor = randomUUID();
+    const [place] = await t.db.query<{ category: string; group: string }>(
+      `select g.category_id as category, g.id as "group" from category_groups g join categories c on c.id = g.category_id where c.slug = 'lighting' limit 1`,
+    );
+    const product = {
+      name: "Driver Bulb",
+      sku: "DRIVER-BULB",
+      description: null,
+      brandId: null,
+      categoryId: place!.category,
+      groupId: place!.group,
+      subcategoryId: null,
+      variantLabel: null,
+      priceMinor: 990_000,
+      wasPriceMinor: null,
+      specifications: [{ label: "Power", value: "9 W" }],
+      variants: ["9W"],
+      colors: [],
+    };
+    expect(await products.create(db, "TZ", "driver-bulb", product, actor, randomUUID())).toMatchObject({ ok: true, slug: "driver-bulb", status: "draft" });
+    const png = Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), Buffer.alloc(300, 9)]);
+    const first = await products.addImage(db, "TZ", "driver-bulb", { contentType: "image/png", data: png.toString("base64") }, actor, randomUUID());
+    const second = await products.addImage(db, "TZ", "driver-bulb", { contentType: "image/png", data: png.toString("base64") }, actor, randomUUID());
+    if (!first.ok || !second.ok) throw new Error("photo refused");
+    expect(await products.arrangeImages(db, "TZ", "driver-bulb", [second.imageId, first.imageId], actor, randomUUID())).toMatchObject({ ok: true });
+    expect(await products.update(db, "TZ", "driver-bulb", { ...product, priceMinor: 950_000 }, actor, randomUUID())).toMatchObject({ ok: true });
+    expect(await products.setStatus(db, "TZ", "driver-bulb", true, actor, randomUUID())).toMatchObject({ ok: true, status: "live" });
+    const detail = await products.get(db, "TZ", "driver-bulb");
+    expect(detail).toMatchObject({ ok: true, product: { priceMinor: 950_000, variants: ["9W"], specifications: [{ label: "Power", value: "9 W" }] } });
+    if (detail.ok) expect(detail.product.images.map((image) => image.id)).toEqual([second.imageId, first.imageId]);
+    const served = await getPublicProductImage(db, second.imageId);
+    expect(Buffer.from(served!.bytes).equals(png)).toBe(true);
   });
 });

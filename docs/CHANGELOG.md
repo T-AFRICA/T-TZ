@@ -3,6 +3,45 @@
 Meaningful implementation changes, newest first. Dates are work dates;
 nothing below is released.
 
+## 2026-11-20 — Products from the Central Admin (part 1)
+
+- Owner decisions: photos are stored in the country's database; nothing is
+  deleted, a product is hidden; a new product starts as a draft and someone
+  with `products.publish` makes it live; the SAMPLE catalogue stays and is
+  edited from the admin (marked **Sample**).
+- Country migration `0016_product_admin.sql` (draft): `published_at`
+  (draft / live / hidden), private photo files and a change log
+  (`catalogue_changes`, one row per signed request), and service_role-only
+  functions to list, read, create, edit, publish/hide, add/arrange photos
+  and set stock. Going live needs a price, a photo and a shown category.
+  `public_product_image()` gives anon the photos of live products only.
+- Country admin API: `/catalogue/options`, `/products` (list, create),
+  `/products/:slug` (read, edit), `/status`, `/stock`, `/images`,
+  `/images/arrange`, `/images/:id`, each with its own permission. The
+  storefront route accepts a photo-sized body on the photo endpoint and
+  reads its catalogue again (`revalidateTag("catalogue")`) after every
+  accepted product change; with the shared cache the catalogue client keeps
+  no copy of its own, so the change shows at once.
+- Storefront: `/media/products/<id>` serves a live product's uploaded
+  photo, cached for a year (a new photo gets a new id).
+- Admin: Products list (status chips, search, category filter, price,
+  stock, Sample mark), New product (saved as a draft), the product page
+  (publish/hide with confirmation, photos made smaller in the browser and
+  ordered or removed, stock, details form that keeps what was typed after
+  a refusal, recent changes). Photos are shown through the console's own
+  address, a draft's too. Admin migration `0005_product_actions.sql`
+  records the product actions in the audit log.
+- Found by the storefront browser test: postgres.js sent the product JSON
+  as a JSON string (`$n::jsonb`); it now goes as `$n::text::jsonb`, as the
+  other functions do, and the driver test covers products.
+- Tests: database (signed requests, permissions, draft → live → hidden,
+  photos, refusals, replays), the postgres.js driver, admin unit (the
+  form), admin browser (`e2e/products.spec.ts`: create, refusal without a
+  photo, photo, stock, publish, edit, hide, audit log, phone width) and
+  storefront browser (`e2e/admin-api.spec.ts`: a product through the real
+  route, its photo private as a draft, on the product page once live, gone
+  when hidden).
+
 ## 2026-11-20 — Homepage hero: a second slide with the lighting range
 
 - Owner request: a new hero with TRONIC's lighting photograph (street

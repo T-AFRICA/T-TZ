@@ -38,7 +38,7 @@ export interface NavSection {
 
 /** Country modules served by the country's own backend. Each needs the country's service to be connected. */
 export const COUNTRY_MODULES = {
-  products: { label: "Products", permission: "products.read", icon: "products", summary: "Listing, creation, SKUs, images, variants, status and bulk import." },
+  products: { label: "Products", permission: "products.read", icon: "products", summary: "Listing, creation, SKUs, prices, photos, options, publishing and stock." },
   categories: { label: "Categories", permission: "categories.manage", icon: "categories", summary: "Categories, subcategories and brands." },
   inventory: { label: "Inventory", permission: "inventory.read", icon: "inventory", summary: "Stock quantities, low-stock alerts, history and adjustments." },
   orders: { label: "Orders", permission: "orders.read", icon: "orders", summary: "Orders by status, details, tracking timeline and internal notes." },

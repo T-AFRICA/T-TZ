@@ -653,7 +653,15 @@ export type CountryAction =
   | "delivery.pickup"
   | "delivery.start"
   | "delivery.deliver"
-  | "delivery.fail";
+  | "delivery.fail"
+  // Products (admin migration 0005, country migration 0016).
+  | "product.create"
+  | "product.update"
+  | "product.publish"
+  | "product.hide"
+  | "product.image_add"
+  | "product.image_arrange"
+  | "product.stock";
 
 export interface Rider {
   userId: string;
