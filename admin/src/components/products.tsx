@@ -12,9 +12,9 @@ import { buttonClass, inputClass } from "./ui";
 /**
  * The product pieces of the console that run in the browser: the product
  * form (it shows what was typed again after a refusal), the photo upload
- * (the photo is made smaller in the browser first), the photo order buttons
- * and the stock form. Every one posts to a server action; the country
- * decides.
+ * (the photo is made smaller in the browser first) and the photo order
+ * buttons. Every one posts to a server action; the country decides. Stock
+ * is changed on the Inventory pages (components/inventory.tsx).
  */
 
 type SaveAction = (previous: ProductFormState, form: FormData) => Promise<ProductFormState>;
@@ -287,28 +287,6 @@ export function PhotoOrderButton({ action, countryId, slug, keep, label, title }
         <p role="alert" className="mt-1 text-xs font-medium text-danger">
           {state.message}
         </p>
-      ) : null}
-    </form>
-  );
-}
-
-export function StockForm({ action, countryId, slug, available }: { action: Action; countryId: string; slug: string; available: number | null }) {
-  const [state, formAction, pending] = useActionState(action, IDLE);
-  useResultToast(state);
-  return (
-    <form action={formAction} noValidate className="flex flex-wrap items-end gap-3">
-      <input type="hidden" name="countryId" value={countryId} />
-      <input type="hidden" name="slug" value={slug} />
-      <div className="w-40">
-        <TextField name="available" label="Units in stock" inputMode="numeric" defaultValue={available ?? 0} error={state.fieldErrors?.available} />
-      </div>
-      <SubmitButton pending={pending} variant="secondary" pendingLabel="Saving…">
-        Set stock
-      </SubmitButton>
-      {state.status === "error" && state.message ? (
-        <div className="w-full">
-          <FormMessage state={state} />
-        </div>
       ) : null}
     </form>
   );

@@ -15,6 +15,9 @@ import {
   orderNoteBodySchema,
   orderStatusChangeBodySchema,
   PRODUCT_SLUG_PATTERN,
+  inventoryListQuerySchema,
+  lowStockBodySchema,
+  stockAdjustBodySchema,
   productCreateBodySchema,
   productImageArrangeBodySchema,
   productImageBodySchema,
@@ -33,6 +36,7 @@ import {
 import type { Db, Row } from "../db";
 import { customerFunctions } from "./customers";
 import { deliveryFunctions } from "./deliveries";
+import { inventoryFunctions } from "./inventory";
 import { productFunctions } from "./products";
 
 /**
@@ -64,6 +68,9 @@ export async function withServiceAccess<T>(db: Db, fn: (tx: Db) => Promise<T>): 
 const deliveries = deliveryFunctions(withServiceAccess);
 const customers = customerFunctions(withServiceAccess);
 const products = productFunctions(withServiceAccess);
+const inventory = inventoryFunctions(withServiceAccess);
+
+const INVENTORY_ENDPOINTS: ReadonlySet<CountryAdminEndpoint> = new Set(["listInventory", "getInventory", "adjustStock", "setLowStock"]);
 
 const PRODUCT_ENDPOINTS: ReadonlySet<CountryAdminEndpoint> = new Set([
   "catalogueOptions",
@@ -456,6 +463,33 @@ export async function handleCountryAdminRequest(service: CountryAdminService, re
       }
     }
 
+    // Inventory (migration 0017).
+    if (INVENTORY_ENDPOINTS.has(matched.endpoint)) {
+      if (matched.endpoint === "listInventory") {
+        const query = inventoryListQuerySchema.safeParse(Object.fromEntries(url.searchParams));
+        if (!query.success) return refuse(400, "invalid_request");
+        return { status: 200, body: await inventory.list(db, countryCode, query.data) };
+      }
+      const slug = (matched.params.slug ?? "").toLowerCase();
+      if (!PRODUCT_SLUG_PATTERN.test(slug) || slug.length > 80) return { status: 200, body: { ok: false, code: "not_found" } };
+      if (matched.endpoint === "getInventory") return { status: 200, body: await inventory.get(db, countryCode, slug) };
+      let input: unknown;
+      try {
+        input = JSON.parse(request.body);
+      } catch {
+        return refuse(400, "invalid_request");
+      }
+      if (matched.endpoint === "adjustStock") {
+        const body = stockAdjustBodySchema.safeParse(input);
+        if (!body.success) return { status: 200, body: { ok: false, code: "invalid_request" } };
+        // The token id is the request id: the same signed request changes the stock once.
+        return { status: 200, body: await inventory.adjust(db, countryCode, slug, body.data, verified.actorId, verified.tokenId) };
+      }
+      const body = lowStockBodySchema.safeParse(input);
+      if (!body.success) return { status: 200, body: { ok: false, code: "invalid_request" } };
+      return { status: 200, body: await inventory.setLowStock(db, countryCode, slug, body.data.level) };
+    }
+
     const orderNumber = (matched.params.orderNumber ?? "").toUpperCase();
     if (matched.endpoint !== "listOrders" && matched.endpoint !== "listMyDeliveries" && !ORDER_NUMBER_PATTERN.test(orderNumber)) {
       return { status: 200, body: { ok: false, code: "not_found" } };
@@ -540,6 +574,7 @@ export async function handleCountryAdminRequest(service: CountryAdminService, re
       if (matched.endpoint === "riderFigures" || matched.endpoint === "riderDeliveries") return refuse(503, "rider_figures_missing");
       if (matched.endpoint === "listCustomers" || matched.endpoint === "getCustomer") return refuse(503, "customers_missing");
       if (PRODUCT_ENDPOINTS.has(matched.endpoint)) return refuse(503, "products_missing");
+      if (INVENTORY_ENDPOINTS.has(matched.endpoint)) return refuse(503, "inventory_missing");
       const deliveryEndpoint = COUNTRY_ADMIN_ENDPOINTS[matched.endpoint].permission.startsWith("deliveries.");
       return refuse(503, deliveryEndpoint ? "delivery_admin_missing" : "order_admin_missing");
     }

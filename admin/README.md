@@ -174,8 +174,8 @@ catalogue (SKUs starting with `SAMPLE-`). Owner decisions 2026-11-20:
   product, 1 MB each, JPEG/PNG/WebP; the browser makes them smaller first)
   and the storefront serves a live product's photos at
   `/media/products/<id>`. The first photo is the main one.
-- **Stock** is set on the product page by whoever holds `inventory.adjust`
-  (Inventory Manager, Country Super Admin).
+- **Stock** is changed on the Inventory pages (see below); the product
+  page links there.
 - Each change the country accepts is recorded in the country
   (`catalogue_changes`) and in this console's audit log; the storefront's
   catalogue is read again at once.
@@ -190,6 +190,30 @@ catalogue (SKUs starting with `SAMPLE-`). Owner decisions 2026-11-20:
 
 Categories and brands are edited in part 2; until then the form chooses
 from the existing ones.
+
+## Inventory (owner)
+
+"Inventory" (for whoever holds `inventory.read`) lists every product's
+stock live from the country: out of stock first, then low, then the rest,
+with All / Low / Out of stock chips and a search. Owner decisions
+2026-11-20:
+
+- Stock is **added or removed with a reason** (received, returned,
+  damaged, lost, count correction, other with a note) or **set to a
+  counted total** as a correction. Removing more than there is is refused.
+  Needs `inventory.adjust` (Inventory Manager, Country Super Admin).
+- Each product has its **own low-stock level** (5 unless changed; 0 means
+  never low). The dashboard's "low stock" counts with it.
+- Each product's **history** shows the administrators' changes and what
+  orders did (an order takes units, a cancellation gives them back, with
+  the order number). It starts when the migration runs.
+
+1. Country project: `database/migrations/0017_inventory_admin.sql` (after
+   0016). Until then the Inventory page says the database does not have
+   the inventory yet.
+2. Central Admin project: `database/admin-migrations/0006_inventory_actions.sql`
+   (after 0005), for the audit log.
+3. Deploy both apps.
 
 ## Customers (owner)
 

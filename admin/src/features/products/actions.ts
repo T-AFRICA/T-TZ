@@ -2,7 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { z } from "zod";
-import { PRODUCT_IMAGES_MAX, PRODUCT_IMAGE_MAX_BYTES, PRODUCT_LIMITS, PRODUCT_SLUG_PATTERN, PRODUCT_STOCK_MAX, type CountryUnavailableReason } from "@tronic/api-contracts";
+import { PRODUCT_IMAGES_MAX, PRODUCT_IMAGE_MAX_BYTES, PRODUCT_LIMITS, PRODUCT_SLUG_PATTERN, type CountryUnavailableReason } from "@tronic/api-contracts";
 import { recordCountryAction } from "@tronic/database/admin";
 import { can, type CountryPermission } from "@tronic/permissions";
 import type { FormState } from "@/features/form-state";
@@ -128,24 +128,6 @@ export async function setProductStatusAction(_previous: FormState, form: FormDat
   return done(publish ? "Published. It is on the website within a minute." : `Hidden. It is "${PRODUCT_STATUS_LABEL[answer.status]}" and off the website.`);
 }
 
-const stockSchema = z.object({ countryId, slug, available: z.coerce.number().int("Enter a whole number").min(0, "Enter 0 or more").max(PRODUCT_STOCK_MAX, `At most ${PRODUCT_STOCK_MAX}`) });
-
-export async function setProductStockAction(_previous: FormState, form: FormData): Promise<FormState> {
-  const admin = await requireAdmin();
-  const parsed = stockSchema.safeParse({ countryId: formText(form, "countryId"), slug: formText(form, "slug"), available: formText(form, "available").trim() || "x" });
-  if (!parsed.success) return { status: "error", fieldErrors: { available: parsed.error.issues[0]?.message ?? "Enter the number of units" } };
-  const country = await countryFor(admin, parsed.data.countryId, "inventory.adjust");
-  if (!country) return denied(admin, parsed.data.countryId, "inventory.adjust");
-
-  const api = await countryApiFor(admin, country);
-  const result = await api.setProductStock(admin.actor.userId, parsed.data.slug, parsed.data.available);
-  if (!result.available) return unavailable(result.reason);
-  if (!result.data.ok) return { status: "error", message: result.data.code === "not_found" ? "That product no longer exists." : "The country did not accept that number." };
-  if (!result.data.replayed) {
-    await audit(admin, { countryId: country.id, action: "product.stock", targetId: parsed.data.slug, summary: { available: result.data.available } });
-  }
-  return done(`Stock set to ${result.data.available}.`);
-}
 
 const imageSchema = z.object({
   countryId,

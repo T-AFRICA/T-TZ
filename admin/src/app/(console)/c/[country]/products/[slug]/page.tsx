@@ -5,7 +5,7 @@ import { PRODUCT_IMAGES_MAX, PRODUCT_SLUG_PATTERN } from "@tronic/api-contracts"
 import { getCountryEndpoint, listAdministrators } from "@tronic/database/admin";
 import { can } from "@tronic/permissions";
 import { ConfirmAction } from "@/components/forms";
-import { PhotoOrderButton, PhotoUpload, ProductForm, StockForm } from "@/components/products";
+import { PhotoOrderButton, PhotoUpload, ProductForm } from "@/components/products";
 import { Notice, PageHeader, Panel, StatusPill, buttonClass } from "@/components/ui";
 import { SERVICE_UNAVAILABLE_TEXT, auditActionLabel, formatDateTime } from "@/features/labels";
 import { formatMinor } from "@/features/orders/labels";
@@ -13,7 +13,6 @@ import {
   addProductImageAction,
   arrangeProductImagesAction,
   setProductStatusAction,
-  setProductStockAction,
   updateProductAction,
 } from "@/features/products/actions";
 import { formValuesOf, placementChoices } from "@/features/products/form";
@@ -69,6 +68,7 @@ export default async function ProductPage({
   const mayUpdate = can(admin.actor, "products.update", country.id);
   const mayPublish = can(admin.actor, "products.publish", country.id);
   const mayStock = can(admin.actor, "inventory.adjust", country.id);
+  const mayInventory = can(admin.actor, "inventory.read", country.id);
   const amount = (minor: number) => formatMinor(minor, product.currency, product.currencyExponent);
 
   const [people, endpoint] = await Promise.all([
@@ -200,14 +200,14 @@ export default async function ProductPage({
       </Panel>
 
       <Panel title="Stock" description="Units this country can sell. Checkout reserves them; a cancelled order gives them back.">
-        {mayStock ? (
-          <StockForm action={setProductStockAction} {...fields} available={product.available} />
-        ) : (
-          <p className="text-sm text-ink">
-            {product.available === null ? "Not set" : `${product.available} in stock`}
-            <span className="block text-xs text-muted">Changing stock needs the inventory.adjust permission (Inventory Manager or Country Super Admin).</span>
-          </p>
-        )}
+        <div className="flex flex-wrap items-center gap-3">
+          <p className="text-sm text-ink">{product.available === null ? "Not set" : `${product.available} in stock`}</p>
+          {mayInventory ? (
+            <Link href={`/c/${country.id}/inventory/${product.slug}`} className={buttonClass.secondary}>
+              {mayStock ? "Change stock and see its history" : "Stock history"}
+            </Link>
+          ) : null}
+        </div>
       </Panel>
 
       <Panel title="Details">
