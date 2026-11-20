@@ -52,11 +52,62 @@ async function checkoutWith(page: Page, lines: { productId: string; quantity: nu
   await expect(page.getByRole("complementary", { name: "Order summary" })).toBeVisible();
 }
 
+/** A registered customer of the stand-in auth server: synthetic values that exist only inside a test run. */
+const SHOPPER = ["shopper.flow@example.test", "Shopper-Flow-Test-1"] as const;
+
+async function signIn(page: Page, email: string, phrase: string, landing = `${BASE}/account`) {
+  await page.goto(`${BASE}/login`);
+  await page.getByLabel(/Email address/).fill(email);
+  await page.getByLabel(/^Password/).fill(phrase);
+  await page.getByRole("button", { name: "Sign in" }).click();
+  await expect(page).toHaveURL(landing);
+}
+
 test.describe.configure({ mode: "serial" });
 
-test("guest: catalogue → cart → checkout → confirmed order that exists in the database", async ({ page }) => {
+test.beforeAll(async () => {
+  await createCustomer(...SHOPPER);
+});
+
+test("signed out, checkout sends the visitor to sign in or register and back; nothing can be ordered without an account", async ({ page }) => {
+  const next = `${BASE}/login?next=${encodeURIComponent("/checkout")}`;
+  await page.goto(`${BASE}/cart`);
+  await page.evaluate(([key, value]) => window.localStorage.setItem(key, value), [CART_KEY, JSON.stringify([{ productId: PANEL.slug, quantity: 1, color: null, variant: null }])] as const);
+  await page.goto(`${BASE}/checkout`);
+  await expect(page).toHaveURL(next);
+  await expect(page.getByText(/Sign in or create an account to place your order/)).toBeVisible();
+
+  // Registration keeps where to go back to: the form, the sign-in link, and the page after it.
+  await page.getByRole("link", { name: "Create an account" }).click();
+  await expect(page).toHaveURL(`${BASE}/register?next=${encodeURIComponent("/checkout")}`);
+  await expect(page.getByRole("link", { name: "Sign in" })).toHaveAttribute("href", `/login?next=${encodeURIComponent("/checkout")}`);
+  await page.getByLabel(/Full name/).fill("Neema Mushi");
+  await page.getByLabel(/Email address/).fill("new.flow@example.test");
+  await page.getByLabel(/Mobile number/).fill("0712 345 679");
+  await page.getByLabel(/^Password/).fill("Register-Flow-Test-1");
+  await page.getByLabel(/Confirm password/).fill("Register-Flow-Test-1");
+  await page.getByRole("checkbox", { name: /I agree/ }).check();
+  await page.getByRole("button", { name: "Create account" }).click();
+  await expect(page).toHaveURL(`${BASE}/login/registered?next=${encodeURIComponent("/checkout")}`);
+  await expect(page.getByText(/Check your email/)).toBeVisible();
+
+  // Nothing was ordered on the way.
+  expect(await sql(`select 1 from orders where contact_email = 'new.flow@example.test'`)).toEqual([]);
+
+  // Signing in returns to checkout with the cart kept and the account's email filled in.
+  await page.goto(next);
+  await page.getByLabel(/Email address/).fill(SHOPPER[0]);
+  await page.getByLabel(/^Password/).fill(SHOPPER[1]);
+  await page.getByRole("button", { name: "Sign in" }).click();
+  await expect(page).toHaveURL(`${BASE}/checkout`);
+  await expect(page.getByRole("complementary", { name: "Order summary" })).toContainText("TZS 28,000");
+  await expect(page.getByLabel(/Email address/)).toHaveValue(SHOPPER[0]);
+});
+
+test("a signed-in customer: catalogue → cart → checkout → confirmed order that exists in the database, linked to them", async ({ page }) => {
   const email = "guest.flow@example.test";
   const stockBefore = await stockOf(PANEL.slug);
+  await signIn(page, ...SHOPPER);
 
   // The panel's own subcategory: the Lighting category has more than one page of products.
   await page.goto(`${BASE}/categories/lighting/indoor-lighting/panel-lights`);
@@ -81,7 +132,9 @@ test("guest: catalogue → cart → checkout → confirmed order that exists in 
   expect(new URL(page.url()).search).toBe("");
 
   const [order] = await ordersFor(email);
-  expect(order).toMatchObject({ order_number: orderNumber, user_id: null, status: "pending_payment" });
+  const [account] = await sql<{ id: string }>(`select id from auth.users where email = $1`, [SHOPPER[0]]);
+  expect(order).toMatchObject({ order_number: orderNumber, user_id: account!.id, status: "pending_payment" });
+  await expect(page.getByRole("link", { name: "Track your order" })).toHaveAttribute("href", `/account/orders/${orderNumber}`);
   expect(Number(order!.total_minor)).toBe(PANEL.priceMinor);
   const lines = await sql<{ product_slug: string; quantity: number; unit_price_minor: string }>(
     `select product_slug, quantity, unit_price_minor from order_lines l join orders o on o.id = l.order_id where o.order_number = $1`,
@@ -96,6 +149,7 @@ test("guest: catalogue → cart → checkout → confirmed order that exists in 
 
 test("a price change between quote and order is shown and nothing is saved until confirmed", async ({ page }) => {
   const email = "price.change@example.test";
+  await signIn(page, ...SHOPPER);
   try {
     await checkoutWith(page, [{ productId: PANEL.slug, quantity: 2 }]);
     await expect(page.getByRole("complementary", { name: "Order summary" })).toContainText("TZS 56,000");
@@ -118,6 +172,7 @@ test("a price change between quote and order is shown and nothing is saved until
 
 test("unavailable stock is refused without an order or a stock change", async ({ page }) => {
   const email = "no.stock@example.test";
+  await signIn(page, ...SHOPPER);
   const before = await stockOf(PANEL.slug);
   try {
     await checkoutWith(page, [{ productId: PANEL.slug, quantity: 2 }]);
@@ -135,6 +190,7 @@ test("unavailable stock is refused without an order or a stock change", async ({
 
 test("a submission whose answer is lost is retried with the same key and saved once", async ({ page }) => {
   const email = "lost.answer@example.test";
+  await signIn(page, ...SHOPPER);
   await checkoutWith(page, [{ productId: PANEL.slug, quantity: 1 }]);
   await fillCheckout(page, email);
 
@@ -166,14 +222,6 @@ test("a submission whose answer is lost is retried with the same key and saved o
 test("customers see only their own orders; guests track with number plus contact", async ({ browser }) => {
   await createCustomer("alice.e2e@example.test", "Alice-Secret-1");
   await createCustomer("bob.e2e@example.test", "Bob-Secret-1");
-
-  const signIn = async (page: Page, email: string, password: string) => {
-    await page.goto(`${BASE}/login`);
-    await page.getByLabel(/Email address/).fill(email);
-    await page.getByLabel(/^Password/).fill(password);
-    await page.getByRole("button", { name: "Sign in" }).click();
-    await expect(page).toHaveURL(`${BASE}/account`);
-  };
 
   const alice = await (await browser.newContext()).newPage();
   await signIn(alice, "alice.e2e@example.test", "Alice-Secret-1");

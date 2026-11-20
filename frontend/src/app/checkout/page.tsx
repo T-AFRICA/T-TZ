@@ -1,7 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { Container } from "@tronic/ui";
 import { CheckoutView } from "@/components/checkout/CheckoutView";
+import { withNext } from "@/features/auth/next";
+import { authConfigured, currentUser } from "@/features/auth/server";
 import { parseBuyNowParams } from "@/features/checkout/links";
 import { ordersEnabled } from "@/features/data/source";
 
@@ -12,16 +15,35 @@ export const metadata: Metadata = {
 
 const HEADING_FONT = { fontFamily: "var(--font-heading, var(--font-fallback-heading))" };
 
+/** This checkout's own address, query included (the Buy Now line), to come back to after signing in. */
+function checkoutPath(params: Record<string, string | string[] | undefined>): string {
+  const query = Object.entries(params)
+    .filter((entry): entry is [string, string] => typeof entry[1] === "string")
+    .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
+    .join("&");
+  return query ? `/checkout?${query}` : "/checkout";
+}
+
 /**
  * /checkout — the cart's lines, or one Buy Now line from the URL
  * (?buy=<id>&qty=&color=&variant=), validated here before the page renders.
+ *
+ * Owner decision 2026-11-19: no order without an account. While orders are
+ * connected, a visitor who is not signed in goes to sign in (or register
+ * from there) and comes back here afterwards; the cart stays on the device.
+ * Without accounts configured, orders cannot be placed at all.
  */
 export default async function CheckoutPage({
   searchParams,
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const buyNowLine = parseBuyNowParams(await searchParams);
+  const params = await searchParams;
+  const buyNowLine = parseBuyNowParams(params);
+  const canOrder = ordersEnabled() && authConfigured();
+  const user = canOrder ? await currentUser() : null;
+  if (canOrder && !user) redirect(withNext("/login", checkoutPath(params)));
+  const customer = user ? { fullName: user.fullName, email: user.email, phone: user.phone } : null;
   return (
     <>
       <div className="border-b border-[var(--color-light-grey)]/70 bg-white">
@@ -59,7 +81,7 @@ export default async function CheckoutPage({
           </p>
         </Container>
       </div>
-      <CheckoutView buyNowLine={buyNowLine} ordersEnabled={ordersEnabled()} />
+      <CheckoutView buyNowLine={buyNowLine} ordersEnabled={canOrder} customer={customer} />
     </>
   );
 }

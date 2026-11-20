@@ -13,6 +13,7 @@ import {
   type RegisterValues,
   type ResetValues,
 } from "@/features/auth/rules";
+import { CHECKOUT_SIGN_IN_NOTICE, fromCheckout } from "@/features/auth/next";
 import { IDLE } from "@/features/auth/state";
 import { useAuthForm } from "@/features/auth/useAuthForm";
 import { AuthMessage, IconField, PasswordField, SubmitButton } from "./AuthFields";
@@ -31,7 +32,8 @@ import { PasswordStrength } from "./PasswordStrength";
 
 const icon = (Icon: typeof Mail) => <Icon size={18} strokeWidth={1.8} />;
 
-export function RegisterForm({ enabled }: { enabled: boolean }) {
+/** `next`: where to go once the account is ready (a same-site path, checked again on the server), e.g. back to checkout. */
+export function RegisterForm({ enabled, next = null }: { enabled: boolean; next?: string | null }) {
   const [state, action, pending] = useActionState(signUpAction, IDLE);
   const form = useAuthForm<RegisterValues>({
     initial: { fullName: "", email: "", phone: "", password: "", confirmPassword: "", acceptTerms: false },
@@ -42,6 +44,7 @@ export function RegisterForm({ enabled }: { enabled: boolean }) {
   const { values, errors } = form;
   return (
     <form ref={form.formRef} action={action} noValidate onSubmit={form.onSubmit} className="login-form space-y-3.5">
+      {next ? <input type="hidden" name="next" value={next} /> : null}
       <IconField
         label="Full name"
         name="fullName"
@@ -138,7 +141,7 @@ export function RegisterForm({ enabled }: { enabled: boolean }) {
       <SubmitButton pending={pending} disabled={!enabled}>
         Create account
       </SubmitButton>
-      <AuthMessage message={form.message} />
+      <AuthMessage message={form.message ?? (fromCheckout(next) ? { tone: "info", text: CHECKOUT_SIGN_IN_NOTICE } : null)} />
     </form>
   );
 }

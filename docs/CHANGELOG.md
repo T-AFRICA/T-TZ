@@ -23,6 +23,31 @@ nothing below is released.
   the cycle, the room returns from the start, dots, inert slides, equal
   heights and no overflow from 320px to 1920px.
 
+## 2026-11-19 — No order without an account
+
+- Owner decision: a customer registers (or signs in) before checkout.
+  Signed out, `/checkout` goes to `/login?next=/checkout` (the Buy Now
+  line kept in `next`), which says why; "Create an account" carries the
+  same `next`, and so do the registration form, its "check your email"
+  page and the email confirmation link. After signing in the customer is
+  back at checkout with the cart kept and the account's name, email and
+  phone filled in. `next` is checked as a same-site path everywhere.
+- The server action refuses an order without a session
+  (`sign_in_required`; the page sends the customer to sign in again), and
+  migration `0015_orders_need_account.sql` (draft) makes the database
+  refuse it too: `place_cod_order()` is no longer callable with the public
+  anon key.
+- Without accounts configured, checkout cannot place orders at all.
+- The confirmation's "Track your order" opens the order in the account.
+- Owner settings this relies on: Supabase Auth "Confirm email" on and
+  "Allow anonymous sign-ins" off; the confirmation link's `/auth/confirm`
+  address must be in the allowed redirect URLs (it already is for
+  `/account`).
+- Tests: database (anon refused; every order test now places orders as a
+  registered customer), storefront unit (the `next` path) and e2e
+  (`order-flow.spec.ts`: signed out → sign in or register → back to
+  checkout; signed-in orders linked to the account).
+
 ## 2026-11-19 — A map on the rider's delivery page
 
 - Owner request: the rider's delivery page had only the address and map

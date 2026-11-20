@@ -115,7 +115,7 @@ describe("sign up", () => {
       email: "amina@example.com",
       password: "Tronic-2026",
       options: {
-        emailRedirectTo: "https://shop.example.test/auth/confirm?next=/account",
+        emailRedirectTo: "https://shop.example.test/auth/confirm?next=%2Faccount",
         data: { full_name: "Amina Juma", phone: "+255712345678" },
       },
     });
@@ -124,6 +124,22 @@ describe("sign up", () => {
   it("goes straight to the account when the provider has already signed the customer in", async () => {
     supabase.auth.signUp.mockResolvedValueOnce({ data: { user: { id: "u" }, session: { user: { id: "u" } } }, error: null });
     await expect(signUpAction(IDLE, form(valid))).rejects.toThrow(/^REDIRECT \/account$/);
+  });
+
+  it("sent from checkout: the email link and the sign-in page lead back to checkout; another site never", async () => {
+    supabase.auth.signUp.mockResolvedValueOnce({ data: { user: { id: "u" }, session: null }, error: null });
+    await expect(signUpAction(IDLE, form({ ...valid, next: "/checkout?buy=sample-led-panel&qty=2" }))).rejects.toThrow(
+      /^REDIRECT \/login\/registered\?next=%2Fcheckout%3Fbuy%3Dsample-led-panel%26qty%3D2$/,
+    );
+    expect(supabase.auth.signUp).toHaveBeenCalledWith(
+      expect.objectContaining({
+        options: expect.objectContaining({ emailRedirectTo: "https://shop.example.test/auth/confirm?next=%2Fcheckout%3Fbuy%3Dsample-led-panel%26qty%3D2" }),
+      }),
+    );
+    supabase.auth.signUp.mockResolvedValueOnce({ data: { user: { id: "u" }, session: { user: { id: "u" } } }, error: null });
+    await expect(signUpAction(IDLE, form({ ...valid, next: "/checkout" }))).rejects.toThrow(/^REDIRECT \/checkout$/);
+    supabase.auth.signUp.mockResolvedValueOnce({ data: { user: { id: "u" }, session: { user: { id: "u" } } }, error: null });
+    await expect(signUpAction(IDLE, form({ ...valid, next: "https://evil.example" }))).rejects.toThrow(/^REDIRECT \/account$/);
   });
 
   it("refuses without accepted terms or with a non-Tanzanian number", async () => {

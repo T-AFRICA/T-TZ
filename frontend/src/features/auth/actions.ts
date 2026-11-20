@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { normalizeTzPhone } from "@/features/checkout/validation";
 import { validateForgot, validateLogin, validateRegister, validateReset } from "./rules";
+import { readNext, withNext } from "./next";
 import { authConfigured, safeNextPath, siteOrigin, supabaseServer } from "./server";
 import { AUTH_REGISTERED_PATH, authErrorFromSupabase, isUnexpectedAuthError } from "./service";
 import type { AuthFormState } from "./state";
@@ -73,12 +74,15 @@ export async function signUpAction(_previous: AuthFormState, form: FormData): Pr
   const errors = fieldErrors(validateRegister(values));
   if (Object.keys(errors).length > 0) return { status: "invalid", fieldErrors: errors };
 
+  // Where to go once the account is ready: checkout when checkout sent the
+  // customer here (owner decision 2026-11-19), otherwise the account.
+  const next = safeNextPath(text(form, "next"));
   const supabase = await supabaseServer();
   const { data, error } = await supabase.auth.signUp({
     email: values.email,
     password: values.password,
     options: {
-      emailRedirectTo: `${siteOrigin()}/auth/confirm?next=/account`,
+      emailRedirectTo: `${siteOrigin()}/auth/confirm?next=${encodeURIComponent(next)}`,
       data: { full_name: values.fullName.trim(), phone: normalizeTzPhone(values.phone) },
     },
   });
@@ -87,9 +91,9 @@ export async function signUpAction(_previous: AuthFormState, form: FormData): Pr
   // yet: the customer goes to the sign-in page, which asks them to confirm
   // by email first. Supabase answers the same way for a new and an existing
   // email, so neither page can be used to find out who has an account.
-  if (!data.session) redirect(AUTH_REGISTERED_PATH);
+  if (!data.session) redirect(withNext(AUTH_REGISTERED_PATH, readNext(next)));
   // Confirmation off: the provider has already signed the customer in.
-  redirect("/account");
+  redirect(next);
 }
 
 export async function requestPasswordResetAction(_previous: AuthFormState, form: FormData): Promise<AuthFormState> {

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { ArrowRightIcon, CartIcon, ChevronDownIcon, Container, ErrorState, Input, Select, Textarea } from "@tronic/ui";
 import { formatPrice } from "@/components/home/sampleProducts";
+import { withNext } from "@/features/auth/next";
 import { useCart, useHydrated } from "@/features/cart/hooks";
 import type { CartLine } from "@/features/cart/store";
 import { cartStore } from "@/features/cart/store";
@@ -72,7 +73,28 @@ type QuoteState =
  */
 type Confirmation = Extract<PlaceOrderResponse, { ok: true }>;
 
-export function CheckoutView({ buyNowLine, ordersEnabled = false }: { buyNowLine: CartLine | null; ordersEnabled?: boolean }) {
+/** The signed-in customer's details, to start the form with (they can change them for this order). */
+export interface CheckoutCustomer {
+  fullName: string | null;
+  email: string | null;
+  phone: string | null;
+}
+
+/** A stored +255… number as the customer types it (0712 345 678); anything else as it is. */
+function localPhone(phone: string | null): string {
+  const match = /^\+255(\d{3})(\d{3})(\d{3})$/.exec(phone ?? "");
+  return match ? `0${match[1]} ${match[2]} ${match[3]}` : (phone ?? "");
+}
+
+export function CheckoutView({
+  buyNowLine,
+  ordersEnabled = false,
+  customer = null,
+}: {
+  buyNowLine: CartLine | null;
+  ordersEnabled?: boolean;
+  customer?: CheckoutCustomer | null;
+}) {
   const hydrated = useHydrated();
   const { lines: cartLines } = useCart();
   const lines = useMemo(() => (buyNowLine ? [buyNowLine] : cartLines), [buyNowLine, cartLines]);
@@ -119,9 +141,20 @@ export function CheckoutView({ buyNowLine, ordersEnabled = false }: { buyNowLine
     try {
       raw = window.sessionStorage.getItem(DRAFT_KEY);
     } catch {
+      raw = null;
+    }
+    if (!raw) {
+      // A first visit: start from the customer's account details.
+      if (customer) {
+        setForm((current) => ({
+          ...current,
+          fullName: current.fullName || (customer.fullName ?? ""),
+          email: current.email || (customer.email ?? ""),
+          phone: current.phone || localPhone(customer.phone),
+        }));
+      }
       return;
     }
-    if (!raw) return;
     try {
       const draft = readCheckoutForm(JSON.parse(raw) as unknown);
       if (!isPaymentMethodAvailable(draft.paymentMethod)) {
@@ -132,7 +165,7 @@ export function CheckoutView({ buyNowLine, ordersEnabled = false }: { buyNowLine
     } catch {
       // A damaged draft is ignored.
     }
-  }, [hydrated]);
+  }, [hydrated, customer]);
 
   useEffect(() => {
     if (!restoredRef.current || confirmation) return;
@@ -239,6 +272,12 @@ export function CheckoutView({ buyNowLine, ordersEnabled = false }: { buyNowLine
         case "conflict":
           attemptRef.current = null;
           setNotice("Your order details changed while it was being placed. Check them and place the order again.");
+          break;
+        case "sign_in_required":
+          // The session ended (signed out elsewhere, expired): sign in again and come back.
+          // The cart and the typed details stay on this device.
+          setNotice("Your sign-in has ended. Sign in again to place your order. Nothing was ordered.");
+          window.location.assign(withNext("/login", `${window.location.pathname}${window.location.search}`));
           break;
         default:
           setNotice("Online ordering is not available right now. Nothing was ordered or charged.");
@@ -372,7 +411,9 @@ export function CheckoutView({ buyNowLine, ordersEnabled = false }: { buyNowLine
           <form ref={formRef} id="checkout-form" noValidate onSubmit={onSubmit} className="space-y-4">
             <Section number={1} title="Contact details" done={contactDone}>
               <p className="-mt-1 mb-4 text-xs text-[var(--text-secondary)]">
-                Checking out as a guest. Customer accounts are coming soon.
+                {customer?.email
+                  ? `Signed in as ${customer.email}. The order is saved to your account; you can change the contact details for this delivery.`
+                  : "Orders are placed from a TRONIC account."}
               </p>
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="sm:col-span-2">
@@ -606,7 +647,7 @@ function OrderConfirmation({ confirmation }: { confirmation: Confirmation }) {
       </h2>
       <p role="status" className="mt-2 max-w-md text-sm text-[var(--text-secondary)]">
         Thank you. Your order number is <strong className="tabular-nums text-[var(--text-primary)]">{confirmation.orderNumber}</strong>.
-        Keep it to track your order. Pay the delivery team in cash when it arrives.
+        You can follow it in your account. Pay the delivery team in cash when it arrives.
       </p>
       <dl className="mt-5 grid grid-cols-2 gap-x-6 gap-y-1 text-sm">
         <dt className="text-left text-[var(--text-secondary)]">Items</dt>
@@ -617,7 +658,7 @@ function OrderConfirmation({ confirmation }: { confirmation: Confirmation }) {
       <p className="mt-3 max-w-md text-xs text-[var(--text-muted)]">Delivery fees, if any, are confirmed with you before delivery.</p>
       <div className="mt-6 flex flex-wrap justify-center gap-3">
         <Link
-          href="/track-order"
+          href={`/account/orders/${encodeURIComponent(confirmation.orderNumber)}`}
           className="inline-flex h-11 items-center rounded-full border border-[var(--color-light-grey)] bg-white px-6 text-sm font-semibold"
         >
           Track your order

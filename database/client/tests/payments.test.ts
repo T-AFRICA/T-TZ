@@ -12,7 +12,7 @@ import {
 import { ANON, withAccess, type Access } from "../src/db";
 import { placeCodOrder } from "../src/orders";
 import { databasePaymentStore } from "../src/payments";
-import { createAuthUser, createTestDatabase, type TestDatabase } from "../src/testing";
+import { createAuthUser, createShopper, createTestDatabase, type TestDatabase } from "../src/testing";
 
 /**
  * Online payments (migration 0007) and the server's payment service, on a
@@ -24,6 +24,8 @@ import { createAuthUser, createTestDatabase, type TestDatabase } from "../src/te
 let t: TestDatabase;
 let alice: string;
 let bob: string;
+/** Orders need an account (migration 0015). */
+let shopper: Access;
 const WEBHOOK_KEY = randomBytes(32);
 
 const policy: CountryPaymentPolicy = {
@@ -76,7 +78,7 @@ function webhook(update: Partial<GatewayPaymentUpdate> & { reference: string; st
 }
 
 /** Places an order (as the checkout does today) and marks it as paid online, as checkout will once a gateway is approved. */
-async function onlineOrder(method: "mobile_money" | "card", access: Access = ANON, email = "amina@example.com"): Promise<{ orderNumber: string; totalMinor: number }> {
+async function onlineOrder(method: "mobile_money" | "card", access: Access = shopper, email = "amina@example.com"): Promise<{ orderNumber: string; totalMinor: number }> {
   const result = await placeCodOrder(t.db, access, {
     idempotencyKey: randomUUID(),
     country: "TZ",
@@ -111,6 +113,7 @@ beforeAll(async () => {
   t = await createTestDatabase();
   alice = await createAuthUser(t.db, "alice@example.test");
   bob = await createAuthUser(t.db, "bob@example.test");
+  shopper = await createShopper(t.db, "amina@example.com");
 }, 60_000);
 
 afterAll(async () => {
@@ -161,7 +164,7 @@ describe("starting a payment", () => {
 
   it("refuses methods, wallets and orders that are not set up for it", async () => {
     const { service } = setup();
-    const cod = await placeCodOrder(t.db, ANON, {
+    const cod = await placeCodOrder(t.db, shopper, {
       idempotencyKey: randomUUID(),
       country: "TZ",
       contact: { name: "Juma Ali", email: "juma@example.com", phone: "+255712345679" },

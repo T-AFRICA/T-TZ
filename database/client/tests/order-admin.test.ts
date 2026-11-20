@@ -13,10 +13,10 @@ import {
   orderStatusChangeResponseSchema,
   type ServiceTokenSigner,
 } from "@tronic/api-contracts";
-import { ANON, withAccess } from "../src/db";
+import { ANON, withAccess, type Access } from "../src/db";
 import { handleCountryAdminRequest, type CountryAdminResponse, type CountryAdminService } from "../src/country-admin";
 import { listCustomerOrders, placeCodOrder, trackOrder } from "../src/orders";
-import { createAuthUser, createTestDatabase, type TestDatabase } from "../src/testing";
+import { createAuthUser, createShopper, createTestDatabase, type TestDatabase } from "../src/testing";
 
 /**
  * Order administration (migration 0006) and the country side of the country
@@ -30,6 +30,7 @@ let t: TestDatabase;
 let signer: ServiceTokenSigner;
 let service: CountryAdminService;
 let customer: string;
+let shopper: Access;
 
 const ADMIN = "0b6f3a52-7c1e-4f0a-9a57-3d0a5d6b9e11";
 const PANEL = "sample-led-panel";
@@ -52,7 +53,8 @@ async function stock(slug: string): Promise<number> {
   return row!.available;
 }
 
-async function placeOrder(name: string, email: string, access: Parameters<typeof placeCodOrder>[1] = ANON): Promise<string> {
+/** Orders need an account (migration 0015); by default the shopper places them. */
+async function placeOrder(name: string, email: string, access: Parameters<typeof placeCodOrder>[1] = shopper): Promise<string> {
   const result = await placeCodOrder(t.db, access, {
     idempotencyKey: randomUUID(),
     country: "TZ",
@@ -91,6 +93,7 @@ const moveTo = (orderNumber: string, status: string, note?: string) =>
 beforeAll(async () => {
   t = await createTestDatabase();
   customer = await createAuthUser(t.db, "customer@example.test");
+  shopper = await createShopper(t.db);
   const keys = await generateKeyPair("ES256", { extractable: true });
   signer = await createServiceTokenSigner({ privateKeyPem: await exportPKCS8(keys.privateKey), keyId: "k1" });
   const verifier = await createServiceTokenVerifier({ countryCode: "TZ", publicKeysPem: { k1: await exportSPKI(keys.publicKey) } });
@@ -195,7 +198,7 @@ describe("reading orders", () => {
         status: "pending_payment",
         paymentStatus: "pending",
         paymentMethod: "pay_on_delivery",
-        registeredCustomer: false,
+        registeredCustomer: true,
         contact: { name: "Asha Mrema", email: "asha@example.test", phone: "+255712345678" },
         delivery: { method: "home", region: "Dar es Salaam", street: "Plot 12, Mwai Kibaki Rd" },
         nextStatuses: ["confirmed", "cancelled"],

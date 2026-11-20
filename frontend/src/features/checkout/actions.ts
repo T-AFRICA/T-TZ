@@ -1,7 +1,7 @@
 "use server";
 
 import { ACTIVE_COUNTRY, payOnDeliveryRefusal } from "@tronic/country-config";
-import { ANON, placeCodOrder, type Access, type LineProblem } from "@tronic/database";
+import { placeCodOrder, type Access, type LineProblem } from "@tronic/database";
 import { currentUser } from "@/features/auth/server";
 import { parseCart } from "@/features/cart/store";
 import { getCatalog, getDb, ordersEnabled } from "@/features/data/source";
@@ -21,7 +21,7 @@ export async function getCheckoutQuote(lines: unknown, deliveryMethod: unknown):
 
 export type PlaceOrderResponse =
   | { ok: true; orderNumber: string; totalMinor: number; currency: string; itemCount: number }
-  | { ok: false; reason: "unavailable" | "conflict" }
+  | { ok: false; reason: "unavailable" | "conflict" | "sign_in_required" }
   | { ok: false; reason: "invalid"; fieldErrors: CheckoutErrors }
   | { ok: false; reason: "price_changed"; totalMinor: number }
   | { ok: false; reason: "lines_unavailable"; problems: LineProblem[] };
@@ -34,9 +34,11 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
  * then the database reprices every line, checks and reserves stock and
  * saves the order in one transaction (place_cod_order). The idempotency
  * key makes a retried or double-clicked submit return the same order.
- * The customer's identity comes from the verified session only; without
- * one the order is a guest order. The page shows a confirmation only after
- * this returns ok, i.e. after the order is saved.
+ * The customer's identity comes from the verified session only. Owner
+ * decision 2026-11-19: no order without an account, so without a session
+ * nothing is saved and the answer is "sign_in_required" (the database
+ * refuses guests too, migration 0015). The page shows a confirmation only
+ * after this returns ok, i.e. after the order is saved.
  */
 export async function placeOrderAction(input: {
   idempotencyKey: unknown;
@@ -45,6 +47,8 @@ export async function placeOrderAction(input: {
   expectedTotalMinor: unknown;
 }): Promise<PlaceOrderResponse> {
   if (!ordersEnabled()) return { ok: false, reason: "unavailable" };
+  const user = await currentUser();
+  if (!user) return { ok: false, reason: "sign_in_required" };
 
   const form = readCheckoutForm(input.form);
   const fieldErrors = validateCheckout(form);
@@ -73,8 +77,7 @@ export async function placeOrderAction(input: {
     }
   }
 
-  const user = await currentUser();
-  const access: Access = user ? { role: "authenticated", userId: user.id } : ANON;
+  const access: Access = { role: "authenticated", userId: user.id };
   const result = await placeCodOrder(getDb(), access, {
     idempotencyKey: input.idempotencyKey,
     country: ACTIVE_COUNTRY.code,

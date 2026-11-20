@@ -5,7 +5,7 @@ import { DatabaseCatalogClient } from "../src/catalog";
 import type { Db } from "../src/db";
 import { placeCodOrder, trackOrder } from "../src/orders";
 import { createPostgresDb } from "../src/postgres-db";
-import { createTestDatabase, type TestDatabase } from "../src/testing";
+import { createShopper, createTestDatabase, type TestDatabase } from "../src/testing";
 
 /**
  * The app reaches Postgres through postgres.js (DATABASE_URL), not PGlite's
@@ -39,7 +39,7 @@ describe("postgres.js driver", () => {
   it("places and tracks a Cash on Delivery order", async () => {
     const result = await placeCodOrder(
       db,
-      { role: "anon" },
+      await createShopper(t.db),
       {
         idempotencyKey: randomUUID(),
         country: "TZ",

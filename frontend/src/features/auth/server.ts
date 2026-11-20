@@ -78,10 +78,8 @@ export async function currentUser(): Promise<SessionUser | null> {
   };
 }
 
-/** Only same-site paths are followed after sign-in or an email link. */
-export function safeNextPath(value: unknown, fallback = "/account"): string {
-  return typeof value === "string" && /^\/(?!\/)[\w\-./?=&%]*$/.test(value) && !value.startsWith("/\\") ? value : fallback;
-}
+/** Only same-site paths are followed after sign-in or an email link (next.ts, shared with the forms). */
+export { safeNextPath } from "./next";
 
 /**
  * authConfigured() read at request time. Account pages use this so the
