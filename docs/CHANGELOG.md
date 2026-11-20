@@ -3,6 +3,32 @@
 Meaningful implementation changes, newest first. Dates are work dates;
 nothing below is released.
 
+## 2026-11-20 — Inventory from the Central Admin
+
+- Owner decisions: stock is added or removed with a reason, or set to a
+  counted total as a correction; each product has its own low-stock level
+  (default 5); the history shows the administrators' changes and what
+  orders did.
+- Country migration `0017_inventory_admin.sql` (draft):
+  `stock_levels.low_stock_at`, `stock_movements` (one row per change, per
+  signed request for administrators), triggers that record an order's
+  units and a cancellation's return with the order, and service_role-only
+  functions to list, read, adjust and set the level. The product page's
+  "set stock" (0016) now also lands in the history; the dashboard counts
+  low stock with each product's level.
+- Country admin API: `/inventory`, `/inventory/:slug`,
+  `/inventory/:slug/adjust`, `/inventory/:slug/low-stock`.
+- Admin: Inventory list (out, then low, then the rest; All / Low / Out of
+  stock; search), a product's stock page (change with reason, low-stock
+  level, history with order numbers), linked from the product page, which
+  no longer sets stock itself. Admin migration `0006_inventory_actions.sql`
+  records the changes in the audit log.
+- Tests: database (permissions, add / remove / set, refusals, replay,
+  orders and cancellations in the history, storefront in-stock, low-stock
+  levels and the dashboard), the postgres.js driver, admin browser
+  (`e2e/products.spec.ts` now changes the stock on the Inventory page,
+  including a refused removal, a level and the history).
+
 ## 2026-11-20 — Products from the Central Admin (part 1)
 
 - Owner decisions: photos are stored in the country's database; nothing is

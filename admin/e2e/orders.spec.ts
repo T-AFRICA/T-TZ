@@ -256,6 +256,12 @@ test("the country dashboard counts Tanzania's own orders, sales and stock for a 
   await expect(page.getByText("Products on sale")).toBeVisible();
   await expect(page.getByText("Stock to refill")).toBeVisible();
   await page.screenshot({ path: path.join(SHOTS, "country-dashboard.png"), fullPage: true });
+  // A module whose part of the country API does not exist yet says that, and shows no sample rows.
+  await page.goto("/c/tz/content");
+  await expect(page.getByRole("heading", { level: 1, name: "Website content" })).toBeVisible();
+  await expect(page.getByText("Website content for Tanzania cannot be shown yet")).toBeVisible();
+  await expect(page.getByText(/service is connected, but the website content part of the country API has not been built yet/)).toBeVisible();
+  await expect(page.getByRole("table")).toHaveCount(0);
 
   // Customer Support has no reports: the figures say so instead of showing numbers.
   // (Not the Order Manager: sign-ins per address are limited, and later tests need theirs.)

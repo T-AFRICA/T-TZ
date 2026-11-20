@@ -277,10 +277,9 @@ test("staff see only their modules, which say they are not connected instead of 
   await expect(page.getByText("Tanzania's products cannot be shown right now")).toBeVisible();
   await expect(page.getByRole("table")).toHaveCount(0);
   await expect(page.getByRole("link", { name: "New product" })).toHaveCount(0);
-  // A module whose part of the country API does not exist yet says that, and shows no sample rows.
   await page.goto("/c/tz/inventory");
   await expect(page.getByRole("heading", { level: 1, name: "Inventory" })).toBeVisible();
-  await expect(page.getByText("Inventory for Tanzania cannot be shown yet")).toBeVisible();
+  await expect(page.getByText("Tanzania's stock cannot be shown right now")).toBeVisible();
   await expect(page.getByRole("table")).toHaveCount(0);
   for (const address of ["/c/tz/staff", "/c/tz/settings", "/c/tz/content", "/c/tz/promotions", "/audit", "/c/tz/unknown-module"]) {
     await expectRefused(page, address);

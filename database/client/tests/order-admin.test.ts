@@ -154,7 +154,7 @@ describe("who may use the order administration", () => {
   });
 
   it("answers 404 for an address that is not part of the API", async () => {
-    expect(await send("GET", "/inventory", "inventory.read")).toMatchObject({ status: 404 });
+    expect(await send("GET", "/content", "content.read")).toMatchObject({ status: 404 });
     expect(await send("POST", "/orders", "orders.update", {})).toMatchObject({ status: 404 });
   });
 });

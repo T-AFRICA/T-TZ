@@ -661,7 +661,10 @@ export type CountryAction =
   | "product.hide"
   | "product.image_add"
   | "product.image_arrange"
-  | "product.stock";
+  | "product.stock"
+  // Inventory (admin migration 0006, country migration 0017).
+  | "inventory.adjust"
+  | "inventory.low_stock";
 
 export interface Rider {
   userId: string;

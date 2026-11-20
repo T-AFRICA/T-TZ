@@ -3,6 +3,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { PGLiteSocketServer } from "@electric-sql/pglite-socket";
 import { DatabaseCatalogClient, getPublicProductImage } from "../src/catalog";
 import { withServiceAccess } from "../src/country-admin";
+import { inventoryFunctions } from "../src/country-admin/inventory";
 import { productFunctions } from "../src/country-admin/products";
 import type { Db } from "../src/db";
 import { placeCodOrder, trackOrder } from "../src/orders";
@@ -90,5 +91,18 @@ describe("postgres.js driver", () => {
     if (detail.ok) expect(detail.product.images.map((image) => image.id)).toEqual([second.imageId, first.imageId]);
     const served = await getPublicProductImage(db, second.imageId);
     expect(Buffer.from(served!.bytes).equals(png)).toBe(true);
+
+    // Inventory (0017) through the same driver: a change with its reason, the level, the history.
+    const inventory = inventoryFunctions(withServiceAccess);
+    expect(await inventory.adjust(db, "TZ", "driver-bulb", { mode: "add", quantity: 7, reason: "received", note: "Driver" }, actor, randomUUID())).toMatchObject({
+      ok: true,
+      available: 7,
+      change: 7,
+    });
+    expect(await inventory.setLowStock(db, "TZ", "driver-bulb", 8)).toEqual({ ok: true, lowStockAt: 8 });
+    const stock = await inventory.get(db, "TZ", "driver-bulb");
+    expect(stock).toMatchObject({ ok: true, item: { available: 7, lowStockAt: 8, movements: [{ change: 7, reason: "received", note: "Driver", actorId: actor }] } });
+    const low = await inventory.list(db, "TZ", { filter: "low", q: "driver", page: 1 });
+    expect(low.items.map((entry) => entry.slug)).toEqual(["driver-bulb"]);
   });
 });

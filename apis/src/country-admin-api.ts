@@ -52,6 +52,11 @@ export const COUNTRY_ADMIN_ENDPOINTS = {
   addProductImage: { method: "POST", path: "/products/:slug/images", permission: "products.update" },
   arrangeProductImages: { method: "POST", path: "/products/:slug/images/arrange", permission: "products.update" },
   getProductImage: { method: "GET", path: "/products/:slug/images/:imageId", permission: "products.read" },
+  // Inventory (migration 0017): stock with its history.
+  listInventory: { method: "GET", path: "/inventory", permission: "inventory.read" },
+  getInventory: { method: "GET", path: "/inventory/:slug", permission: "inventory.read" },
+  adjustStock: { method: "POST", path: "/inventory/:slug/adjust", permission: "inventory.adjust" },
+  setLowStock: { method: "POST", path: "/inventory/:slug/low-stock", permission: "inventory.adjust" },
 } as const;
 
 export type CountryAdminEndpoint = keyof typeof COUNTRY_ADMIN_ENDPOINTS;
@@ -700,6 +705,118 @@ export type ProductImageAddResult = z.infer<typeof productImageAddResponseSchema
 export type ProductImageArrangeResult = z.infer<typeof productImageArrangeResponseSchema>;
 export type ProductImageResponse = z.infer<typeof productImageResponseSchema>;
 
+// --------------------------------------------------------------- inventory --
+
+export const INVENTORY_PAGE_SIZE = 25;
+export const INVENTORY_FILTERS = ["low", "out"] as const;
+export type InventoryFilter = (typeof INVENTORY_FILTERS)[number];
+export const STOCK_LEVELS = ["ok", "low", "out"] as const;
+export type StockLevel = (typeof STOCK_LEVELS)[number];
+export const STOCK_ADJUST_MODES = ["add", "remove", "set"] as const;
+export type StockAdjustMode = (typeof STOCK_ADJUST_MODES)[number];
+/** Why stock changed. The first six are an administrator's; the last two come from orders. */
+export const STOCK_REASONS = ["received", "returned", "damaged", "lost", "correction", "other", "order", "order_cancelled"] as const;
+export type StockReason = (typeof STOCK_REASONS)[number];
+/** The reasons an administrator may give for each kind of change. */
+export const STOCK_REASONS_FOR: Record<StockAdjustMode, readonly StockReason[]> = {
+  add: ["received", "returned", "correction", "other"],
+  remove: ["damaged", "lost", "correction", "other"],
+  set: ["correction"],
+};
+export const STOCK_NOTE_MAX = 200;
+
+export const inventoryListQuerySchema = z.object({
+  q: z.string().trim().max(80).optional(),
+  filter: z.enum(INVENTORY_FILTERS).optional(),
+  page: z.coerce.number().int().min(1).max(10_000).default(1),
+});
+
+export const stockAdjustBodySchema = z
+  .object({
+    mode: z.enum(STOCK_ADJUST_MODES),
+    quantity: z.number().int().min(0).max(PRODUCT_STOCK_MAX),
+    reason: z.enum(STOCK_REASONS),
+    note: z.string().trim().max(STOCK_NOTE_MAX).optional(),
+  })
+  .refine((body) => STOCK_REASONS_FOR[body.mode].includes(body.reason), { message: "That reason does not fit this change", path: ["reason"] })
+  .refine((body) => body.mode === "set" || body.quantity >= 1, { message: "Enter at least 1", path: ["quantity"] })
+  .refine((body) => body.reason !== "other" || (body.note ?? "").length > 0, { message: "Say what happened", path: ["note"] });
+export const lowStockBodySchema = z.object({ level: z.number().int().min(0).max(PRODUCT_STOCK_MAX) });
+
+const stockLevel = z.enum(STOCK_LEVELS);
+
+export const inventoryListResponseSchema = z.object({
+  ok: z.literal(true),
+  total: z.number().int().nonnegative(),
+  page: z.number().int().positive(),
+  pageSize: z.number().int().positive(),
+  counts: z.object({ all: z.number().int().nonnegative(), low: z.number().int().nonnegative(), out: z.number().int().nonnegative() }),
+  items: z.array(
+    z.object({
+      slug: z.string(),
+      sku: z.string(),
+      name: z.string(),
+      status: productStatus,
+      available: z.number().int().nonnegative(),
+      lowStockAt: z.number().int().nonnegative(),
+      level: stockLevel,
+      image: productImageRef.nullable(),
+      lastChangeAt: z.string().datetime().nullable(),
+    }),
+  ),
+});
+
+export const inventoryDetailResponseSchema = z.discriminatedUnion("ok", [
+  z.object({
+    ok: z.literal(true),
+    item: z.object({
+      slug: z.string(),
+      sku: z.string(),
+      name: z.string(),
+      status: productStatus,
+      available: z.number().int().nonnegative(),
+      lowStockAt: z.number().int().nonnegative(),
+      image: productImageRef.nullable(),
+      /** Newest first, at most 100. */
+      movements: z.array(
+        z.object({
+          change: z.number().int(),
+          availableAfter: z.number().int().nonnegative(),
+          reason: z.enum(STOCK_REASONS),
+          note: z.string().nullable(),
+          /** The administrator, for a change made in the console; null for an order. */
+          actorId: z.string().uuid().nullable(),
+          orderNumber: z.string().nullable(),
+          createdAt: z.string().datetime(),
+        }),
+      ),
+    }),
+  }),
+  z.object({ ok: z.literal(false), code: z.literal("not_found") }),
+]);
+
+export const stockAdjustResponseSchema = z.discriminatedUnion("ok", [
+  z.object({ ok: z.literal(true), replayed: z.boolean(), available: z.number().int().nonnegative(), change: z.number().int() }),
+  z.object({
+    ok: z.literal(false),
+    code: z.enum(["invalid_request", "not_found", "not_enough", "no_change"]),
+    /** With not_enough and no_change: the units there are now. */
+    available: z.number().int().nonnegative().optional(),
+  }),
+]);
+
+export const lowStockResponseSchema = z.discriminatedUnion("ok", [
+  z.object({ ok: z.literal(true), lowStockAt: z.number().int().nonnegative() }),
+  z.object({ ok: z.literal(false), code: z.enum(["invalid_request", "not_found"]) }),
+]);
+
+export type InventoryListQuery = { q?: string; filter?: InventoryFilter; page?: number };
+export type InventoryList = z.infer<typeof inventoryListResponseSchema>;
+export type InventoryDetailResponse = z.infer<typeof inventoryDetailResponseSchema>;
+export type StockAdjustment = z.infer<typeof stockAdjustBodySchema>;
+export type StockAdjustResult = z.infer<typeof stockAdjustResponseSchema>;
+export type LowStockResult = z.infer<typeof lowStockResponseSchema>;
+
 // ----------------------------------------------------------------- adapter --
 
 /** Why a country could not be asked, or did not give a usable answer. */
@@ -718,6 +835,7 @@ export type CountryUnavailableReason =
   | "country_customers_missing" // the country's database lacks the customer directory (migration 0011)
   | "country_tracking_missing" // the country's database lacks live tracking (migration 0012)
   | "country_products_missing" // the country's database lacks the product administration (migration 0016)
+  | "country_inventory_missing" // the country's database lacks the inventory (migration 0017)
   | "unreachable" // no connection
   | "timeout"
   | "rejected" // the country refused the request (401/403)
@@ -760,6 +878,10 @@ export interface CountryAdminApi {
   addProductImage(actorId: string, slug: string, image: ProductImageUpload): Promise<CountryApiResult<ProductImageAddResult>>;
   arrangeProductImages(actorId: string, slug: string, keep: string[]): Promise<CountryApiResult<ProductImageArrangeResult>>;
   getProductImage(actorId: string, slug: string, imageId: string): Promise<CountryApiResult<ProductImageResponse>>;
+  listInventory(actorId: string, query?: InventoryListQuery): Promise<CountryApiResult<InventoryList>>;
+  getInventory(actorId: string, slug: string): Promise<CountryApiResult<InventoryDetailResponse>>;
+  adjustStock(actorId: string, slug: string, adjustment: StockAdjustment): Promise<CountryApiResult<StockAdjustResult>>;
+  setLowStock(actorId: string, slug: string, level: number): Promise<CountryApiResult<LowStockResult>>;
 }
 
 /** A country whose service cannot be called. Every request answers with the reason; nothing is sent anywhere. */
@@ -793,6 +915,10 @@ export function unavailableCountryApi(reason: CountryUnavailableReason): Country
     addProductImage: answer,
     arrangeProductImages: answer,
     getProductImage: answer,
+    listInventory: answer,
+    getInventory: answer,
+    adjustStock: answer,
+    setLowStock: answer,
   };
 }
 
@@ -880,6 +1006,7 @@ export function createCountryAdminApi(options: CountryAdminApiOptions): CountryA
         else if (code === "customers_missing") reason = "country_customers_missing";
         else if (code === "tracking_missing") reason = "country_tracking_missing";
         else if (code === "products_missing") reason = "country_products_missing";
+        else if (code === "inventory_missing") reason = "country_inventory_missing";
       }
       return { available: false, reason, statusCode: response.status, latencyMs: elapsed() };
     }
@@ -989,6 +1116,20 @@ export function createCountryAdminApi(options: CountryAdminApiOptions): CountryA
     },
     getProductImage(actorId, slug, imageId) {
       return call("getProductImage", productImageResponseSchema, actorId, { params: { slug, imageId } });
+    },
+    listInventory(actorId, query = {}) {
+      return call("listInventory", inventoryListResponseSchema, actorId, {
+        query: { q: query.q, filter: query.filter, page: query.page && query.page > 1 ? String(query.page) : undefined },
+      });
+    },
+    getInventory(actorId, slug) {
+      return call("getInventory", inventoryDetailResponseSchema, actorId, { params: { slug } });
+    },
+    adjustStock(actorId, slug, adjustment) {
+      return call("adjustStock", stockAdjustResponseSchema, actorId, { params: { slug }, body: adjustment });
+    },
+    setLowStock(actorId, slug, level) {
+      return call("setLowStock", lowStockResponseSchema, actorId, { params: { slug }, body: { level } });
     },
   };
 }

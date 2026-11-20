@@ -100,10 +100,33 @@ test("a Country Super Admin creates a draft, adds a photo and stock, publishes, 
   await expect(shown).toBeVisible();
   await expect.poll(() => shown.evaluate((image) => (image as HTMLImageElement).naturalWidth)).toBeGreaterThan(0);
 
-  // Stock, then live.
-  await region(page, "Stock").getByLabel("Units in stock").fill("9");
-  await region(page, "Stock").getByRole("button", { name: "Set stock" }).click();
-  await expect(page.getByText("Stock set to 9.").first()).toBeVisible();
+  // Stock, on the Inventory page (country migration 0017): units in with a reason, a refused removal,
+  // a low-stock level, the history. Then back to the product to make it live.
+  await region(page, "Stock").getByRole("link", { name: "Change stock and see its history" }).click();
+  await expect(page).toHaveURL(new RegExp(`/c/tz/inventory/${SLUG}$`));
+  const change = region(page, "Change the stock");
+  await change.getByLabel("Units", { exact: true }).fill("9");
+  await change.getByLabel("Reason").selectOption({ label: "Received from supplier" });
+  await change.getByLabel(/^Note/).fill("Delivery note 1452");
+  await change.getByRole("button", { name: "Save stock change" }).click();
+  await expect(page.getByText("+9 (Received from supplier). 9 in stock now.").first()).toBeVisible();
+  await change.getByLabel("Remove units").check();
+  await change.getByLabel("Units", { exact: true }).fill("20");
+  await change.getByRole("button", { name: "Save stock change" }).click();
+  await expect(change.getByText("There are only 9 units to remove.")).toBeVisible();
+  await region(page, "Low-stock level").getByLabel("Low at (units)").fill("10");
+  await region(page, "Low-stock level").getByRole("button", { name: "Set level" }).click();
+  await expect(page.getByText("Counted as low at 10 units or fewer.").first()).toBeVisible();
+  await expect(region(page, "In stock").getByText("Low", { exact: true })).toBeVisible();
+  const history = page.getByRole("table", { name: "Stock history" });
+  await expect(history.getByRole("row")).toHaveCount(2);
+  await expect(history).toContainText("+9");
+  await expect(history).toContainText("Delivery note 1452");
+  expect(await countrySql(`select change, reason, note from stock_movements m join products p on p.id = m.product_id where p.slug = $1`, [SLUG])).toEqual([
+    { change: 9, reason: "received", note: "Delivery note 1452" },
+  ]);
+  await page.getByRole("link", { name: "Product", exact: true }).click();
+  await expect(page.getByRole("heading", { level: 1, name: "E2E Smart Bulb 12W" })).toBeVisible();
   await confirm(page, "On the website", "Publish");
   await expect(page.getByText(/^Published\./).first()).toBeVisible();
   await expect(region(page, "On the website").getByRole("button", { name: "Hide from the website" })).toBeVisible();
@@ -129,11 +152,19 @@ test("a Country Super Admin creates a draft, adds a photo and stock, publishes, 
 
   // Each accepted change is in the Central Admin's audit log, with the permission it needed.
   const audited = await adminSql<{ action: string }>(`select action from audit_logs where target_type = 'product' and target_id = $1 order by id`, [SLUG]);
-  expect(audited.map((row) => row.action)).toEqual(["product.create", "product.image_add", "product.stock", "product.publish", "product.update", "product.hide"]);
+  expect(audited.map((row) => row.action)).toEqual([
+    "product.create",
+    "product.image_add",
+    "inventory.adjust",
+    "inventory.low_stock",
+    "product.publish",
+    "product.update",
+    "product.hide",
+  ]);
 
   // The same pages on a phone (same session: sign-ins per address are limited).
   await page.setViewportSize({ width: 375, height: 812 });
-  for (const address of ["/c/tz/products", "/c/tz/products/new", `/c/tz/products/${SLUG}`]) {
+  for (const address of ["/c/tz/products", "/c/tz/products/new", "/c/tz/inventory", `/c/tz/inventory/${SLUG}`, `/c/tz/products/${SLUG}`]) {
     await page.goto(address);
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
     expect(await sideways(page), address).toBeLessThanOrEqual(1);
