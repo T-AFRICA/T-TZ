@@ -78,39 +78,41 @@ export function SalesReportView({ report }: { report: SalesReport }) {
         </TableView>
       </Panel>
 
-      <Panel title={`Orders placed by ${per}`} description="Every order placed, paid or not.">
-        {totals.placed === 0 ? (
-          <p className="text-sm text-muted">No orders were placed in this period.</p>
-        ) : (
-          <ColumnChart
-            label={`Orders placed by ${per}`}
-            formatTick={(value) => (Number.isInteger(value) ? compactCount(value) : "")}
-            points={buckets.map((b) => ({
-              key: b.from,
-              label: b.label,
-              value: b.placed,
-              tip: `${bucketName(b)}: ${plural(b.placed, "order", "orders")} placed, ${b.paidOrders} paid, ${b.cancelled} cancelled`,
-            }))}
-          />
-        )}
-      </Panel>
+      <div className="grid grid-cols-1 items-start gap-6 xl:grid-cols-[3fr_2fr]">
+        <Panel title={`Orders placed by ${per}`} description="Every order placed, paid or not.">
+          {totals.placed === 0 ? (
+            <p className="text-sm text-muted">No orders were placed in this period.</p>
+          ) : (
+            <ColumnChart
+              label={`Orders placed by ${per}`}
+              formatTick={(value) => (Number.isInteger(value) ? compactCount(value) : "")}
+              points={buckets.map((b) => ({
+                key: b.from,
+                label: b.label,
+                value: b.placed,
+                tip: `${bucketName(b)}: ${plural(b.placed, "order", "orders")} placed, ${b.paidOrders} paid, ${b.cancelled} cancelled`,
+              }))}
+            />
+          )}
+        </Panel>
 
-      <Panel title="By payment method" flush>
-        {report.byPayment.length === 0 ? (
-          <EmptyRow title="No paid orders yet" />
-        ) : (
-          <DataTable caption="Sales by payment method" head={["Payment method", "Paid orders", "Sales", "Share"]}>
-            {report.byPayment.map((p) => (
-              <tr key={p.method}>
-                <Cell className="text-ink">{paymentMethodLabel(p.method)}</Cell>
-                <Cell className="tabular-nums">{p.paidOrders}</Cell>
-                <Cell className="font-semibold tabular-nums text-ink">{money(p.paidMinor)}</Cell>
-                <Cell className="tabular-nums text-muted">{percent(p.paidMinor, totals.paidMinor)}</Cell>
-              </tr>
-            ))}
-          </DataTable>
-        )}
-      </Panel>
+        <Panel title="By payment method" flush>
+          {report.byPayment.length === 0 ? (
+            <EmptyRow title="No paid orders yet" />
+          ) : (
+            <DataTable caption="Sales by payment method" head={["Payment method", "Paid orders", "Sales", "Share"]}>
+              {report.byPayment.map((p) => (
+                <tr key={p.method}>
+                  <Cell className="text-ink">{paymentMethodLabel(p.method)}</Cell>
+                  <Cell className="tabular-nums">{p.paidOrders}</Cell>
+                  <Cell className="font-semibold tabular-nums text-ink">{money(p.paidMinor)}</Cell>
+                  <Cell className="tabular-nums text-muted">{percent(p.paidMinor, totals.paidMinor)}</Cell>
+                </tr>
+              ))}
+            </DataTable>
+          )}
+        </Panel>
+      </div>
     </>
   );
 }
@@ -126,7 +128,12 @@ export function ProductsReportView({ report, productsHref }: { report: ProductsR
       <Tiles>
         <StatCard label="Sales" value={money(report.paidMinor)} hint="Paid orders placed in the period" />
         <StatCard label="Units sold" value={report.units} hint="In paid orders" />
-        <StatCard label="Best seller" value={best ? best.name : "None yet"} hint={best ? `${money(best.amountMinor)} · ${plural(best.units, "unit", "units")}` : undefined} />
+        <StatCard
+          label="Best seller"
+          value={best ? best.name : "None yet"}
+          text={Boolean(best)}
+          hint={best ? `${money(best.amountMinor)} · ${plural(best.units, "unit", "units")}` : undefined}
+        />
         <StatCard label="Categories selling" value={report.categories.length} hint="With at least one paid sale" />
       </Tiles>
 
@@ -135,7 +142,7 @@ export function ProductsReportView({ report, productsHref }: { report: ProductsR
           <EmptyRow title="No paid orders in this period yet" description="Cash on Delivery orders count once they are delivered." />
         </Panel>
       ) : (
-        <div className="grid gap-6 xl:grid-cols-2">
+        <div className="grid items-start gap-6 xl:grid-cols-2">
           <Panel title={`Top ${report.products.length} products`} description="By sales from paid orders.">
             <RankedBars
               label="Top products by sales"
@@ -225,7 +232,7 @@ export function OrdersReportView({ report, ridersHref }: { report: OrdersReport;
           <EmptyRow title="No orders were placed in this period" />
         </Panel>
       ) : (
-        <div className="grid gap-6 xl:grid-cols-2">
+        <div className="grid items-start gap-6 xl:grid-cols-2">
           <Panel title="Where the orders stand now" description="Orders placed in the period, by their status today.">
             <ShareBar
               label="Orders by status"
@@ -326,7 +333,7 @@ export function StockReportView({ report, inventoryHref }: { report: StockReport
   return (
     <>
       <Tiles>
-        <StatCard label="Units in stock" value={report.units} hint={`Across ${plural(report.products, "product", "products")}, now`} />
+        <StatCard label="Units in stock" value={report.units.toLocaleString("en-GB")} hint={`Across ${plural(report.products, "product", "products")}, now`} />
         <StatCard label="Stock value" value={money(report.valueMinor)} hint="Units in stock at today's prices" />
         <StatCard label="Out of stock" value={report.out} hint="Products, now" {...(inventoryHref ? { href: `${inventoryHref}?filter=out` } : {})} />
         <StatCard label="Low" value={report.low} hint="At or under their own low level, now" {...(inventoryHref ? { href: `${inventoryHref}?filter=low` } : {})} />

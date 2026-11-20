@@ -43,12 +43,12 @@ export function ColumnChart({ points, formatTick, label }: { points: ColumnPoint
   return (
     <figure aria-label={label}>
       <div className="flex gap-2">
-        <div aria-hidden="true" className="relative h-56 w-16 shrink-0 text-right text-[11px] tabular-nums text-muted">
+        <div aria-hidden="true" className="relative h-48 w-16 shrink-0 text-right text-[11px] tabular-nums text-muted">
           <span className="absolute right-0 top-0 -translate-y-1/2">{formatTick(top)}</span>
           <span className="absolute right-0 top-1/2 -translate-y-1/2">{formatTick(top / 2)}</span>
           <span className="absolute bottom-0 right-0 translate-y-1/2">{formatTick(0)}</span>
         </div>
-        <div className="relative h-56 min-w-0 flex-1 border-b border-line-strong">
+        <div className="relative h-48 min-w-0 flex-1 border-b border-line-strong">
           <div aria-hidden="true" className="absolute inset-x-0 top-0 border-t border-line" />
           <div aria-hidden="true" className="absolute inset-x-0 top-1/2 border-t border-line" />
           <ol className="absolute inset-0 flex items-end gap-[2px]">
@@ -57,7 +57,7 @@ export function ColumnChart({ points, formatTick, label }: { points: ColumnPoint
                 <span className="sr-only">{point.tip}</span>
                 <span
                   aria-hidden="true"
-                  className="block w-full max-w-12 rounded-t-[4px] bg-chart-1 group-hover:opacity-80"
+                  className="block w-full max-w-8 rounded-t-[4px] bg-chart-1 group-hover:opacity-80"
                   style={{ height: point.value > 0 ? `max(2px, ${percentOf(point.value, top)}%)` : 0 }}
                 />
               </li>
@@ -87,23 +87,21 @@ export interface RankedRow {
   tip: string;
 }
 
-/** Ranked horizontal bars, largest first, one hue: the longest bar is the largest value. */
+/** Ranked horizontal bars on a track, largest first, one hue: the longest bar is the largest value. */
 export function RankedBars({ rows, label }: { rows: RankedRow[]; label: string }) {
   const top = Math.max(0, ...rows.map((row) => row.value));
   return (
-    <ol aria-label={label} className="flex flex-col gap-3.5">
+    <ol aria-label={label} className="flex flex-col gap-4">
       {rows.map((row) => (
         <li key={row.key} title={row.tip}>
-          <div className="flex items-baseline justify-between gap-3 text-sm">
+          <div className="flex items-baseline justify-between gap-4 text-sm">
             <span className="min-w-0 font-medium text-ink [overflow-wrap:anywhere]">{row.label}</span>
             <span className="shrink-0 font-semibold tabular-nums text-ink">{row.display}</span>
           </div>
-          {row.sub ? <p className="text-xs text-muted">{row.sub}</p> : null}
-          <div
-            aria-hidden="true"
-            className="mt-1.5 h-2.5 rounded-r-[4px] bg-chart-1"
-            style={{ width: row.value > 0 ? `max(2px, ${percentOf(row.value, top)}%)` : 0 }}
-          />
+          <div aria-hidden="true" className="mt-1.5 h-2 overflow-hidden rounded-full bg-raised ring-1 ring-inset ring-line">
+            <div className="h-full rounded-full bg-chart-1" style={{ width: row.value > 0 ? `max(4px, ${percentOf(row.value, top)}%)` : 0 }} />
+          </div>
+          {row.sub ? <p className="mt-1 text-xs text-muted">{row.sub}</p> : null}
         </li>
       ))}
     </ol>
@@ -137,27 +135,25 @@ export function ShareBar({ parts, label, otherDisplay }: { parts: SharePart[]; l
   }
   const total = shown.reduce((sum, part) => sum + part.value, 0);
   const segments = [...kept.map((part, index) => ({ part, fill: SERIES_FILL[index] ?? OTHER_FILL })), ...(other ? [{ part: other, fill: OTHER_FILL }] : [])];
-  const share = (value: number) => `${percentOf(value, total).toFixed(percentOf(value, total) < 10 ? 1 : 0)}%`;
+  const share = (value: number) => {
+    const exact = percentOf(value, total);
+    return exact > 0 && exact < 1 ? "<1%" : `${Math.round(exact)}%`;
+  };
 
   return (
     <figure aria-label={label}>
-      <div aria-hidden="true" className="flex h-9 w-full gap-[2px]">
-        {segments.map(({ part, fill }, index) => (
-          <span
-            key={part.key}
-            title={`${part.label}: ${part.display} (${share(part.value)})`}
-            className={`${fill} min-w-[3px] ${index === 0 ? "rounded-l-[4px]" : ""} ${index === segments.length - 1 ? "rounded-r-[4px]" : ""}`}
-            style={{ flexGrow: part.value, flexBasis: 0 }}
-          />
+      <div aria-hidden="true" className="flex h-4 w-full gap-[2px] overflow-hidden rounded-full">
+        {segments.map(({ part, fill }) => (
+          <span key={part.key} title={`${part.label}: ${part.display} (${share(part.value)})`} className={`${fill} min-w-[4px]`} style={{ flexGrow: part.value, flexBasis: 0 }} />
         ))}
       </div>
-      <ul className="mt-4 grid gap-x-6 gap-y-2 sm:grid-cols-2">
+      <ul className="mt-4 divide-y divide-line">
         {segments.map(({ part, fill }) => (
-          <li key={part.key} className="flex items-baseline gap-2 text-sm">
-            <span aria-hidden="true" className={`${fill} inline-block h-3 w-3 shrink-0 translate-y-0.5 rounded-sm`} />
+          <li key={part.key} className="flex items-center gap-3 py-2.5 text-sm">
+            <span aria-hidden="true" className={`${fill} h-2.5 w-2.5 shrink-0 rounded-full`} />
             <span className="min-w-0 flex-1 text-ink [overflow-wrap:anywhere]">{part.label}</span>
             <span className="shrink-0 font-semibold tabular-nums text-ink">{part.display}</span>
-            <span className="w-12 shrink-0 text-right tabular-nums text-muted">{share(part.value)}</span>
+            <span className="w-11 shrink-0 text-right tabular-nums text-muted">{share(part.value)}</span>
           </li>
         ))}
       </ul>

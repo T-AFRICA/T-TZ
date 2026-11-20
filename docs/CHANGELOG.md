@@ -3,6 +3,15 @@
 Meaningful implementation changes, newest first. Dates are work dates;
 nothing below is released.
 
+## 2026-11-20 — Reports page layout
+
+- The four reports are a segmented control, apart from the quick periods;
+  shorter header, period controls in a grid on phones.
+- The best seller is shown at text size (two lines at most); ranked bars
+  sit on a track; share bars are slimmer with a one-column legend and
+  whole percentages; paired panels no longer stretch; slimmer columns;
+  units in stock with thousands separators.
+
 ## 2026-11-20 — Reports in the Central Admin
 
 - Owner decisions: four reports (sales; products and categories; orders

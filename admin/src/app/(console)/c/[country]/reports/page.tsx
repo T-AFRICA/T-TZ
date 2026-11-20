@@ -20,9 +20,16 @@ import { requireCountry } from "@/server/session";
 
 export const metadata: Metadata = { title: "Reports" };
 
+/** A quick period. */
 const chip = (current: boolean) =>
-  `inline-flex min-h-9 items-center gap-2 rounded-full border px-3.5 py-1.5 text-sm font-medium transition-colors ${
+  `inline-flex min-h-8 items-center justify-center rounded-full border px-3 py-1 text-[13px] font-medium transition-colors ${
     current ? "border-accent bg-accent-soft text-accent-ink" : "border-line bg-surface text-ink hover:bg-raised"
+  }`;
+
+/** One report of the four: a segment of one control, so it does not read as a period. */
+const segment = (current: boolean) =>
+  `inline-flex min-h-9 items-center justify-center rounded-md px-4 py-1.5 text-center text-sm transition-colors ${
+    current ? "bg-surface font-semibold text-ink shadow-sm ring-1 ring-line" : "font-medium text-muted hover:text-ink"
   }`;
 
 /**
@@ -48,7 +55,7 @@ export default async function ReportsPage({
     <PageHeader
       eyebrow={country.name}
       title="Reports"
-      description={`${country.name}'s own figures, counted when the page is opened. A sale is a paid order; Cash on Delivery counts once delivered. Days are ${country.name}'s${country.timezone ? ` (${country.timezone})` : ""}.`}
+      description="A sale is a paid order; Cash on Delivery counts once delivered. Figures are counted when the page opens."
       actions={
         result.available ? (
           <a href={reportHref(`${base}/export`, tab, period)} download className={buttonClass.secondary}>
@@ -66,9 +73,9 @@ export default async function ReportsPage({
     <>
       {header}
 
-      <nav aria-label="Report" className="flex flex-wrap gap-2">
+      <nav aria-label="Report" className="grid grid-cols-2 gap-1 rounded-lg border border-line bg-raised p-1 sm:inline-flex sm:self-start">
         {REPORT_TABS.map((value) => (
-          <Link key={value} href={reportHref(base, value, period)} aria-current={tab === value ? "page" : undefined} className={chip(tab === value)}>
+          <Link key={value} href={reportHref(base, value, period)} aria-current={tab === value ? "page" : undefined} className={segment(tab === value)}>
             {REPORT_TAB_LABEL[value]}
           </Link>
         ))}
@@ -76,8 +83,11 @@ export default async function ReportsPage({
 
       <section aria-label="Period" className="flex flex-wrap items-end justify-between gap-4 rounded-xl border border-line bg-surface p-4 shadow-panel">
         <div className="flex flex-col gap-2">
-          <p className="text-sm font-semibold text-ink">{formatPeriod(period)}</p>
-          <div className="flex flex-wrap gap-2">
+          <p className="text-sm font-semibold text-ink">
+            {formatPeriod(period)}
+            {country.timezone ? <span className="font-normal text-muted"> · {country.name} days ({country.timezone})</span> : null}
+          </p>
+          <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
             {REPORT_PRESETS.map((days) => (
               <Link
                 key={days}
@@ -90,7 +100,7 @@ export default async function ReportsPage({
             ))}
           </div>
         </div>
-        <form method="get" action={base} className="flex flex-wrap items-end gap-2">
+        <form method="get" action={base} className="grid w-full grid-cols-2 items-end gap-2 sm:flex sm:w-auto sm:flex-wrap">
           <input type="hidden" name="tab" value={tab} />
           <label className="flex flex-col gap-1 text-xs font-medium text-muted">
             From
@@ -100,7 +110,7 @@ export default async function ReportsPage({
             To
             <input type="date" name="to" required defaultValue={period.to} max={today} className={`${inputClass} py-2`} />
           </label>
-          <button type="submit" className={buttonClass.secondary}>
+          <button type="submit" className={`${buttonClass.secondary} col-span-2 sm:col-span-1`}>
             Show
           </button>
         </form>

@@ -51,11 +51,30 @@ export function Panel({
   );
 }
 
-export function StatCard({ label, value, hint, href }: { label: string; value: string | number; hint?: string; href?: string }) {
+export function StatCard({
+  label,
+  value,
+  hint,
+  href,
+  text = false,
+}: {
+  label: string;
+  value: string | number;
+  hint?: string;
+  href?: string;
+  /** The value is words (a product name), not a figure: smaller, at most two lines. */
+  text?: boolean;
+}) {
   const body = (
     <>
       <p className="text-xs font-semibold uppercase tracking-wide text-muted">{label}</p>
-      <p className="mt-2 text-3xl font-bold tabular-nums text-ink">{value}</p>
+      {text ? (
+        <p className="mt-2 line-clamp-2 text-lg font-semibold leading-snug text-ink [overflow-wrap:anywhere]" title={String(value)}>
+          {value}
+        </p>
+      ) : (
+        <p className="mt-2 text-3xl font-bold tabular-nums text-ink">{value}</p>
+      )}
       {hint ? <p className="mt-1 text-xs text-muted">{hint}</p> : null}
     </>
   );
