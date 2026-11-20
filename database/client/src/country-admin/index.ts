@@ -15,6 +15,9 @@ import {
   orderNoteBodySchema,
   orderStatusChangeBodySchema,
   PRODUCT_SLUG_PATTERN,
+  brandSaveBodySchema,
+  categoryBannerBodySchema,
+  taxonomySaveBodySchema,
   inventoryListQuerySchema,
   lowStockBodySchema,
   stockAdjustBodySchema,
@@ -36,6 +39,7 @@ import {
 import type { Db, Row } from "../db";
 import { customerFunctions } from "./customers";
 import { deliveryFunctions } from "./deliveries";
+import { categoryFunctions } from "./categories";
 import { inventoryFunctions } from "./inventory";
 import { productFunctions } from "./products";
 
@@ -71,6 +75,8 @@ const products = productFunctions(withServiceAccess);
 const inventory = inventoryFunctions(withServiceAccess);
 
 const INVENTORY_ENDPOINTS: ReadonlySet<CountryAdminEndpoint> = new Set(["listInventory", "getInventory", "adjustStock", "setLowStock"]);
+const categories = categoryFunctions(withServiceAccess);
+const CATEGORY_ENDPOINTS: ReadonlySet<CountryAdminEndpoint> = new Set(["categoryTree", "saveTaxonomy", "setCategoryBanner", "getCategoryBanner", "saveBrand"]);
 
 const PRODUCT_ENDPOINTS: ReadonlySet<CountryAdminEndpoint> = new Set([
   "catalogueOptions",
@@ -463,6 +469,37 @@ export async function handleCountryAdminRequest(service: CountryAdminService, re
       }
     }
 
+    // Categories and brands (migration 0018).
+    if (CATEGORY_ENDPOINTS.has(matched.endpoint)) {
+      if (matched.endpoint === "categoryTree") return { status: 200, body: await categories.tree(db, countryCode) };
+      if (matched.endpoint === "getCategoryBanner") {
+        const categoryId = matched.params.categoryId ?? "";
+        if (!UUID.test(categoryId)) return { status: 200, body: { ok: false, code: "not_found" } };
+        return { status: 200, body: await categories.getBanner(db, countryCode, categoryId.toLowerCase()) };
+      }
+      let input: unknown;
+      try {
+        input = JSON.parse(request.body);
+      } catch {
+        return refuse(400, "invalid_request");
+      }
+      // The token id is the request id: the same signed request changes the catalogue once.
+      if (matched.endpoint === "saveTaxonomy") {
+        const body = taxonomySaveBodySchema.safeParse(input);
+        if (!body.success) return { status: 200, body: { ok: false, code: "invalid_request" } };
+        return { status: 200, body: await categories.save(db, countryCode, body.data, verified.actorId, verified.tokenId) };
+      }
+      if (matched.endpoint === "saveBrand") {
+        const body = brandSaveBodySchema.safeParse(input);
+        if (!body.success) return { status: 200, body: { ok: false, code: "invalid_request" } };
+        return { status: 200, body: await categories.saveBrand(db, countryCode, body.data, verified.actorId, verified.tokenId) };
+      }
+      const categoryId = matched.params.categoryId ?? "";
+      const body = categoryBannerBodySchema.safeParse(input);
+      if (!UUID.test(categoryId) || !body.success) return { status: 200, body: { ok: false, code: "invalid_request" } };
+      return { status: 200, body: await categories.setBanner(db, countryCode, categoryId.toLowerCase(), body.data, verified.actorId, verified.tokenId) };
+    }
+
     // Inventory (migration 0017).
     if (INVENTORY_ENDPOINTS.has(matched.endpoint)) {
       if (matched.endpoint === "listInventory") {
@@ -575,6 +612,7 @@ export async function handleCountryAdminRequest(service: CountryAdminService, re
       if (matched.endpoint === "listCustomers" || matched.endpoint === "getCustomer") return refuse(503, "customers_missing");
       if (PRODUCT_ENDPOINTS.has(matched.endpoint)) return refuse(503, "products_missing");
       if (INVENTORY_ENDPOINTS.has(matched.endpoint)) return refuse(503, "inventory_missing");
+      if (CATEGORY_ENDPOINTS.has(matched.endpoint)) return refuse(503, "categories_missing");
       const deliveryEndpoint = COUNTRY_ADMIN_ENDPOINTS[matched.endpoint].permission.startsWith("deliveries.");
       return refuse(503, deliveryEndpoint ? "delivery_admin_missing" : "order_admin_missing");
     }

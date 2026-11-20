@@ -180,7 +180,7 @@ export function ProductForm({ action, countryId, currency, currencyExponent, slu
 }
 
 /** Makes a photo small enough to send: at most 1600 px on the long side, WebP where the browser can, else JPEG, under 1 MB. */
-async function shrinkPhoto(file: File): Promise<string> {
+export async function shrinkPhoto(file: File): Promise<string> {
   const bitmap = await createImageBitmap(file);
   const scale = Math.min(1, 1600 / Math.max(bitmap.width, bitmap.height));
   const canvas = document.createElement("canvas");

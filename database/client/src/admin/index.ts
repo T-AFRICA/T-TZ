@@ -664,7 +664,11 @@ export type CountryAction =
   | "product.stock"
   // Inventory (admin migration 0006, country migration 0017).
   | "inventory.adjust"
-  | "inventory.low_stock";
+  | "inventory.low_stock"
+  // Categories and brands (admin migration 0007, country migration 0018).
+  | "category.save"
+  | "category.banner"
+  | "brand.save";
 
 export interface Rider {
   userId: string;

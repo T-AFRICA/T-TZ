@@ -188,8 +188,32 @@ catalogue (SKUs starting with `SAMPLE-`). Owner decisions 2026-11-20:
    written to this console's audit log (the server log says so).
 3. Deploy both apps.
 
-Categories and brands are edited in part 2; until then the form chooses
-from the existing ones.
+Categories and brands are edited on the Categories page (below).
+
+## Categories and brands (owner)
+
+"Categories" (for whoever holds `categories.manage`: Product Manager,
+Country Super Admin) shows every category with its groups, subcategories,
+product counts and order, and the brands. Owner decisions 2026-11-20:
+
+- The website's menu, homepage and category pages will read these
+  categories (part 2). Country migration 0018 first fills the database
+  with the list the website shows today, so nothing changes on day one;
+  a name changed here is never overwritten by running it again.
+- Add a category, group or subcategory; change its name, its order or
+  whether it is shown. Its web address is set when it is added and never
+  changes. Nothing is deleted. Hiding a category with live products warns
+  first: its products leave the website until it is shown again.
+- A category can have a **banner photo** (stored in the country's
+  database); without one the website shows the category's icon.
+- **Brands** are added and renamed (each name once).
+
+1. Country project: `database/migrations/0018_category_admin.sql` (after
+   0016). Until then the Categories page says the database does not have
+   the category administration yet.
+2. Central Admin project: `database/admin-migrations/0007_category_actions.sql`
+   (after 0006), for the audit log.
+3. Deploy both apps.
 
 ## Inventory (owner)
 

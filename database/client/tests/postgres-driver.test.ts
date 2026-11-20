@@ -3,6 +3,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { PGLiteSocketServer } from "@electric-sql/pglite-socket";
 import { DatabaseCatalogClient, getPublicProductImage } from "../src/catalog";
 import { withServiceAccess } from "../src/country-admin";
+import { categoryFunctions } from "../src/country-admin/categories";
 import { inventoryFunctions } from "../src/country-admin/inventory";
 import { productFunctions } from "../src/country-admin/products";
 import type { Db } from "../src/db";
@@ -104,5 +105,16 @@ describe("postgres.js driver", () => {
     expect(stock).toMatchObject({ ok: true, item: { available: 7, lowStockAt: 8, movements: [{ change: 7, reason: "received", note: "Driver", actorId: actor }] } });
     const low = await inventory.list(db, "TZ", { filter: "low", q: "driver", page: 1 });
     expect(low.items.map((entry) => entry.slug)).toEqual(["driver-bulb"]);
+
+    // Categories and brands (0018) through the same driver: jsonb input, a banner as bytea.
+    const categories = categoryFunctions(withServiceAccess);
+    const created = await categories.save(db, "TZ", { level: "category", slug: "driver-cat", name: "Driver Category", description: "Line", sortOrder: 50, active: true }, actor, randomUUID());
+    expect(created).toMatchObject({ ok: true, slug: "driver-cat" });
+    if (!created.ok) throw new Error("category refused");
+    expect(await categories.setBanner(db, "TZ", created.id, { contentType: "image/png", data: png.toString("base64") }, actor, randomUUID())).toMatchObject({ ok: true });
+    expect(await categories.saveBrand(db, "TZ", { name: "Driver Brand" }, actor, randomUUID())).toMatchObject({ ok: true });
+    const tree = await categories.tree(db, "TZ");
+    expect(tree.categories.find((category) => category.slug === "driver-cat")).toMatchObject({ name: "Driver Category", description: "Line", banner: { sha256: expect.any(String) } });
+    expect(tree.brands.map((brand) => brand.name)).toContain("Driver Brand");
   });
 });
