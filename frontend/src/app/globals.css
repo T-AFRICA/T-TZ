@@ -585,6 +585,14 @@ details.drawer-acc[open] > ul > li {
   }
 }
 
+/* Hero slideshow (HeroCarousel.tsx): a hidden slide's loops wait where they
+   are, so the room comes back at the start of its cycle, not halfway through. */
+.hero-slide[data-paused="true"] *,
+.hero-slide[data-paused="true"] *::before,
+.hero-slide[data-paused="true"] *::after {
+  animation-play-state: paused !important;
+}
+
 /* Section reveal (CSS-only; see components/motion/Reveal.tsx). The server
    HTML carries no inline hidden styles, so content never depends on JS to
    appear. Chromium drives the animation from scroll position; browsers

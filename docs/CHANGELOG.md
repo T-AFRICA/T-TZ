@@ -3,6 +3,26 @@
 Meaningful implementation changes, newest first. Dates are work dates;
 nothing below is released.
 
+## 2026-11-20 — Homepage hero: a second slide with the lighting range
+
+- Owner request: a new hero with TRONIC's lighting photograph (street
+  lamp, pendants, chandelier, bulbs, floodlights, wall lamps), shown after
+  the animated "Power Every Space" room as a slideshow.
+- `HeroCarousel`: when the room's 18 s lighting cycle ends (the room has
+  just gone dark) the lighting slide fades in, stays 7 s, and the room
+  comes back and lights up from the start (its animations are paused
+  while hidden). Dots switch slides by hand, after which the slideshow
+  stays put; hovering or focusing the hero holds the current slide; with
+  reduced motion nothing moves by itself. Hidden slides are inert.
+- `LightingHero`: "Light Up Every Room." with "Shop Lighting"
+  (`/categories/lighting`). Phones show the photograph edge to edge (same
+  96:50 shape as the room) over the button strip; from lg the copy sits on
+  the left and the photograph on the right at its own shape. Image:
+  `public/banners/hero-lighting-collection.webp` (1600×833, 77 KB).
+- Browser test `e2e/home-hero.spec.ts`: the slide changes at the end of
+  the cycle, the room returns from the start, dots, inert slides, equal
+  heights and no overflow from 320px to 1920px.
+
 ## 2026-11-19 — A map on the rider's delivery page
 
 - Owner request: the rider's delivery page had only the address and map
