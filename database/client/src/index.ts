@@ -5,7 +5,7 @@
  */
 export { ANON, toSafeInteger, withAccess, type Access, type Db, type Row } from "./db";
 export { createPostgresDb } from "./postgres-db";
-export { DatabaseCatalogClient, loadPublicProducts, rowToProduct } from "./catalog";
+export { DatabaseCatalogClient, getPublicProductImage, loadPublicProducts, rowToProduct } from "./catalog";
 export {
   CUSTOMER_ORDER_PAGE_SIZE,
   ORDER_STATUSES,

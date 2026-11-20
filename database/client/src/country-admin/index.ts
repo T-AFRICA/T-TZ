@@ -14,6 +14,14 @@ import {
   orderListQuerySchema,
   orderNoteBodySchema,
   orderStatusChangeBodySchema,
+  PRODUCT_SLUG_PATTERN,
+  productCreateBodySchema,
+  productImageArrangeBodySchema,
+  productImageBodySchema,
+  productListQuerySchema,
+  productStatusBodySchema,
+  productStockBodySchema,
+  productUpdateBodySchema,
   type CountryAdminEndpoint,
   type CountryHealth,
   type OrderDetailResponse,
@@ -25,6 +33,7 @@ import {
 import type { Db, Row } from "../db";
 import { customerFunctions } from "./customers";
 import { deliveryFunctions } from "./deliveries";
+import { productFunctions } from "./products";
 
 /**
  * The country side of the country admin API (apis/src/country-admin-api.ts):
@@ -54,6 +63,20 @@ export async function withServiceAccess<T>(db: Db, fn: (tx: Db) => Promise<T>): 
 
 const deliveries = deliveryFunctions(withServiceAccess);
 const customers = customerFunctions(withServiceAccess);
+const products = productFunctions(withServiceAccess);
+
+const PRODUCT_ENDPOINTS: ReadonlySet<CountryAdminEndpoint> = new Set([
+  "catalogueOptions",
+  "listProducts",
+  "createProduct",
+  "getProduct",
+  "updateProduct",
+  "setProductStatus",
+  "setProductStock",
+  "addProductImage",
+  "arrangeProductImages",
+  "getProductImage",
+]);
 
 type Json = Record<string, unknown>;
 
@@ -371,6 +394,68 @@ export async function handleCountryAdminRequest(service: CountryAdminService, re
       return { status: 200, body: await deliveries.riderDeliveries(db, countryCode, riderId.toLowerCase()) };
     }
 
+    // Products (migration 0016).
+    if (PRODUCT_ENDPOINTS.has(matched.endpoint)) {
+      if (matched.endpoint === "catalogueOptions") return { status: 200, body: await products.options(db, countryCode) };
+      if (matched.endpoint === "listProducts") {
+        const query = productListQuerySchema.safeParse(Object.fromEntries(url.searchParams));
+        if (!query.success) return refuse(400, "invalid_request");
+        return { status: 200, body: await products.list(db, countryCode, query.data) };
+      }
+      let input: unknown = null;
+      if (method === "POST") {
+        try {
+          input = JSON.parse(request.body);
+        } catch {
+          return refuse(400, "invalid_request");
+        }
+      }
+      // The token id is the request id: the same signed request changes a product once.
+      const change = { actorId: verified.actorId, requestId: verified.tokenId };
+      if (matched.endpoint === "createProduct") {
+        const body = productCreateBodySchema.safeParse(input);
+        if (!body.success) return { status: 200, body: { ok: false, code: "invalid_request" } };
+        return { status: 200, body: await products.create(db, countryCode, body.data.slug, body.data.product, change.actorId, change.requestId) };
+      }
+      const slug = (matched.params.slug ?? "").toLowerCase();
+      if (!PRODUCT_SLUG_PATTERN.test(slug) || slug.length > 80) return { status: 200, body: { ok: false, code: "not_found" } };
+      switch (matched.endpoint) {
+        case "getProduct":
+          return { status: 200, body: await products.get(db, countryCode, slug) };
+        case "getProductImage": {
+          const imageId = matched.params.imageId ?? "";
+          if (!UUID.test(imageId)) return { status: 200, body: { ok: false, code: "not_found" } };
+          return { status: 200, body: await products.getImage(db, countryCode, slug, imageId.toLowerCase()) };
+        }
+        case "updateProduct": {
+          const body = productUpdateBodySchema.safeParse(input);
+          if (!body.success) return { status: 200, body: { ok: false, code: "invalid_request" } };
+          return { status: 200, body: await products.update(db, countryCode, slug, body.data.product, change.actorId, change.requestId) };
+        }
+        case "setProductStatus": {
+          const body = productStatusBodySchema.safeParse(input);
+          if (!body.success) return { status: 200, body: { ok: false, code: "invalid_request" } };
+          return { status: 200, body: await products.setStatus(db, countryCode, slug, body.data.publish, change.actorId, change.requestId) };
+        }
+        case "setProductStock": {
+          const body = productStockBodySchema.safeParse(input);
+          if (!body.success) return { status: 200, body: { ok: false, code: "invalid_request" } };
+          return { status: 200, body: await products.setStock(db, countryCode, slug, body.data.available, change.actorId, change.requestId) };
+        }
+        case "addProductImage": {
+          const body = productImageBodySchema.safeParse(input);
+          if (!body.success) return { status: 200, body: { ok: false, code: "invalid_request" } };
+          return { status: 200, body: await products.addImage(db, countryCode, slug, body.data, change.actorId, change.requestId) };
+        }
+        case "arrangeProductImages": {
+          const body = productImageArrangeBodySchema.safeParse(input);
+          if (!body.success) return { status: 200, body: { ok: false, code: "invalid_request" } };
+          const keep = body.data.keep.map((id) => id.toLowerCase());
+          return { status: 200, body: await products.arrangeImages(db, countryCode, slug, keep, change.actorId, change.requestId) };
+        }
+      }
+    }
+
     const orderNumber = (matched.params.orderNumber ?? "").toUpperCase();
     if (matched.endpoint !== "listOrders" && matched.endpoint !== "listMyDeliveries" && !ORDER_NUMBER_PATTERN.test(orderNumber)) {
       return { status: 200, body: { ok: false, code: "not_found" } };
@@ -454,6 +539,7 @@ export async function handleCountryAdminRequest(service: CountryAdminService, re
       if (matched.endpoint === "reportLocation") return refuse(503, "tracking_missing");
       if (matched.endpoint === "riderFigures" || matched.endpoint === "riderDeliveries") return refuse(503, "rider_figures_missing");
       if (matched.endpoint === "listCustomers" || matched.endpoint === "getCustomer") return refuse(503, "customers_missing");
+      if (PRODUCT_ENDPOINTS.has(matched.endpoint)) return refuse(503, "products_missing");
       const deliveryEndpoint = COUNTRY_ADMIN_ENDPOINTS[matched.endpoint].permission.startsWith("deliveries.");
       return refuse(503, deliveryEndpoint ? "delivery_admin_missing" : "order_admin_missing");
     }

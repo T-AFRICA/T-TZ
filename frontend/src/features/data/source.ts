@@ -93,7 +93,9 @@ export async function getCatalog(options: { fresh?: boolean } = {}): Promise<Cat
     }
     if (!catalog) {
       const seconds = catalogCacheSeconds();
-      catalog = new DatabaseCatalogClient(getDb(), seconds > 0 ? { load: sharedCatalogLoader(getDb(), seconds) } : {});
+      // With the shared cache the client keeps no copy of its own, so a product
+      // change from the Central Admin (revalidateTag("catalogue")) shows at once.
+      catalog = new DatabaseCatalogClient(getDb(), seconds > 0 ? { load: sharedCatalogLoader(getDb(), seconds), cacheMs: 0 } : {});
     }
     return catalog;
   }

@@ -160,6 +160,37 @@ keeps a rider's email address off the customer's page.
    not have live tracking yet and the customer's map says the live
    location is not available; everything else keeps working.
 
+## Products (owner)
+
+"Products" lists the country's catalogue live from the country: status
+(Draft, Live, Hidden), price, stock and a **Sample** mark for the SAMPLE
+catalogue (SKUs starting with `SAMPLE-`). Owner decisions 2026-11-20:
+
+- A new product is saved as a **draft**. Whoever holds `products.publish`
+  (Product Manager, Country Super Admin) publishes it; it needs a price
+  above zero, at least one photo and a shown category. A live product can
+  be **hidden** again; nothing is deleted.
+- **Photos** are stored in the country's own database (at most 12 per
+  product, 1 MB each, JPEG/PNG/WebP; the browser makes them smaller first)
+  and the storefront serves a live product's photos at
+  `/media/products/<id>`. The first photo is the main one.
+- **Stock** is set on the product page by whoever holds `inventory.adjust`
+  (Inventory Manager, Country Super Admin).
+- Each change the country accepts is recorded in the country
+  (`catalogue_changes`) and in this console's audit log; the storefront's
+  catalogue is read again at once.
+
+1. Country project: `database/migrations/0016_product_admin.sql` (after
+   0006). Until then the Products page says the database does not have the
+   product administration yet.
+2. Central Admin project: `database/admin-migrations/0005_product_actions.sql`
+   (after 0003). Until then product changes still work, but are not
+   written to this console's audit log (the server log says so).
+3. Deploy both apps.
+
+Categories and brands are edited in part 2; until then the form chooses
+from the existing ones.
+
 ## Customers (owner)
 
 "Customers" (for whoever holds `customers.read`: Order Manager, Customer

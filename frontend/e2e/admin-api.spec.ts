@@ -56,7 +56,8 @@ test("requests must be signed for this country and for the endpoint's permission
 
   expect((await call(request, "GET", "/health", "settings.read", undefined, { countryCode: "KE" })).status()).toBe(401);
   expect((await call(request, "GET", "/orders", "settings.read")).status()).toBe(401);
-  expect((await call(request, "GET", "/products", "products.read")).status()).toBe(404);
+  expect((await call(request, "GET", "/inventory", "inventory.read")).status()).toBe(404);
+  expect((await call(request, "GET", "/products", "orders.read")).status()).toBe(401);
 
   const health = await call(request, "GET", "/health", "settings.read");
   expect(health.status()).toBe(200);
@@ -179,4 +180,71 @@ test("a rider's delivery goes through this route with a full-size photo and sign
   // The delivered unit is gone from stock; put it back for the other tests.
   await sql(`update stock_levels s set available = available + 1 from products p where p.id = s.product_id and p.slug = 'sample-top-plug' and s.country_code = 'TZ'`);
   expect(await stockOf("sample-top-plug")).toBe(stockBefore);
+});
+
+test("a product made through the admin API: its photo stays private as a draft, shows once live, and both go when hidden", async ({ request, page }) => {
+  const slug = "admin-api-e2e-bulb";
+  const options = (await (await call(request, "GET", "/catalogue/options", "products.read")).json()) as {
+    categories: { slug: string; id: string; groups: { id: string; subcategories: { id: string }[] }[] }[];
+  };
+  const lighting = options.categories.find((category) => category.slug === "lighting")!;
+  const group = lighting.groups.find((candidate) => candidate.subcategories.length > 0)!;
+  const product = {
+    name: "Admin API E2E Bulb",
+    sku: "E2E-API-BULB",
+    description: "Made by the storefront browser tests.",
+    brandId: null,
+    categoryId: lighting.id,
+    groupId: group.id,
+    subcategoryId: group.subcategories[0]!.id,
+    variantLabel: null,
+    priceMinor: 1_234_500,
+    wasPriceMinor: null,
+    specifications: [{ label: "Power", value: "9 W" }],
+    variants: [],
+    colors: [],
+  };
+  const created = await call(request, "POST", "/products", "products.create", { slug, product });
+  expect(await created.json(), `HTTP ${created.status()}`).toEqual({ ok: true, replayed: false, slug, status: "draft" });
+
+  // A real photo, as the admin sends it (base64 of a PNG).
+  await page.goto(`${CONNECTED}/`);
+  const png = await page.screenshot({ clip: { x: 0, y: 0, width: 320, height: 200 } });
+  const added = (await (await call(request, "POST", `/products/${slug}/images`, "products.update", { contentType: "image/png", data: png.toString("base64"), alt: "The bulb" })).json()) as {
+    ok: boolean;
+    imageId: string;
+  };
+  expect(added.ok).toBe(true);
+  // Not public while it is a draft.
+  expect((await request.get(`${CONNECTED}/media/products/${added.imageId}`)).status()).toBe(404);
+  // Product pages stream, so the answer is read from the page, not the status code.
+  const productHeading = page.getByRole("heading", { level: 1, name: "Admin API E2E Bulb" });
+  const shownOnStorefront = async () => {
+    await page.goto(`${CONNECTED}/products/${slug}`);
+    await page.getByRole("heading", { level: 1 }).first().waitFor();
+    return productHeading.count();
+  };
+  expect(await shownOnStorefront()).toBe(0);
+
+  await call(request, "POST", `/products/${slug}/stock`, "inventory.adjust", { available: 4 });
+  expect(await (await call(request, "POST", `/products/${slug}/status`, "products.publish", { publish: true })).json()).toMatchObject({ ok: true, status: "live" });
+
+  const media = await request.get(`${CONNECTED}/media/products/${added.imageId}`);
+  expect(media.status()).toBe(200);
+  expect(media.headers()["content-type"]).toBe("image/png");
+  expect(media.headers()["cache-control"]).toBe("public, max-age=31536000, immutable");
+  expect(Buffer.from(await media.body()).equals(png)).toBe(true);
+
+  // The storefront shows it (its catalogue is read again after the change; allow its short cache).
+  await expect.poll(shownOnStorefront, { timeout: 25_000, intervals: [1_000, 2_000, 5_000] }).toBe(1);
+  await expect(page.getByText("TZS 12,345").first()).toBeVisible();
+  const photo = page.locator(`img[src*="${added.imageId}"]`).first();
+  await expect(photo).toBeVisible();
+  await expect.poll(() => photo.evaluate((image) => (image as HTMLImageElement).naturalWidth)).toBeGreaterThan(0);
+
+  // Hidden: the page and the photo are gone; the product stays in the database.
+  expect(await (await call(request, "POST", `/products/${slug}/status`, "products.publish", { publish: false })).json()).toMatchObject({ ok: true, status: "hidden" });
+  expect((await request.get(`${CONNECTED}/media/products/${added.imageId}`)).status()).toBe(404);
+  await expect.poll(shownOnStorefront, { timeout: 25_000, intervals: [1_000, 2_000, 5_000] }).toBe(0);
+  expect(await sql(`select active from products where slug = $1`, [slug])).toEqual([{ active: false }]);
 });

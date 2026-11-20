@@ -41,6 +41,17 @@ export const COUNTRY_ADMIN_ENDPOINTS = {
   // The customer directory, read only (migration 0011).
   listCustomers: { method: "GET", path: "/customers", permission: "customers.read" },
   getCustomer: { method: "GET", path: "/customers/:customerId", permission: "customers.read" },
+  // Products (migration 0016). Nothing is deleted: a product is hidden.
+  catalogueOptions: { method: "GET", path: "/catalogue/options", permission: "products.read" },
+  listProducts: { method: "GET", path: "/products", permission: "products.read" },
+  createProduct: { method: "POST", path: "/products", permission: "products.create" },
+  getProduct: { method: "GET", path: "/products/:slug", permission: "products.read" },
+  updateProduct: { method: "POST", path: "/products/:slug", permission: "products.update" },
+  setProductStatus: { method: "POST", path: "/products/:slug/status", permission: "products.publish" },
+  setProductStock: { method: "POST", path: "/products/:slug/stock", permission: "inventory.adjust" },
+  addProductImage: { method: "POST", path: "/products/:slug/images", permission: "products.update" },
+  arrangeProductImages: { method: "POST", path: "/products/:slug/images/arrange", permission: "products.update" },
+  getProductImage: { method: "GET", path: "/products/:slug/images/:imageId", permission: "products.read" },
 } as const;
 
 export type CountryAdminEndpoint = keyof typeof COUNTRY_ADMIN_ENDPOINTS;
@@ -472,6 +483,223 @@ export type RiderDeliveryResponse = z.infer<typeof riderDeliveryResponseSchema>;
 export type RiderDeliveryUpdate = z.infer<typeof deliveryUpdateBodySchema>;
 export type RiderDeliveryUpdateResult = z.infer<typeof riderDeliveryUpdateResponseSchema>;
 
+// ---------------------------------------------------------------- products --
+
+/** draft: never live; live: on the storefront; hidden: was live, taken off. */
+export const PRODUCT_STATUSES = ["draft", "live", "hidden"] as const;
+export type ProductStatus = (typeof PRODUCT_STATUSES)[number];
+export const PRODUCT_PAGE_SIZE = 25;
+/** Largest product photo accepted, in bytes (the database allows 1 MB). */
+export const PRODUCT_IMAGE_MAX_BYTES = 1_048_576;
+export const PRODUCT_IMAGES_MAX = 12;
+export const PRODUCT_STOCK_MAX = 100_000;
+/** Products whose SKU starts with this belong to the SAMPLE catalogue (placeholder data). */
+export const SAMPLE_SKU_PREFIX = "SAMPLE-";
+export const PRODUCT_SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+export const PRODUCT_SKU_PATTERN = /^[A-Z0-9][A-Z0-9-]{1,39}$/;
+export const PRODUCT_LIMITS = {
+  name: 120,
+  description: 4000,
+  variantLabel: 30,
+  specifications: 30,
+  specLabel: 60,
+  specValue: 200,
+  variants: 20,
+  variantName: 40,
+  colors: 12,
+  colorName: 40,
+  alt: 120,
+} as const;
+/** Largest price accepted, in minor units. */
+const PRICE_MAX = 1_000_000_000_000_000;
+
+const productStatus = z.enum(PRODUCT_STATUSES);
+const price = z.number().int().min(1).max(PRICE_MAX);
+const uniqueBy = <T>(items: readonly T[], key: (item: T) => string) => new Set(items.map((item) => key(item).trim().toLowerCase())).size === items.length;
+
+/** What the admin sends to create or edit a product. The country checks all of it again. */
+export const productInputSchema = z
+  .object({
+    name: z.string().trim().min(2).max(PRODUCT_LIMITS.name),
+    sku: z.string().trim().toUpperCase().regex(PRODUCT_SKU_PATTERN),
+    description: z.string().trim().max(PRODUCT_LIMITS.description).nullable(),
+    brandId: z.string().uuid().nullable(),
+    categoryId: z.string().uuid(),
+    groupId: z.string().uuid().nullable(),
+    subcategoryId: z.string().uuid().nullable(),
+    variantLabel: z.string().trim().max(PRODUCT_LIMITS.variantLabel).nullable(),
+    priceMinor: price,
+    /** The price before an offer; shown struck through. Above the price, or null. */
+    wasPriceMinor: price.nullable(),
+    specifications: z
+      .array(z.object({ label: z.string().trim().min(1).max(PRODUCT_LIMITS.specLabel), value: z.string().trim().min(1).max(PRODUCT_LIMITS.specValue) }))
+      .max(PRODUCT_LIMITS.specifications)
+      .refine((list) => uniqueBy(list, (item) => item.label), "Each specification label once"),
+    variants: z
+      .array(z.string().trim().min(1).max(PRODUCT_LIMITS.variantName))
+      .max(PRODUCT_LIMITS.variants)
+      .refine((list) => uniqueBy(list, (item) => item), "Each variant once"),
+    colors: z
+      .array(z.object({ name: z.string().trim().min(1).max(PRODUCT_LIMITS.colorName), swatch: z.string().regex(/^#[0-9a-fA-F]{6}$/) }))
+      .max(PRODUCT_LIMITS.colors)
+      .refine((list) => uniqueBy(list, (item) => item.name), "Each colour once"),
+  })
+  .refine((input) => input.wasPriceMinor === null || input.wasPriceMinor > input.priceMinor, { message: "The earlier price must be above the price", path: ["wasPriceMinor"] })
+  .refine((input) => input.subcategoryId === null || input.groupId !== null, { message: "A subcategory needs its group", path: ["subcategoryId"] });
+
+export const productCreateBodySchema = z.object({
+  slug: z.string().trim().toLowerCase().max(80).regex(PRODUCT_SLUG_PATTERN),
+  product: productInputSchema,
+});
+export const productUpdateBodySchema = z.object({ product: productInputSchema });
+export const productStatusBodySchema = z.object({ publish: z.boolean() });
+export const productStockBodySchema = z.object({ available: z.number().int().min(0).max(PRODUCT_STOCK_MAX) });
+export const productImageBodySchema = z.object({
+  contentType: z.enum(["image/jpeg", "image/png", "image/webp"]),
+  /** Base64 of the photo; at most PRODUCT_IMAGE_MAX_BYTES once decoded. */
+  data: z.string().regex(/^[A-Za-z0-9+/]+={0,2}$/).max(Math.ceil(PRODUCT_IMAGE_MAX_BYTES / 3) * 4),
+  alt: z.string().trim().max(PRODUCT_LIMITS.alt).optional(),
+});
+export const productImageArrangeBodySchema = z.object({ keep: z.array(z.string().uuid()).max(PRODUCT_IMAGES_MAX) });
+export const productListQuerySchema = z.object({
+  q: z.string().trim().max(80).optional(),
+  category: z.string().trim().toLowerCase().max(80).regex(PRODUCT_SLUG_PATTERN).optional(),
+  status: productStatus.optional(),
+  page: z.coerce.number().int().min(1).max(10_000).default(1),
+});
+
+const productImageRef = z.object({ id: z.string().uuid(), url: z.string() });
+
+export const catalogueOptionsResponseSchema = z.object({
+  ok: z.literal(true),
+  ...money,
+  categories: z.array(
+    z.object({
+      id: z.string().uuid(),
+      slug: z.string(),
+      name: z.string(),
+      active: z.boolean(),
+      groups: z.array(
+        z.object({
+          id: z.string().uuid(),
+          slug: z.string(),
+          name: z.string(),
+          active: z.boolean(),
+          subcategories: z.array(z.object({ id: z.string().uuid(), slug: z.string(), name: z.string(), active: z.boolean() })),
+        }),
+      ),
+    }),
+  ),
+  brands: z.array(z.object({ id: z.string().uuid(), name: z.string() })),
+});
+
+export const productSummarySchema = z.object({
+  slug: z.string(),
+  sku: z.string(),
+  name: z.string(),
+  status: productStatus,
+  categoryName: z.string(),
+  brandName: z.string().nullable(),
+  /** Null when the product has no price in this country. */
+  priceMinor: minor.nullable(),
+  wasPriceMinor: minor.nullable(),
+  /** Units in stock; null when stock was never recorded. */
+  available: z.number().int().nonnegative().nullable(),
+  image: productImageRef.nullable(),
+  sample: z.boolean(),
+  updatedAt: z.string().datetime(),
+});
+
+export const productListResponseSchema = z.object({
+  ok: z.literal(true),
+  total: z.number().int().nonnegative(),
+  page: z.number().int().positive(),
+  pageSize: z.number().int().positive(),
+  counts: z.partialRecord(productStatus, z.number().int().nonnegative()),
+  ...money,
+  products: z.array(productSummarySchema),
+});
+
+export const productDetailSchema = z.object({
+  slug: z.string(),
+  sku: z.string(),
+  name: z.string(),
+  description: z.string().nullable(),
+  brandId: z.string().uuid().nullable(),
+  categoryId: z.string().uuid(),
+  groupId: z.string().uuid().nullable(),
+  subcategoryId: z.string().uuid().nullable(),
+  variantLabel: z.string().nullable(),
+  status: productStatus,
+  publishedAt: z.string().datetime().nullable(),
+  createdAt: z.string().datetime(),
+  updatedAt: z.string().datetime(),
+  ...money,
+  priceMinor: minor.nullable(),
+  wasPriceMinor: minor.nullable(),
+  available: z.number().int().nonnegative().nullable(),
+  sample: z.boolean(),
+  /** In order; the first is the main photo. `uploaded` is false for a path-only photo (the SAMPLE catalogue). */
+  images: z.array(productImageRef.extend({ alt: z.string().nullable(), uploaded: z.boolean() })),
+  specifications: z.array(z.object({ label: z.string(), value: z.string() })),
+  variants: z.array(z.string()),
+  colors: z.array(z.object({ name: z.string(), swatch: z.string() })),
+  /** The last changes, newest first. */
+  history: z.array(z.object({ action: z.string(), actorId: z.string().uuid(), createdAt: z.string().datetime(), detail: z.record(z.string(), z.unknown()) })),
+});
+
+export const productDetailResponseSchema = z.discriminatedUnion("ok", [
+  z.object({ ok: z.literal(true), product: productDetailSchema }),
+  z.object({ ok: z.literal(false), code: z.literal("not_found") }),
+]);
+
+export const productSaveResponseSchema = z.discriminatedUnion("ok", [
+  z.object({ ok: z.literal(true), replayed: z.boolean(), slug: z.string(), status: productStatus }),
+  z.object({ ok: z.literal(false), code: z.enum(["invalid_request", "not_found", "slug_taken", "sku_taken", "invalid_category", "invalid_brand"]) }),
+]);
+
+export const PRODUCT_READINESS = ["price", "image", "category"] as const;
+export const productStatusResponseSchema = z.discriminatedUnion("ok", [
+  z.object({ ok: z.literal(true), replayed: z.boolean(), status: productStatus }),
+  z.object({ ok: z.literal(false), code: z.enum(["invalid_request", "not_found", "not_ready"]), missing: z.array(z.enum(PRODUCT_READINESS)).optional() }),
+]);
+
+export const productStockResponseSchema = z.discriminatedUnion("ok", [
+  z.object({ ok: z.literal(true), replayed: z.boolean(), available: z.number().int().nonnegative() }),
+  z.object({ ok: z.literal(false), code: z.enum(["invalid_request", "not_found"]) }),
+]);
+
+export const productImageAddResponseSchema = z.discriminatedUnion("ok", [
+  z.object({ ok: z.literal(true), replayed: z.boolean(), imageId: z.string().uuid() }),
+  z.object({ ok: z.literal(false), code: z.enum(["invalid_request", "not_found", "too_many_images"]) }),
+]);
+
+export const productImageArrangeResponseSchema = z.discriminatedUnion("ok", [
+  z.object({ ok: z.literal(true), replayed: z.boolean() }),
+  z.object({ ok: z.literal(false), code: z.enum(["invalid_request", "not_found", "last_image"]) }),
+]);
+
+export const productImageResponseSchema = z.discriminatedUnion("ok", [
+  /** `file` is null for a path-only photo: the storefront serves it at `url`. */
+  z.object({ ok: z.literal(true), url: z.string(), file: productImageBodySchema.pick({ contentType: true, data: true }).nullable() }),
+  z.object({ ok: z.literal(false), code: z.literal("not_found") }),
+]);
+
+export type ProductInput = z.infer<typeof productInputSchema>;
+export type ProductListQuery = { q?: string; category?: string; status?: ProductStatus; page?: number };
+export type CatalogueOptions = z.infer<typeof catalogueOptionsResponseSchema>;
+export type ProductSummary = z.infer<typeof productSummarySchema>;
+export type ProductList = z.infer<typeof productListResponseSchema>;
+export type ProductDetail = z.infer<typeof productDetailSchema>;
+export type ProductDetailResponse = z.infer<typeof productDetailResponseSchema>;
+export type ProductSaveResult = z.infer<typeof productSaveResponseSchema>;
+export type ProductStatusResult = z.infer<typeof productStatusResponseSchema>;
+export type ProductStockResult = z.infer<typeof productStockResponseSchema>;
+export type ProductImageUpload = z.infer<typeof productImageBodySchema>;
+export type ProductImageAddResult = z.infer<typeof productImageAddResponseSchema>;
+export type ProductImageArrangeResult = z.infer<typeof productImageArrangeResponseSchema>;
+export type ProductImageResponse = z.infer<typeof productImageResponseSchema>;
+
 // ----------------------------------------------------------------- adapter --
 
 /** Why a country could not be asked, or did not give a usable answer. */
@@ -489,6 +717,7 @@ export type CountryUnavailableReason =
   | "country_rider_figures_missing" // the country's database lacks riders' figures (migration 0010)
   | "country_customers_missing" // the country's database lacks the customer directory (migration 0011)
   | "country_tracking_missing" // the country's database lacks live tracking (migration 0012)
+  | "country_products_missing" // the country's database lacks the product administration (migration 0016)
   | "unreachable" // no connection
   | "timeout"
   | "rejected" // the country refused the request (401/403)
@@ -521,6 +750,16 @@ export interface CountryAdminApi {
   riderDeliveries(actorId: string, riderId: string): Promise<CountryApiResult<RiderDeliveries>>;
   listCustomers(actorId: string, query?: CustomerListQuery): Promise<CountryApiResult<CustomerList>>;
   getCustomer(actorId: string, customerId: string): Promise<CountryApiResult<CustomerDetailResponse>>;
+  catalogueOptions(actorId: string): Promise<CountryApiResult<CatalogueOptions>>;
+  listProducts(actorId: string, query?: ProductListQuery): Promise<CountryApiResult<ProductList>>;
+  getProduct(actorId: string, slug: string): Promise<CountryApiResult<ProductDetailResponse>>;
+  createProduct(actorId: string, slug: string, product: ProductInput): Promise<CountryApiResult<ProductSaveResult>>;
+  updateProduct(actorId: string, slug: string, product: ProductInput): Promise<CountryApiResult<ProductSaveResult>>;
+  setProductStatus(actorId: string, slug: string, publish: boolean): Promise<CountryApiResult<ProductStatusResult>>;
+  setProductStock(actorId: string, slug: string, available: number): Promise<CountryApiResult<ProductStockResult>>;
+  addProductImage(actorId: string, slug: string, image: ProductImageUpload): Promise<CountryApiResult<ProductImageAddResult>>;
+  arrangeProductImages(actorId: string, slug: string, keep: string[]): Promise<CountryApiResult<ProductImageArrangeResult>>;
+  getProductImage(actorId: string, slug: string, imageId: string): Promise<CountryApiResult<ProductImageResponse>>;
 }
 
 /** A country whose service cannot be called. Every request answers with the reason; nothing is sent anywhere. */
@@ -544,6 +783,16 @@ export function unavailableCountryApi(reason: CountryUnavailableReason): Country
     riderDeliveries: answer,
     listCustomers: answer,
     getCustomer: answer,
+    catalogueOptions: answer,
+    listProducts: answer,
+    getProduct: answer,
+    createProduct: answer,
+    updateProduct: answer,
+    setProductStatus: answer,
+    setProductStock: answer,
+    addProductImage: answer,
+    arrangeProductImages: answer,
+    getProductImage: answer,
   };
 }
 
@@ -630,6 +879,7 @@ export function createCountryAdminApi(options: CountryAdminApiOptions): CountryA
         else if (code === "rider_figures_missing") reason = "country_rider_figures_missing";
         else if (code === "customers_missing") reason = "country_customers_missing";
         else if (code === "tracking_missing") reason = "country_tracking_missing";
+        else if (code === "products_missing") reason = "country_products_missing";
       }
       return { available: false, reason, statusCode: response.status, latencyMs: elapsed() };
     }
@@ -707,6 +957,38 @@ export function createCountryAdminApi(options: CountryAdminApiOptions): CountryA
     },
     getCustomer(actorId, customerId) {
       return call("getCustomer", customerDetailResponseSchema, actorId, { params: { customerId } });
+    },
+    catalogueOptions(actorId) {
+      return call("catalogueOptions", catalogueOptionsResponseSchema, actorId);
+    },
+    listProducts(actorId, query = {}) {
+      return call("listProducts", productListResponseSchema, actorId, {
+        query: { q: query.q, category: query.category, status: query.status, page: query.page && query.page > 1 ? String(query.page) : undefined },
+      });
+    },
+    getProduct(actorId, slug) {
+      return call("getProduct", productDetailResponseSchema, actorId, { params: { slug } });
+    },
+    createProduct(actorId, slug, product) {
+      return call("createProduct", productSaveResponseSchema, actorId, { body: { slug, product } });
+    },
+    updateProduct(actorId, slug, product) {
+      return call("updateProduct", productSaveResponseSchema, actorId, { params: { slug }, body: { product } });
+    },
+    setProductStatus(actorId, slug, publish) {
+      return call("setProductStatus", productStatusResponseSchema, actorId, { params: { slug }, body: { publish } });
+    },
+    setProductStock(actorId, slug, available) {
+      return call("setProductStock", productStockResponseSchema, actorId, { params: { slug }, body: { available } });
+    },
+    addProductImage(actorId, slug, image) {
+      return call("addProductImage", productImageAddResponseSchema, actorId, { params: { slug }, body: image });
+    },
+    arrangeProductImages(actorId, slug, keep) {
+      return call("arrangeProductImages", productImageArrangeResponseSchema, actorId, { params: { slug }, body: { keep } });
+    },
+    getProductImage(actorId, slug, imageId) {
+      return call("getProductImage", productImageResponseSchema, actorId, { params: { slug, imageId } });
     },
   };
 }
