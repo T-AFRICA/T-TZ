@@ -3,6 +3,8 @@ import { ArrowRightIcon, Container } from "@tronic/ui";
 import { METER_NAV_ITEM } from "@tronic/country-config";
 import { externalLinkProps } from "@/config/site";
 import { Hero } from "@/components/home/Hero";
+import { HeroCarousel } from "@/components/home/HeroCarousel";
+import { LightingHero } from "@/components/home/LightingHero";
 import { CategoryRail } from "@/components/home/CategoryRail";
 import { HomeCollections } from "@/components/home/HomeCollections";
 import { HomeEssentials } from "@/components/home/HomeEssentials";
@@ -25,7 +27,11 @@ import { Reveal } from "@/components/motion/Reveal";
 export default function HomePage() {
   return (
     <>
-      <Hero />
+      {/* The animated room first; when its lighting cycle ends, the lighting range (owner request 2026-11-19). */}
+      <HeroCarousel labels={["Power Every Space", "Light Up Every Room"]}>
+        <Hero />
+        <LightingHero />
+      </HeroCarousel>
       <Container id="departments" className="scroll-mt-24 pt-5 md:pt-10 lg:pt-12">
         <CategoryRail />
       </Container>
