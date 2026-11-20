@@ -3,6 +3,27 @@
 Meaningful implementation changes, newest first. Dates are work dates;
 nothing below is released.
 
+## 2026-11-20 — Reports in the Central Admin
+
+- Owner decisions: four reports (sales; products and categories; orders
+  and delivery; stock), charts, a sale is a paid order, CSV download.
+- Country migration `0019_reports.sql` (draft): read-only, service_role-only
+  report functions for a period of the country's own days (at most 366),
+  with no customer details. Country admin API: `GET /reports/sales`,
+  `/reports/products`, `/reports/orders`, `/reports/stock` (`?from&to`,
+  permission `reports.read`); a database without 0019 answers
+  `reports_missing`.
+- Admin: the Reports page replaces "Not available yet": tabs, quick and
+  custom periods, figures, column charts, ranked bars, segmented share bars
+  (in place of pies) with legends and a table under each chart, light and
+  dark chart colours checked for colour blindness, and a CSV file of each
+  report (`/c/:country/reports/export`, formulas in names written as text).
+- Tests: database (`tests/reports.test.ts`: who may read, period refusals,
+  each report's figures, no customer details), admin unit
+  (`src/features/reports/reports.test.ts`: periods, weekly columns, CSV) and
+  admin browser (`e2e/reports.spec.ts`, as a new synthetic Finance /
+  Reporting Viewer).
+
 ## 2026-11-20 — Categories and brands from the Central Admin (part 2a)
 
 - Owner decisions: the website's categories will come from the database,

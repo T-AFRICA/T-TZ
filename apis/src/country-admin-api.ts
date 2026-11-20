@@ -63,6 +63,11 @@ export const COUNTRY_ADMIN_ENDPOINTS = {
   setCategoryBanner: { method: "POST", path: "/categories/:categoryId/banner", permission: "categories.manage" },
   getCategoryBanner: { method: "GET", path: "/categories/:categoryId/banner", permission: "categories.manage" },
   saveBrand: { method: "POST", path: "/brands/save", permission: "categories.manage" },
+  // Reports (migration 0019), read only.
+  salesReport: { method: "GET", path: "/reports/sales", permission: "reports.read" },
+  productsReport: { method: "GET", path: "/reports/products", permission: "reports.read" },
+  ordersReport: { method: "GET", path: "/reports/orders", permission: "reports.read" },
+  stockReport: { method: "GET", path: "/reports/stock", permission: "reports.read" },
 } as const;
 
 export type CountryAdminEndpoint = keyof typeof COUNTRY_ADMIN_ENDPOINTS;
@@ -894,6 +899,87 @@ export type CategoryBannerUpload = z.infer<typeof categoryBannerBodySchema>;
 export type CategoryBannerResult = z.infer<typeof categoryBannerResponseSchema>;
 export type CategoryBannerFile = z.infer<typeof categoryBannerFileResponseSchema>;
 
+// ----------------------------------------------------------------- reports --
+
+/** A report covers at most this many days. */
+export const REPORT_MAX_DAYS = 366;
+export const REPORT_TOP_PRODUCTS = 10;
+const isoDay = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
+
+/** The period of a report, in the country's own days, both ends included. */
+export const reportPeriodQuerySchema = z
+  .object({ from: isoDay, to: isoDay })
+  .refine((period) => !Number.isNaN(Date.parse(period.from)) && !Number.isNaN(Date.parse(period.to)), "Not a date")
+  .refine((period) => period.from <= period.to, "The period ends before it starts")
+  .refine((period) => (Date.parse(period.to) - Date.parse(period.from)) / 86_400_000 < REPORT_MAX_DAYS, `At most ${REPORT_MAX_DAYS} days`);
+
+export const salesReportSchema = z.object({
+  ok: z.literal(true),
+  ...money,
+  days: z.array(
+    z.object({ day: isoDay, placed: z.number().int().nonnegative(), paidOrders: z.number().int().nonnegative(), paidMinor: minor, cancelled: z.number().int().nonnegative() }),
+  ),
+  totals: z.object({
+    placed: z.number().int().nonnegative(),
+    paidOrders: z.number().int().nonnegative(),
+    paidMinor: minor,
+    cancelled: z.number().int().nonnegative(),
+    open: z.number().int().nonnegative(),
+  }),
+  byPayment: z.array(z.object({ method: z.string(), paidOrders: z.number().int().nonnegative(), paidMinor: minor })),
+});
+
+export const productsReportSchema = z.object({
+  ok: z.literal(true),
+  ...money,
+  paidMinor: minor,
+  units: z.number().int().nonnegative(),
+  products: z.array(z.object({ slug: z.string(), name: z.string(), sku: z.string(), units: z.number().int().nonnegative(), amountMinor: minor })),
+  categories: z.array(z.object({ slug: z.string(), name: z.string(), units: z.number().int().nonnegative(), amountMinor: minor })),
+});
+
+export const ordersReportSchema = z.object({
+  ok: z.literal(true),
+  ...money,
+  placed: z.number().int().nonnegative(),
+  byStatus: z.partialRecord(orderStatus, z.number().int().nonnegative()),
+  byRegion: z.array(z.object({ region: z.string(), orders: z.number().int().nonnegative(), paidMinor: minor })),
+  riders: z.array(
+    z.object({
+      riderId: z.string().uuid(),
+      riderName: z.string(),
+      given: z.number().int().nonnegative(),
+      delivered: z.number().int().nonnegative(),
+      failedAttempts: z.number().int().nonnegative(),
+      cashMinor: minor,
+    }),
+  ),
+});
+
+export const stockReportSchema = z.object({
+  ok: z.literal(true),
+  ...money,
+  products: z.number().int().nonnegative(),
+  out: z.number().int().nonnegative(),
+  low: z.number().int().nonnegative(),
+  units: z.number().int().nonnegative(),
+  /** Units in stock at today's prices. */
+  valueMinor: minor,
+  movements: z.array(
+    z.object({ reason: z.enum(STOCK_REASONS), unitsIn: z.number().int().nonnegative(), unitsOut: z.number().int().nonnegative(), changes: z.number().int().nonnegative() }),
+  ),
+  /** Out of stock or at its low level, fewest first (at most 50). */
+  attention: z.array(
+    z.object({ slug: z.string(), name: z.string(), sku: z.string(), available: z.number().int().nonnegative(), lowStockAt: z.number().int().nonnegative(), live: z.boolean() }),
+  ),
+});
+
+export type ReportPeriod = { from: string; to: string };
+export type SalesReport = z.infer<typeof salesReportSchema>;
+export type ProductsReport = z.infer<typeof productsReportSchema>;
+export type OrdersReport = z.infer<typeof ordersReportSchema>;
+export type StockReport = z.infer<typeof stockReportSchema>;
+
 // ----------------------------------------------------------------- adapter --
 
 /** Why a country could not be asked, or did not give a usable answer. */
@@ -914,6 +1000,7 @@ export type CountryUnavailableReason =
   | "country_products_missing" // the country's database lacks the product administration (migration 0016)
   | "country_inventory_missing" // the country's database lacks the inventory (migration 0017)
   | "country_categories_missing" // the country's database lacks the category administration (migration 0018)
+  | "country_reports_missing" // the country's database lacks the reports (migration 0019)
   | "unreachable" // no connection
   | "timeout"
   | "rejected" // the country refused the request (401/403)
@@ -965,6 +1052,10 @@ export interface CountryAdminApi {
   saveBrand(actorId: string, brand: { id?: string; name: string }): Promise<CountryApiResult<BrandSaveResult>>;
   setCategoryBanner(actorId: string, categoryId: string, banner: CategoryBannerUpload): Promise<CountryApiResult<CategoryBannerResult>>;
   getCategoryBanner(actorId: string, categoryId: string): Promise<CountryApiResult<CategoryBannerFile>>;
+  salesReport(actorId: string, period: ReportPeriod): Promise<CountryApiResult<SalesReport>>;
+  productsReport(actorId: string, period: ReportPeriod): Promise<CountryApiResult<ProductsReport>>;
+  ordersReport(actorId: string, period: ReportPeriod): Promise<CountryApiResult<OrdersReport>>;
+  stockReport(actorId: string, period: ReportPeriod): Promise<CountryApiResult<StockReport>>;
 }
 
 /** A country whose service cannot be called. Every request answers with the reason; nothing is sent anywhere. */
@@ -1007,6 +1098,10 @@ export function unavailableCountryApi(reason: CountryUnavailableReason): Country
     saveBrand: answer,
     setCategoryBanner: answer,
     getCategoryBanner: answer,
+    salesReport: answer,
+    productsReport: answer,
+    ordersReport: answer,
+    stockReport: answer,
   };
 }
 
@@ -1096,6 +1191,7 @@ export function createCountryAdminApi(options: CountryAdminApiOptions): CountryA
         else if (code === "products_missing") reason = "country_products_missing";
         else if (code === "inventory_missing") reason = "country_inventory_missing";
         else if (code === "categories_missing") reason = "country_categories_missing";
+        else if (code === "reports_missing") reason = "country_reports_missing";
       }
       return { available: false, reason, statusCode: response.status, latencyMs: elapsed() };
     }
@@ -1234,6 +1330,18 @@ export function createCountryAdminApi(options: CountryAdminApiOptions): CountryA
     },
     getCategoryBanner(actorId, categoryId) {
       return call("getCategoryBanner", categoryBannerFileResponseSchema, actorId, { params: { categoryId } });
+    },
+    salesReport(actorId, period) {
+      return call("salesReport", salesReportSchema, actorId, { query: period });
+    },
+    productsReport(actorId, period) {
+      return call("productsReport", productsReportSchema, actorId, { query: period });
+    },
+    ordersReport(actorId, period) {
+      return call("ordersReport", ordersReportSchema, actorId, { query: period });
+    },
+    stockReport(actorId, period) {
+      return call("stockReport", stockReportSchema, actorId, { query: period });
     },
   };
 }

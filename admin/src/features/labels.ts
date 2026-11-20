@@ -138,6 +138,8 @@ export const SERVICE_UNAVAILABLE_TEXT: Record<CountryUnavailableReason, string> 
     "The country's database does not have the inventory yet. An owner has to run database/migrations/0017_inventory_admin.sql in that country's Supabase SQL editor.",
   country_products_missing:
     "The country's database does not have the product administration yet. An owner has to run database/migrations/0016_product_admin.sql in that country's Supabase SQL editor.",
+  country_reports_missing:
+    "The country's database does not have the reports yet. An owner has to run database/migrations/0019_reports.sql in that country's Supabase SQL editor.",
   unreachable: "The country service could not be reached.",
   timeout: "The country service did not answer in time.",
   rejected: "The country service refused the request.",

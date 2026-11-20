@@ -50,6 +50,8 @@ export const ACCOUNTS = {
   invited: "invited@example.test",
   /** A delivery rider in Tanzania. */
   tzRider: "tz.rider@example.test",
+  /** Finance / Reporting Viewer in Tanzania: reports and orders, nothing else. */
+  tzFinance: "tz.finance@example.test",
 } as const;
 
 export interface Stack {
@@ -159,6 +161,7 @@ async function seed(db: Db, auth: FakeAuth, secret: string): Promise<FakeUser> {
   const tzOrders = await add(ACCOUNTS.tzOrders, false);
   const tzSuspended = await add(ACCOUNTS.tzSuspended, false);
   const tzRider = await add(ACCOUNTS.tzRider, false);
+  const tzFinance = await add(ACCOUNTS.tzFinance, false);
   await add(ACCOUNTS.stranger, false);
   await add(ACCOUNTS.invited, false);
 
@@ -177,6 +180,7 @@ async function seed(db: Db, auth: FakeAuth, secret: string): Promise<FakeUser> {
   await onboard(tzSuper, tzOrders, "order_manager", "tz");
   await onboard(tzSuper, tzSuspended, "customer_support", "tz");
   await onboard(tzSuper, tzRider, "rider", "tz");
+  await onboard(tzSuper, tzFinance, "finance_viewer", "tz");
   const suspended = await setAdminStatus(db, as(master), { userId: tzSuspended.id, status: "suspended", reason: "Synthetic test account" });
   if (!suspended.ok) throw new Error(`seed: could not suspend: ${suspended.code}`);
   const waiting = await inviteAdmin(db, as(tzSuper), { email: ACCOUNTS.invited, role: "content_manager", countryId: "tz" });
