@@ -83,7 +83,7 @@ export function Hero() {
   return (
     <section
       aria-label="TRONIC — electrical supplies, lighting and switchgear"
-      className="relative flex flex-col overflow-hidden bg-[#f6f3ee] text-[var(--color-premium-black)] lg:min-h-[max(22rem,30vw)] lg:justify-center lg:bg-[#2b221e] lg:text-white 2xl:min-h-[30rem]"
+      className="relative flex h-full flex-col overflow-hidden bg-[#f6f3ee] text-[var(--color-premium-black)] lg:min-h-[max(22rem,30vw)] lg:justify-center lg:bg-[#2b221e] lg:text-white 2xl:min-h-[30rem]"
     >
       <Container className="relative z-10 py-9 max-lg:text-center max-md:absolute max-md:inset-x-0 max-md:bottom-0 max-md:pb-3.5 max-md:pt-0 lg:py-10">
         <div className="lg:max-w-[32%] xl:max-w-[24rem]">
