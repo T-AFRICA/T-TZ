@@ -78,16 +78,52 @@ describe("PurchasePanel", () => {
     expect(decrease).toBeEnabled();
   });
 
-  it("caps the quantity at the maximum and says so", async () => {
+  it("lets the customer type a quantity, up to 500 units (owner decision 2026-11-21)", async () => {
+    cartStore.set([]);
     const user = userEvent.setup();
     renderPanel(baseProduct);
+    const field = screen.getByRole("textbox", { name: "Quantity" });
     const increase = screen.getByRole("button", { name: "Increase quantity" });
-    for (let step = 0; step < 9; step += 1) {
-      await user.click(increase);
-    }
-    expect(screen.getByText("10")).toBeInTheDocument();
+    expect(field).toHaveValue("1");
+
+    // More than ten is fine now; the steppers carry on from what was typed.
+    await user.clear(field);
+    await user.type(field, "250{Enter}");
+    expect(field).toHaveValue("250");
+    await user.click(increase);
+    expect(field).toHaveValue("251");
+    expect(increase).toBeEnabled();
+    expect(screen.queryByText("Maximum quantity reached")).not.toBeInTheDocument();
+
+    await user.click(screen.getAllByRole("button", { name: /Add to Cart/ })[0]!);
+    expect(cartStore.get()[0]).toMatchObject({ quantity: 251 });
+  });
+
+  it("caps the quantity at the maximum and says so, and ignores what is not a number", async () => {
+    const user = userEvent.setup();
+    renderPanel(baseProduct);
+    const field = screen.getByRole("textbox", { name: "Quantity" });
+    const increase = screen.getByRole("button", { name: "Increase quantity" });
+
+    // The field takes three digits; anything over 500 becomes 500.
+    await user.clear(field);
+    await user.type(field, "9999");
+    await user.tab();
+    expect(field).toHaveValue("500");
     expect(increase).toBeDisabled();
     expect(screen.getByText("Maximum quantity reached")).toBeInTheDocument();
+
+    // Letters and signs are not kept; zero becomes one; an empty field goes back.
+    await user.clear(field);
+    await user.type(field, "-1e2x");
+    await user.tab();
+    expect(field).toHaveValue("12");
+    await user.clear(field);
+    await user.type(field, "0{Enter}");
+    expect(field).toHaveValue("1");
+    await user.clear(field);
+    await user.tab();
+    expect(field).toHaveValue("1");
   });
 
   it("shows the product's own SKU, not one made from its id", () => {

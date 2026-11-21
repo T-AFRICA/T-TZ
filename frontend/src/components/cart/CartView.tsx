@@ -8,6 +8,7 @@ import { useCart, useHydrated, useWishlist } from "@/features/cart/hooks";
 import { resolveLines, summarize, type ResolvedLine } from "@/features/cart/lines";
 import { MAX_LINE_QUANTITY } from "@/features/cart/store";
 import { selectionLabel } from "@/features/cart/purchase";
+import { QuantityField } from "./QuantityField";
 import { CHECKOUT_PATH } from "@/features/checkout/links";
 
 const CARD = "rounded-2xl bg-white md:border md:border-[var(--color-light-grey)]";
@@ -257,9 +258,13 @@ function CartLineRow({
           >
             −
           </button>
-          <span aria-live="polite" className="w-8 text-center text-sm font-semibold tabular-nums">
-            {line.quantity}
-          </span>
+          <QuantityField
+            value={line.quantity}
+            max={MAX_LINE_QUANTITY}
+            onChange={(quantity) => onQuantity(key, quantity)}
+            label={`Units of ${product.name}`}
+            className="h-9 w-11 text-sm"
+          />
           <button
             type="button"
             aria-label="Increase quantity"

@@ -252,3 +252,51 @@ test("customers see only their own orders; guests track with number plus contact
   await expect(guest.getByRole("status").filter({ hasText: "Order " })).toContainText(`Order ${aliceOrder!.order_number}: Pending payment`);
   expect(new URL(guest.url()).search).toBe("");
 });
+
+test("a typed quantity above ten goes through the product page, the cart, checkout and the saved order, up to 500 units", async ({ page }) => {
+  const email = "bulk.flow@example.test";
+  const stockBefore = await stockOf(PANEL.slug);
+  await setStock(PANEL.slug, 500);
+  try {
+    await signIn(page, ...SHOPPER);
+    await page.goto(`${BASE}/products/${PANEL.slug}`);
+    await expect(page.getByRole("heading", { level: 1, name: PANEL.name })).toBeVisible();
+
+    // The number between − and + can be typed (owner decision 2026-11-21).
+    const quantity = page.getByRole("textbox", { name: "Quantity" }).first();
+    await quantity.fill("120");
+    await quantity.press("Enter");
+    await expect(quantity).toHaveValue("120");
+    await page.screenshot({ path: "test-results/quantity/product.png" });
+    await page.getByRole("button", { name: "Add to Cart" }).first().click();
+
+    await page.goto(`${BASE}/cart`);
+    const inCart = page.getByRole("textbox", { name: `Units of ${PANEL.name}` });
+    await expect(inCart).toHaveValue("120");
+    // Over the limit becomes the limit: 500.
+    await inCart.fill("999");
+    await inCart.press("Enter");
+    await expect(inCart).toHaveValue("500");
+    await expect(page.getByRole("group", { name: `Quantity of ${PANEL.name}` }).getByRole("button", { name: "Increase quantity" })).toBeDisabled();
+    await page.screenshot({ path: "test-results/quantity/cart.png" });
+
+    await page.getByRole("link", { name: "Proceed to checkout" }).click();
+    await expect(page).toHaveURL(`${BASE}/checkout`);
+    // 500 × TZS 28,000, priced by the server.
+    await expect(page.getByRole("complementary", { name: "Order summary" })).toContainText("TZS 14,000,000");
+    await fillCheckout(page, email);
+    await placeOrder(page);
+    await expect(page.getByText("Order placed")).toBeVisible();
+
+    const [order] = await ordersFor(email);
+    expect(Number(order!.total_minor)).toBe(500 * PANEL.priceMinor);
+    const lines = await sql<{ quantity: number }>(
+      `select l.quantity from order_lines l join orders o on o.id = l.order_id where o.order_number = $1`,
+      [order!.order_number],
+    );
+    expect(lines.map((line) => Number(line.quantity))).toEqual([500]);
+    expect(await stockOf(PANEL.slug)).toBe(0);
+  } finally {
+    await setStock(PANEL.slug, stockBefore);
+  }
+});
