@@ -1,11 +1,11 @@
 "use client";
 
 import { useActionState, useState, type FormEvent } from "react";
+import Link from "next/link";
 import { Input } from "@tronic/ui";
 import { ACTIVE_COUNTRY, formatMoney } from "@tronic/country-config";
 import { trackOrderAction, type TrackOrderState } from "@/features/orders/actions";
 import { ORDER_NUMBER_PATTERN, ORDER_STATUS_LABELS } from "@/features/orders/status";
-import { DeliveryCode } from "./DeliveryCode";
 
 /** Customer-facing order statuses, in order (owner brief 2026-11-10). */
 export const ORDER_STATUSES = [
@@ -24,7 +24,8 @@ const IDLE: TrackOrderState = { status: "idle" };
  * Track Order. The form posts (method POST, with or without JavaScript) to
  * trackOrderAction, which looks the order up by number plus the phone or
  * email used at checkout (both must match). The order number never goes
- * into a URL. While online orders are not connected (`enabled` false) the
+ * into a URL. The answer never shows the delivery code: that is in the
+ * signed-in account only. While online orders are not connected (`enabled` false) the
  * form cannot be submitted and says so instead of inventing a status.
  */
 export function TrackOrderView({ enabled }: { enabled: boolean }) {
@@ -93,6 +94,10 @@ export function TrackOrderView({ enabled }: { enabled: boolean }) {
             <p role="status" className="mt-4 rounded-xl border border-[var(--color-light-grey)] bg-[var(--surface-card)] px-4 py-3 text-sm">
               We couldn&apos;t find an order with that number and contact. Check both and try again.
             </p>
+          ) : state.status === "rate_limited" ? (
+            <p role="status" className="mt-4 rounded-xl border border-[var(--color-light-grey)] bg-[var(--surface-card)] px-4 py-3 text-sm">
+              Too many tries. Wait a few minutes and try again, or sign in to see your orders.
+            </p>
           ) : state.status === "found" ? (
             <div role="status" className="mt-4 rounded-xl border border-[var(--color-success)] bg-[#f3faf5] px-4 py-3 text-sm">
               <p className="font-semibold">
@@ -103,10 +108,14 @@ export function TrackOrderView({ enabled }: { enabled: boolean }) {
                 {formatMoney(state.order.totalMinor, ACTIVE_COUNTRY, state.order.currency)} · placed{" "}
                 {new Date(state.order.createdAt).toLocaleDateString(ACTIVE_COUNTRY.locale, { dateStyle: "medium" })}
               </p>
-              {state.deliveryCode ? (
-                <div className="mt-3">
-                  <DeliveryCode code={state.deliveryCode} />
-                </div>
+              {state.codeInAccount ? (
+                <p className="mt-3 border-t border-[var(--color-light-grey)] pt-3">
+                  Your order is on its way. The delivery code to give the rider is in your account:{" "}
+                  <Link href="/account/orders" className="font-semibold text-[var(--color-action-red)] underline underline-offset-4">
+                    sign in and open the order
+                  </Link>
+                  . Share it only when the rider is with you.
+                </p>
               ) : null}
             </div>
           ) : null}

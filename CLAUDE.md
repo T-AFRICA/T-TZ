@@ -59,6 +59,29 @@ Once the project is scaffolded:
 - For UI changes, preserve accessibility, keyboard access, responsive layout, and loading/empty/error states.
 - Use synthetic or anonymized fixtures. Test customer, country, currency, and permission boundaries whenever affected.
 
+## Security in every change
+
+Security is part of each task, not a later pass (owner instruction 2026-11-21). `rulesd.md` holds the rules; `docs/security/` holds the design (`SECURITY_ARCHITECTURE.md`), the threats (`THREAT_MODEL.md`), the working checklist (`SECURITY_CHECKLIST.md`) and the open findings (`SECURITY_AUDIT_REPORT.md`). Baseline: OWASP ASVS Level 2, stricter for administration, orders, delivery and payments.
+
+For every feature, fix or integration, in this order:
+
+1. **Assess.** What data it handles and how sensitive it is; who may reach it (visitor, customer, rider, staff role, country); what the caller can change in a request; which outside services are involved.
+2. **Design.** Pick the controls that apply from `SECURITY_CHECKLIST.md` section A. Not every change needs every control, but every boundary it crosses is protected.
+3. **Implement with the feature.** Validation, authentication, authorisation, data protection and payment checks are written with the behaviour, never deferred on something described as ready.
+4. **Test.** Add a regression test for each control, including the refusal: another customer, another country, a lower role, a hostile value. Run the affected checks.
+5. **Review.** Input validation, identity, permission, privacy, database grants and policies, error text, logs, abuse limits.
+6. **Report.** At the end state: what was built; the controls actually applied; the tests run and their results; known risks left; what depends on settings outside the repository; and one of **Ready**, **Ready With Limitations** or **Not Ready**.
+
+Rules that have no exceptions:
+
+- Identity and role come from the verified server session and the database, never from the request, a cookie's presence or user-editable metadata.
+- Every server action and route handler checks permission itself; a page having checked is not enough.
+- Never work around Row Level Security, a grant, a validation or a test to make something pass. A new database function is closed to `anon` and `authenticated` unless it is added to `database/client/tests/function-grants.test.ts` on purpose.
+- Prices, totals, stock and payment state are decided on the server. Nothing is marked paid from the browser. No real payment goes live before the provider integration has passed its security tests.
+- No secret in code, tests, logs, URLs or `NEXT_PUBLIC_*`. If one may have leaked, say so at once and recommend rotation; never repeat its value.
+- Never describe a control as deployed or tested when it is not, never call the application fully secure, and never leave a known weakness out of a report. Front-end-only behaviour is not a finished secure back end.
+- When a change alters a boundary, a role, a public function or a data flow, update `docs/security/` in the same change. A new weakness found along the way is added to `SECURITY_AUDIT_REPORT.md` even if it is not fixed.
+
 ## Review and release boundaries
 
 Instructions in these files guide contributors; they do not enforce GitHub permissions or replace CI.

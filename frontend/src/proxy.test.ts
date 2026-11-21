@@ -10,11 +10,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const auth = vi.hoisted(() => ({
   getUser: vi.fn(),
   cookies: null as null | { getAll: () => { name: string; value: string }[]; setAll: (list: { name: string; value: string; options?: object }[]) => void },
+  cookieOptions: null as null | Record<string, unknown>,
 }));
 
 vi.mock("@supabase/ssr", () => ({
-  createServerClient: (_url: string, _key: string, options: { cookies: NonNullable<typeof auth.cookies> }) => {
+  createServerClient: (_url: string, _key: string, options: { cookies: NonNullable<typeof auth.cookies>; cookieOptions?: Record<string, unknown> }) => {
     auth.cookies = options.cookies;
+    auth.cookieOptions = options.cookieOptions ?? null;
     return { auth: { getUser: auth.getUser } };
   },
 }));
@@ -23,6 +25,7 @@ import { config, proxy } from "./proxy";
 
 const ORIGIN = "https://shop.example.test";
 const SESSION = "sb-testproject-auth-token";
+const HINT = "tronic-signed-in";
 const ENV = { ...process.env };
 
 function request(path: string, cookies: Record<string, string> = {}): NextRequest {
@@ -50,6 +53,7 @@ beforeEach(() => {
   process.env.SUPABASE_ANON_KEY = "anon";
   auth.getUser.mockReset();
   auth.cookies = null;
+  auth.cookieOptions = null;
 });
 
 afterEach(() => {
@@ -81,6 +85,24 @@ describe("session proxy", () => {
       expect(response.headers.get("location"), path).toBe(`${ORIGIN}/account`);
       expect(expired(response), path).toEqual([]);
     }
+  });
+
+  it("writes the session cookies HttpOnly, so a script in the page cannot read the tokens", async () => {
+    auth.getUser.mockResolvedValue(signedIn);
+    await proxy(request("/account", { [SESSION]: "x" }));
+    expect(auth.cookieOptions).toMatchObject({ httpOnly: true, sameSite: "lax", path: "/" });
+  });
+
+  it("gives a verified session the signed-in hint once, and the hint holds no token", async () => {
+    auth.getUser.mockResolvedValue(signedIn);
+    const first = await proxy(request("/account", { [SESSION]: "x" }));
+    const hint = first.headers.getSetCookie().filter((line) => line.startsWith(`${HINT}=`));
+    expect(hint).toHaveLength(1);
+    expect(hint[0]).toContain(`${HINT}=1`);
+    // The hint is for the page to read.
+    expect(hint[0]).not.toMatch(/httponly/i);
+    const again = await proxy(request("/account", { [SESSION]: "x", [HINT]: "1" }));
+    expect(again.headers.getSetCookie()).toEqual([]);
   });
 
   it("keeps a refreshed session cookie when it redirects", async () => {
@@ -115,12 +137,12 @@ describe("session proxy", () => {
     const account = await proxy(request("/account/orders", cookies));
     expect(account.status).toBe(303);
     expect(account.headers.get("location")).toBe(`${ORIGIN}/login`);
-    // Both parts of the session cookie, and nothing else.
-    expect(expired(account).sort()).toEqual([`${SESSION}.0`, `${SESSION}.1`]);
+    // Both parts of the session cookie and the hint that went with them, and nothing else.
+    expect(expired(account).sort()).toEqual([`${SESSION}.0`, `${SESSION}.1`, HINT]);
 
     const login = await proxy(request("/login", cookies));
     expect(login.headers.get("location")).toBeNull();
-    expect(expired(login).sort()).toEqual([`${SESSION}.0`, `${SESSION}.1`]);
+    expect(expired(login).sort()).toEqual([`${SESSION}.0`, `${SESSION}.1`, HINT]);
     // The page behind the proxy no longer sees the dead cookie either.
     expect(login.headers.get("x-middleware-request-cookie") ?? "").not.toContain(`${SESSION}.0=`);
   });

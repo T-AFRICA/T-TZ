@@ -131,15 +131,20 @@ export async function trackOrder(db: Db, orderNumber: string, contact: string): 
 }
 
 /**
- * The customer's delivery code while their order is on its way (migration
- * 0008): for the signed-in owner of the order, or a guest with the checkout
- * email or phone. Null otherwise, and null while the database does not have
- * deliveries yet, so pages keep working before the migration is applied.
+ * The customer's delivery code while their order is on its way (migrations
+ * 0008 and 0020): for the signed-in owner of the order only. The order
+ * number with the checkout email or phone is not enough: the rider is shown
+ * both, and the code is what proves the rider met the customer. Null
+ * otherwise, and null while the database does not have deliveries yet, so
+ * pages keep working before the migration is applied.
  */
-export async function getDeliveryCode(db: Db, access: Access, orderNumber: string, contact: string | null): Promise<string | null> {
+export async function getDeliveryCode(db: Db, access: Access, orderNumber: string): Promise<string | null> {
+  // Never asked for a visitor: nothing is sent that could match by contact
+  // on a database that still has the function of 0008.
+  if (access.role !== "authenticated") return null;
   try {
     const [row] = await withAccess(db, access, (tx) =>
-      tx.query<{ result: unknown }>(`select customer_delivery_code($1, $2) as result`, [orderNumber, contact]),
+      tx.query<{ result: unknown }>(`select customer_delivery_code($1, null) as result`, [orderNumber]),
     );
     const raw: unknown = typeof row?.result === "string" ? JSON.parse(row.result) : row?.result;
     const code = raw && typeof raw === "object" ? (raw as { code?: unknown }).code : null;

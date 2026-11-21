@@ -57,7 +57,7 @@ describe("phone bottom tab bar", () => {
   });
 
   it("opens the account for a signed-in customer and stays current inside it", () => {
-    document.cookie = "sb-test-auth-token=x; path=/";
+    document.cookie = "tronic-signed-in=1; path=/";
     pathname.value = "/account/orders";
     render(<BottomNav />);
     expect(screen.getByRole("link", { name: "Profile" })).toHaveAttribute("href", "/account");

@@ -31,6 +31,14 @@ vi.mock("next/navigation", () => ({
     throw new Error(`REDIRECT ${path}`);
   },
 }));
+/** The attempt limiter (features/security/throttle.ts, tested on its own): open unless a test closes it. */
+const throttle = vi.hoisted(() => ({ open: true, asked: [] as [string, string][] }));
+vi.mock("@/features/security/throttle", () => ({
+  allowAttempt: async (kind: string, target: string) => {
+    throttle.asked.push([kind, target]);
+    return throttle.open;
+  },
+}));
 
 import { requestPasswordResetAction, signInAction, signOutAction, signUpAction, updatePasswordAction } from "./actions";
 import { safeNextPath } from "./server";
@@ -47,12 +55,41 @@ let serverLog: ReturnType<typeof vi.spyOn>;
 
 beforeEach(() => {
   configured.value = true;
+  throttle.open = true;
+  throttle.asked = [];
   for (const fn of Object.values(supabase.auth)) fn.mockReset();
   serverLog = vi.spyOn(console, "error").mockImplementation(() => undefined);
 });
 
 afterEach(() => {
   serverLog.mockRestore();
+});
+
+describe("attempt limits", () => {
+  const typed = ["Sunrise", "harbour", "42"].join("-");
+  const register = { fullName: "Amina Juma", email: "amina@example.com", phone: "0712345678", password: typed, confirmPassword: typed, acceptTerms: "on" };
+
+  it("refuses sign-in, sign-up and reset requests over the limit without calling the provider", async () => {
+    throttle.open = false;
+    const refused = { status: "error", code: "rate_limited" };
+    expect(await signInAction(IDLE, form({ email: "amina@example.com", password: typed }))).toEqual(refused);
+    expect(await signUpAction(IDLE, form(register))).toEqual(refused);
+    expect(await requestPasswordResetAction(IDLE, form({ email: "amina@example.com" }))).toEqual(refused);
+    expect(supabase.auth.signInWithPassword).not.toHaveBeenCalled();
+    expect(supabase.auth.signUp).not.toHaveBeenCalled();
+    expect(supabase.auth.resetPasswordForEmail).not.toHaveBeenCalled();
+    expect(throttle.asked).toEqual([
+      ["signIn", "amina@example.com"],
+      ["signUp", "amina@example.com"],
+      ["passwordReset", "amina@example.com"],
+    ]);
+  });
+
+  it("counts an attempt only once the form is valid", async () => {
+    await signInAction(IDLE, form({ email: "not-an-email", password: "" }));
+    await requestPasswordResetAction(IDLE, form({ email: "" }));
+    expect(throttle.asked).toEqual([]);
+  });
 });
 
 describe("sign in", () => {

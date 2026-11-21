@@ -90,13 +90,17 @@ test("an order manager gives a packed order to a rider; the rider delivers it wi
   await expect(rider.getByRole("link", { name: "Directions to the customer's pin" })).toHaveAttribute("href", /destination=-6\.7924\d*,39\.2083/);
   expect(await sideways(rider)).toBeLessThanOrEqual(1);
 
-  // What the customer sees on their order page: the code, only now.
+  // The code the customer has on their order page, read from the country's
+  // own records for this test.
   const [{ code }] = (await countrySql<{ code: string }>(
     `select d.code from deliveries d join orders o on o.id = d.order_id where o.order_number = $1`,
     [juma],
   )) as [{ code: string }];
+  // The order number with the customer's email, both of which the rider is
+  // shown, does not give the code (country migration 0020): only the
+  // signed-in owner of the order gets it.
   const [shown] = await countrySql<{ result: { code: string } | null }>(`select customer_delivery_code($1, 'juma@example.test') as result`, [juma]);
-  expect(shown!.result).toEqual({ code });
+  expect(shown!.result).toBeNull();
 
   const handover = rider.getByRole("region", { name: "Hand over the order" });
   // A wrong code first.

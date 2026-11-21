@@ -43,3 +43,7 @@ Thumbs.db
 
 # Generated setup SQL for a new database (pnpm --filter @tronic/database run setup:sql).
 database/out/
+
+# Licensed fonts (Adobe Myriad Pro) are served through the Adobe Fonts kit and
+# never committed: this repository is public.
+myriad-pro/

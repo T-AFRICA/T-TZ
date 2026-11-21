@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { normalizeTzPhone } from "@/features/checkout/validation";
+import { allowAttempt } from "@/features/security/throttle";
 import { validateForgot, validateLogin, validateRegister, validateReset } from "./rules";
 import { readNext, withNext } from "./next";
 import { authConfigured, safeNextPath, siteOrigin, supabaseServer } from "./server";
@@ -35,6 +36,8 @@ function fieldErrors(errors: object): Record<string, string> {
 }
 
 const NOT_CONNECTED: AuthFormState = { status: "error", code: "not_connected" };
+/** Too many attempts at this address or from this client (features/security/throttle.ts); nothing was sent to the provider. */
+const TOO_MANY: AuthFormState = { status: "error", code: "rate_limited" };
 
 type ProviderError = { code?: string | undefined; status?: number | undefined };
 
@@ -54,6 +57,7 @@ export async function signInAction(_previous: AuthFormState, form: FormData): Pr
   const values = { email: text(form, "email").trim(), password: text(form, "password") };
   const errors = fieldErrors(validateLogin(values));
   if (Object.keys(errors).length > 0) return { status: "invalid", fieldErrors: errors };
+  if (!(await allowAttempt("signIn", values.email))) return TOO_MANY;
 
   const supabase = await supabaseServer();
   const { error } = await supabase.auth.signInWithPassword(values);
@@ -73,6 +77,7 @@ export async function signUpAction(_previous: AuthFormState, form: FormData): Pr
   };
   const errors = fieldErrors(validateRegister(values));
   if (Object.keys(errors).length > 0) return { status: "invalid", fieldErrors: errors };
+  if (!(await allowAttempt("signUp", values.email))) return TOO_MANY;
 
   // Where to go once the account is ready: checkout when checkout sent the
   // customer here (owner decision 2026-11-19), otherwise the account.
@@ -101,6 +106,7 @@ export async function requestPasswordResetAction(_previous: AuthFormState, form:
   const values = { email: text(form, "email").trim() };
   const errors = fieldErrors(validateForgot(values));
   if (Object.keys(errors).length > 0) return { status: "invalid", fieldErrors: errors };
+  if (!(await allowAttempt("passwordReset", values.email))) return TOO_MANY;
 
   const supabase = await supabaseServer();
   const { error } = await supabase.auth.resetPasswordForEmail(values.email, {

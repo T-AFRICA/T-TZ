@@ -2,6 +2,7 @@
 
 import { useSyncExternalStore } from "react";
 import { usePathname } from "next/navigation";
+import { SESSION_HINT_COOKIE } from "./cookies";
 
 /**
  * A hint, for labels and links only, that this browser has a customer
@@ -10,14 +11,14 @@ import { usePathname } from "next/navigation";
  * session with Supabase Auth on the server, so a stale or forged hint only
  * leads to the sign-in page.
  *
- * It looks for the session cookie @supabase/ssr keeps, named
- * "sb-<project>-auth-token" (in numbered parts when long), which is
- * readable by the page by that library's default. Should that cookie
- * become HttpOnly, the hint is simply false: the header says "Login" and
- * the sign-in page still sends a signed-in customer on to their account.
+ * The session cookies themselves are HttpOnly, so the page cannot see
+ * them. The server keeps a separate cookie beside them (cookies.ts) that
+ * holds no token: only "1" while a session cookie is stored.
  */
-export function hasSessionCookie(cookies: string): boolean {
-  return /(?:^|;\s*)sb-[^=;]+-auth-token(?:\.\d+)?=[^;]/.test(cookies);
+const HINT = new RegExp(`(?:^|;\\s*)${SESSION_HINT_COOKIE}=1(?:;|$)`);
+
+export function hasSignedInHint(cookies: string): boolean {
+  return HINT.test(cookies);
 }
 
 function subscribe(onChange: () => void): () => void {
@@ -29,13 +30,13 @@ function subscribe(onChange: () => void): () => void {
   };
 }
 
-/** True while the session cookie is present. Always false on the server and until hydration. */
+/** True while the hint cookie is present. Always false on the server and until hydration. */
 export function useSignedInHint(): boolean {
   // Signing in and out both end in a navigation; re-read the cookie then.
   usePathname();
   return useSyncExternalStore(
     subscribe,
-    () => hasSessionCookie(document.cookie),
+    () => hasSignedInHint(document.cookie),
     () => false,
   );
 }

@@ -2,7 +2,14 @@ import type { EmailOtpType } from "@supabase/supabase-js";
 import { NextResponse, type NextRequest } from "next/server";
 import { authConfigured, safeNextPath, supabaseServer } from "@/features/auth/server";
 
-const TYPES: readonly EmailOtpType[] = ["signup", "recovery", "email", "email_change", "invite", "magiclink"];
+/**
+ * Only the links this site asks Supabase to send: sign-up confirmation
+ * ("signup", or "email" in newer templates) and password reset. A link of
+ * any other kind (magic link, invitation, email change) is refused: nothing
+ * here sends one, and each would sign whoever opens it into the account of
+ * whoever made the link.
+ */
+const TYPES: readonly EmailOtpType[] = ["signup", "email", "recovery"];
 
 /**
  * Target of the links in Supabase Auth emails (sign-up confirmation and
