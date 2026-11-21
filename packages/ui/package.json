@@ -20,6 +20,6 @@
   },
   "dependencies": {
     "lucide-react": "^1.68.0",
-    "motion": "^14.9.1"
+    "motion": "^14.14.0"
   }
 }
