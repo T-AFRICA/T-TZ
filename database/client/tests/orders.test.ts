@@ -226,6 +226,37 @@ describe("stock", () => {
     expect(again).toMatchObject({ ok: false, code: "lines_unavailable" });
   });
 
+  it("takes up to 500 units of a product in one line when the stock is there (migration 0021)", async () => {
+    const setStock = (units: number) =>
+      t.db.query(`update stock_levels set available = $2 where product_id = (select id from products where slug = $1)`, [PANEL, units]);
+    const line = (quantity: number) => order({ lines: [{ product: PANEL, color: null, variant: null, quantity }], expectedTotalMinor: null });
+
+    // One unit short: refused, with nothing saved or reserved.
+    await setStock(499);
+    expect(await placeCodOrder(t.db, shopper, line(500))).toEqual({
+      ok: false,
+      code: "lines_unavailable",
+      problems: [{ product: PANEL, issue: "out_of_stock", available: 499 }],
+    });
+    expect(await orderCount()).toBe(0);
+    expect(await stock(PANEL)).toBe(499);
+
+    // Enough: the whole line is priced from the catalogue and reserved.
+    await setStock(500);
+    const placed = await placeCodOrder(t.db, shopper, line(500));
+    expect(placed).toMatchObject({ ok: true, totalMinor: 500 * 2_800_000, itemCount: 500 });
+    expect(await stock(PANEL)).toBe(0);
+    const [saved] = await t.db.query<{ quantity: number; line_total_minor: string }>(
+      `select l.quantity, l.line_total_minor::text as line_total_minor from order_lines l join orders o on o.id = l.order_id
+        where o.order_number = $1`,
+      [(placed as { orderNumber: string }).orderNumber],
+    );
+    expect(saved).toEqual({ quantity: 500, line_total_minor: String(500 * 2_800_000) });
+
+    // The table itself holds the same limit.
+    await expect(t.db.query(`update order_lines set quantity = 501 where quantity = 500`)).rejects.toThrow(/order_lines_quantity_check/);
+  });
+
   it("checks product options and unknown products", async () => {
     const result = await placeCodOrder(
       t.db,
@@ -260,7 +291,9 @@ describe("request validation", () => {
     const bad: Partial<PlaceCodOrderInput>[] = [
       { lines: [] },
       { lines: [{ product: PANEL, color: null, variant: null, quantity: 0 }] },
-      { lines: [{ product: PANEL, color: null, variant: null, quantity: 100 }] },
+      { lines: [{ product: PANEL, color: null, variant: null, quantity: 501 }] },
+      { lines: [{ product: PANEL, color: null, variant: null, quantity: 1000 }] },
+      { lines: [{ product: PANEL, color: null, variant: null, quantity: -5 }] },
       { lines: [{ product: PANEL, color: null, variant: null, quantity: 1.5 }] },
       {
         lines: [

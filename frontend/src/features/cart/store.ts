@@ -18,7 +18,8 @@ import { ACTIVE_COUNTRY } from "@tronic/country-config";
  * then the stores work in memory for the visit. Corrupt or tampered
  * entries are dropped on read.
  */
-export const MAX_LINE_QUANTITY = 10;
+/** Units of one product in a line (owner decision 2026-11-21; the database allows the same, migration 0021). */
+export const MAX_LINE_QUANTITY = 500;
 export const MAX_CART_LINES = 50;
 export const MAX_WISHLIST_ITEMS = 100;
 

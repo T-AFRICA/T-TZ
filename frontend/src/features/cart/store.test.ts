@@ -18,7 +18,7 @@ const bulb: CartLine = { productId: "sample-led-bulb", color: null, variant: "Wa
 describe("cart lines", () => {
   it("merges the same product and options and caps the quantity", () => {
     const once = addLine([], { ...bulb, quantity: 4 });
-    const twice = addLine(once, { ...bulb, quantity: 9 });
+    const twice = addLine(once, { ...bulb, quantity: 499 });
     expect(twice).toEqual([{ ...bulb, quantity: MAX_LINE_QUANTITY }]);
   });
 
@@ -27,11 +27,13 @@ describe("cart lines", () => {
     expect(lines.map((line) => line.variant)).toEqual(["Daylight", "Warm White"]);
   });
 
-  it("sets a quantity within 1–10 and removes a line", () => {
+  it("sets a quantity within 1–500 and removes a line", () => {
     const lines = addLine([], bulb);
     const key = lineKey(bulb);
     expect(setLineQuantity(lines, key, 0)[0]!.quantity).toBe(1);
-    expect(setLineQuantity(lines, key, 25)[0]!.quantity).toBe(MAX_LINE_QUANTITY);
+    expect(setLineQuantity(lines, key, 25)[0]!.quantity).toBe(25);
+    expect(setLineQuantity(lines, key, 500)[0]!.quantity).toBe(500);
+    expect(setLineQuantity(lines, key, 501)[0]!.quantity).toBe(MAX_LINE_QUANTITY);
     expect(removeLine(lines, key)).toEqual([]);
   });
 
@@ -51,7 +53,7 @@ describe("parsing stored data", () => {
         { ...bulb, quantity: 2.5 },
         { ...bulb, productId: "../../etc" },
         { ...bulb, color: 5 },
-        { ...bulb, variant: "Daylight", quantity: 99, price: 1 },
+        { ...bulb, variant: "Daylight", quantity: 9999, price: 1 },
         "nonsense",
         null,
       ]),

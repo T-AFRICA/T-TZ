@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import type { ProductSearchHit } from "@tronic/types";
 import { ArrowLeftIcon, ArrowRightIcon, CartIcon } from "@tronic/ui";
+import { QuantityField } from "@/components/cart/QuantityField";
 import { MAX_PURCHASE_QUANTITY, selectionLabel, usePurchaseActions } from "@/features/cart/purchase";
 import { placeholderDescription } from "@/features/catalog/description";
 import { formatHitPrice, isOnSale, productHref } from "./SearchResultItem";
@@ -358,9 +359,7 @@ function QuickViewDetails({
             >
               −
             </button>
-            <span aria-live="polite" className="w-7 text-center text-[13px] font-semibold tabular-nums">
-              {quantity}
-            </span>
+            <QuantityField value={quantity} max={MAX_PURCHASE_QUANTITY} onChange={setQuantity} label="Quantity" disabled={!hit.inStock} className="h-8 w-10 text-[13px]" />
             <button
               type="button"
               aria-label="Increase quantity"

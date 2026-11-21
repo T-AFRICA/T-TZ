@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { CartIcon } from "@tronic/ui";
+import { QuantityField } from "@/components/cart/QuantityField";
 import { MAX_PURCHASE_QUANTITY as MAX_QUANTITY, selectionLabel, usePurchaseActions } from "@/features/cart/purchase";
 import {
   discountPercent,
@@ -179,9 +180,7 @@ export function PurchasePanel({ product }: { product: SampleProduct }) {
           >
             −
           </button>
-          <span aria-live="polite" className="w-10 text-center text-[15px] font-semibold tabular-nums">
-            {String(quantity).padStart(2, "0")}
-          </span>
+          <QuantityField value={quantity} max={MAX_QUANTITY} onChange={setQuantity} label="Quantity" disabled={!product.inStock} className="h-9 w-12 text-[15px]" />
           <button
             type="button"
             aria-label="Increase quantity"

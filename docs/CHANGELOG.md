@@ -3,6 +3,22 @@
 Meaningful implementation changes, newest first. Dates are work dates;
 nothing below is released.
 
+## 2026-11-21 — Up to 500 units in an order line
+
+- Owner decision: a customer may order up to 500 units of one product in
+  a line (the website stopped at 10, the database at 99).
+- Storefront: the cart limit is 500, and the number between − and + on the
+  product page, the search quick view and the cart can be typed
+  (`QuantityField`): digits only, applied on Enter or on leaving the field,
+  held between 1 and 500. Buy Now links accept up to 500.
+- Country migration `0021_order_quantity_500.sql` (draft): `order_lines`
+  and `place_cod_order()` accept 1 to 500. Prices, the stock check and the
+  reservation are unchanged, so a line larger than the stock is still
+  refused. Owner action: run 0021 before deploying this storefront, or a
+  line of more than 99 units is refused as an invalid request.
+- Not changed: there is still no limit on unpaid Cash on Delivery orders
+  per account (security audit F-10); a larger line reserves more stock.
+
 ## 2026-11-21 — Security audit and first fixes
 
 - Audit of the whole repository: `docs/security/SECURITY_AUDIT_REPORT.md`

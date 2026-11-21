@@ -175,7 +175,10 @@ describe("Buy Now links", () => {
     expect(href).toBe("/checkout?buy=sample-extension&qty=3&color=White&variant=4-way");
     const params = Object.fromEntries(new URLSearchParams(href.split("?")[1]));
     expect(parseBuyNowParams(params)).toEqual({ productId: "sample-extension", color: "White", variant: "4-way", quantity: 3 });
-    expect(parseBuyNowParams({ buy: "sample-led-panel", qty: "99" })?.quantity).toBe(10);
+    expect(parseBuyNowParams({ buy: "sample-led-panel", qty: "99" })?.quantity).toBe(99);
+    expect(parseBuyNowParams({ buy: "sample-led-panel", qty: "500" })?.quantity).toBe(500);
+    expect(parseBuyNowParams({ buy: "sample-led-panel", qty: "501" })?.quantity).toBe(500);
+    expect(parseBuyNowParams({ buy: "sample-led-panel", qty: "-3" })?.quantity).toBe(1);
     expect(parseBuyNowParams({ buy: "sample-led-panel", qty: "abc" })?.quantity).toBe(1);
     expect(parseBuyNowParams({ buy: "../etc" })).toBeNull();
     expect(parseBuyNowParams({})).toBeNull();
