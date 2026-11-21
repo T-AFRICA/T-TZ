@@ -14,7 +14,7 @@ import {
 } from "@tronic/api-contracts";
 import { ANON, withAccess, type Access } from "../src/db";
 import { handleCountryAdminRequest, type CountryAdminResponse, type CountryAdminService } from "../src/country-admin";
-import { getCustomerTracking, placeCodOrder, setDeliveryPoint } from "../src/orders";
+import { getCustomerTracking, getDeliveryCode, placeCodOrder, setDeliveryPoint } from "../src/orders";
 import { createAuthUser, createShopper, createTestDatabase, type TestDatabase } from "../src/testing";
 
 /**
@@ -29,6 +29,8 @@ let signer: ServiceTokenSigner;
 let service: CountryAdminService;
 /** Orders need an account (migration 0015). */
 let shopper: Access;
+/** Another registered customer, who owns none of these orders. */
+let stranger: Access;
 
 const MANAGER = "0b6f3a52-7c1e-4f0a-9a57-3d0a5d6b9e11";
 const RIDER = "6a1d2c3b-4e5f-4a60-8b71-9c8d7e6f5a41";
@@ -72,8 +74,9 @@ async function packedOrder(): Promise<{ orderNumber: string; totalMinor: number 
   return order;
 }
 
-async function customerCode(orderNumber: string, contact: string): Promise<string | null> {
-  const [row] = await withAccess(t.db, ANON, (tx) => tx.query<{ result: unknown }>(`select customer_delivery_code($1, $2) as result`, [orderNumber, contact]));
+/** The delivery code as a signed-in customer sees it (the order's owner unless another access is given), with or without a contact. */
+async function customerCode(orderNumber: string, access: Access = shopper, contact: string | null = null): Promise<string | null> {
+  const [row] = await withAccess(t.db, access, (tx) => tx.query<{ result: unknown }>(`select customer_delivery_code($1, $2) as result`, [orderNumber, contact]));
   const raw: unknown = typeof row?.result === "string" ? JSON.parse(row.result) : row?.result;
   return raw && typeof raw === "object" ? String((raw as { code: unknown }).code) : null;
 }
@@ -85,6 +88,7 @@ beforeAll(async () => {
   t = await createTestDatabase();
   await createAuthUser(t.db, "someone@example.test");
   shopper = await createShopper(t.db);
+  stranger = await createShopper(t.db);
   const keys = await generateKeyPair("ES256", { extractable: true });
   signer = await createServiceTokenSigner({ privateKeyPem: await exportPKCS8(keys.privateKey), keyId: "k1" });
   const verifier = await createServiceTokenVerifier({ countryCode: "TZ", publicKeysPem: { k1: await exportSPKI(keys.publicKey) } });
@@ -136,17 +140,26 @@ describe("a rider's delivery", () => {
     expect((await asRider("POST", `/deliveries/${orderNumber}/pickup`, {}, OTHER_RIDER)).body).toEqual({ ok: false, code: "not_found" });
 
     // The customer has no code before the order leaves.
-    expect(await customerCode(orderNumber, PHONE)).toBeNull();
+    expect(await customerCode(orderNumber)).toBeNull();
     expect((await asRider("POST", `/deliveries/${orderNumber}/start`, {})).body).toEqual({ ok: false, code: "wrong_step", status: "packed" });
     expect((await asRider("POST", `/deliveries/${orderNumber}/pickup`, {})).body).toEqual({ ok: true, replayed: false, status: "dispatched", paymentStatus: "pending" });
     // Picked up: no other rider can be given it now.
     expect((await assign(orderNumber, OTHER_RIDER, "Asha")).body).toEqual({ ok: false, code: "not_assignable", status: "dispatched" });
     expect((await asRider("POST", `/deliveries/${orderNumber}/start`, {})).body).toMatchObject({ ok: true, status: "in_transit" });
 
-    const code = await customerCode(orderNumber, PHONE);
+    const code = await customerCode(orderNumber);
     expect(code).toMatch(/^[0-9]{6}$/);
-    expect(await customerCode(orderNumber, "neema@example.test")).toBe(code);
-    expect(await customerCode(orderNumber, "+255700000000")).toBeNull();
+    // Migration 0020: the code is the owner's alone. The order number with
+    // the checkout phone or email, which the rider is shown, is not enough:
+    // not for a visitor (who cannot run the function at all), and not for
+    // another signed-in customer who sends the right contact.
+    for (const contact of [PHONE, "neema@example.test"]) {
+      await expect(customerCode(orderNumber, ANON, contact)).rejects.toThrow(/permission denied/);
+      expect(await customerCode(orderNumber, stranger, contact)).toBeNull();
+    }
+    expect(await getDeliveryCode(t.db, ANON, orderNumber)).toBeNull();
+    expect(await getDeliveryCode(t.db, stranger, orderNumber)).toBeNull();
+    expect(await getDeliveryCode(t.db, shopper, orderNumber)).toBe(code);
     const wrong = code === "000000" ? "111111" : "000000";
 
     const proofs = { photo: image(), signature: image(300) };
@@ -161,7 +174,7 @@ describe("a rider's delivery", () => {
     const delivered = await handleCountryAdminRequest(service, { method: "POST", path: fullPath, authorization: `Bearer ${token}`, body: text });
     // Cash on Delivery: paid at delivery.
     expect(delivered.body).toEqual({ ok: true, replayed: false, status: "delivered", paymentStatus: "paid" });
-    expect(await customerCode(orderNumber, PHONE)).toBeNull();
+    expect(await customerCode(orderNumber)).toBeNull();
 
     const info = deliveryInfoResponseSchema.parse((await asManager("GET", `/orders/${orderNumber}/delivery`)).body);
     expect(info).toMatchObject({ ok: true, delivery: { cashCollectedMinor: totalMinor, proofs: ["photo", "signature"] } });
@@ -183,7 +196,7 @@ describe("a rider's delivery", () => {
     await assign(orderNumber);
     await asRider("POST", `/deliveries/${orderNumber}/pickup`, {});
     await asRider("POST", `/deliveries/${orderNumber}/start`, {});
-    const code = await customerCode(orderNumber, PHONE);
+    const code = await customerCode(orderNumber);
     const wrong = code === "000000" ? "111111" : "000000";
     const body = { code: wrong, cashCollectedMinor: totalMinor, photo: image(), signature: image() };
     const answers = [];
@@ -214,10 +227,10 @@ describe("a rider's delivery", () => {
 });
 
 describe("who can reach deliveries", () => {
-  it("customers and visitors reach only their code; no table, no rider function", async () => {
-    const refused = async (sql: string) => {
+  it("visitors reach nothing here, signed-in customers only their own code; no table, no rider function", async () => {
+    const refused = async (sql: string, access: Access = ANON) => {
       try {
-        await withAccess(t.db, ANON, (tx) => tx.query(sql));
+        await withAccess(t.db, access, (tx) => tx.query(sql));
         return "allowed";
       } catch (error) {
         return error instanceof Error && /permission denied/.test(error.message) ? "denied" : String(error);
@@ -227,7 +240,11 @@ describe("who can reach deliveries", () => {
     expect(await refused(`select * from delivery_proofs`)).toBe("denied");
     expect(await refused(`select rider_list_deliveries('TZ', gen_random_uuid())`)).toBe("denied");
     expect(await refused(`select admin_assign_delivery('TZ', 'x', gen_random_uuid(), 'x', gen_random_uuid())`)).toBe("denied");
-    expect(await refused(`select customer_delivery_code('TZ-000000-NOTHERE1', '+255712340001')`)).toBe("allowed");
+    // Migration 0020: a visitor cannot ask for a code at all.
+    expect(await refused(`select customer_delivery_code('TZ-000000-NOTHERE1', '+255712340001')`)).toBe("denied");
+    expect(await refused(`select customer_delivery_code('TZ-000000-NOTHERE1', null)`, shopper)).toBe("allowed");
+    expect(await refused(`select code from deliveries`, shopper)).toBe("denied");
+    expect(await refused(`select rider_list_deliveries('TZ', gen_random_uuid())`, shopper)).toBe("denied");
   });
 });
 
@@ -287,7 +304,7 @@ describe("live tracking", () => {
 
     // Delivered: the rider and the path are no longer shown.
     await asRider("POST", `/deliveries/${orderNumber}/start`, {});
-    const code = await customerCode(orderNumber, PHONE);
+    const code = await customerCode(orderNumber);
     const total = (await t.db.query<{ total_minor: number }>(`select total_minor from orders where order_number = $1`, [orderNumber]))[0]!.total_minor;
     await asRider("POST", `/deliveries/${orderNumber}/deliver`, { code, cashCollectedMinor: Number(total), photo: image(), signature: image() });
     expect(await customerTracking(orderNumber, PHONE)).toMatchObject({ status: "delivered", rider: null, path: [] });

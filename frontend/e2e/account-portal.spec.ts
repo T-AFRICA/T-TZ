@@ -329,13 +329,20 @@ test("a session ended on another device is cleared here once, not asked about on
   const sessionCookies = async () => (await context.cookies()).filter((cookie) => /^sb-.+-auth-token(\.\d+)?$/.test(cookie.name));
   await signIn(page, DAVID);
   expect(await sessionCookies()).not.toHaveLength(0);
+  // The tokens are out of reach of scripts in the page (HttpOnly, and Secure
+  // in a production build); the header reads a separate hint with no token.
+  for (const cookie of await sessionCookies()) expect(cookie).toMatchObject({ httpOnly: true, secure: true, sameSite: "Lax" });
+  const hint = async () => (await context.cookies()).find((cookie) => cookie.name === "tronic-signed-in");
+  expect(await hint()).toMatchObject({ value: "1", httpOnly: false });
+  expect(await page.evaluate(() => document.cookie)).not.toMatch(/auth-token/);
 
   // David signs out somewhere else: this browser still has its cookie.
   await revokeSessions(DAVID[0]);
   await page.goto(`${BASE}/account/orders`);
   await expect(page).toHaveURL(`${BASE}/login`);
-  // The dead cookie is gone, so the store offers Login again...
+  // The dead cookie and its hint are gone, so the store offers Login again...
   expect(await sessionCookies()).toHaveLength(0);
+  expect(await hint()).toBeUndefined();
   await page.goto(BASE + "/");
   await expect(page.getByRole("banner").getByRole("link", { name: "Login" })).toHaveAttribute("href", "/login");
 

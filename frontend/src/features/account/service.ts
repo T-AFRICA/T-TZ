@@ -161,7 +161,7 @@ export function createAccountService(user: SessionUser): AccountService {
 
     getDeliveryCode: async (order) =>
       ordersEnabled() && (order.status === "dispatched" || order.status === "in_transit")
-        ? getDeliveryCode(getDb(), access, order.orderNumber, null)
+        ? getDeliveryCode(getDb(), access, order.orderNumber)
         : null,
 
     listPayments: (query) =>

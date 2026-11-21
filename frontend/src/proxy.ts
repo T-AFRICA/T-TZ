@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { SESSION_COOKIE, SESSION_COOKIE_OPTIONS, SESSION_HINT_COOKIE, hintChange, hintCookie } from "@/features/auth/cookies";
 
 /**
  * Customer sessions (Supabase Auth via @supabase/ssr), on the account pages
@@ -17,10 +18,11 @@ import { NextResponse, type NextRequest } from "next/server";
  *   would ask about the same dead session again. A cookie is kept when the
  *   Auth server could not be reached: that says nothing about the session.
  *
+ * The session cookies are written HttpOnly (features/auth/cookies.ts); the
+ * separate "signed in" hint the header reads is kept in step with them here.
+ *
  * Other routes are untouched.
  */
-const SESSION_COOKIE = /^sb-.+-auth-token(\.\d+)?$/;
-
 function sessionCookieNames(request: NextRequest): string[] {
   return request.cookies
     .getAll()
@@ -43,6 +45,16 @@ function carryCookies(from: NextResponse, to: NextResponse): NextResponse {
 
 function expireCookies(response: NextResponse, names: readonly string[]): NextResponse {
   for (const name of names) response.cookies.set(name, "", { path: "/", maxAge: 0 });
+  const hint = hintCookie("clear");
+  response.cookies.set(hint.name, hint.value, hint.options);
+  return response;
+}
+
+/** Tells the header "signed in" when a verified session has no hint yet (a session from before the hint existed). */
+function withHint(request: NextRequest, response: NextResponse): NextResponse {
+  if (request.cookies.get(SESSION_HINT_COOKIE)?.value === "1") return response;
+  const hint = hintCookie("set");
+  response.cookies.set(hint.name, hint.value, hint.options);
   return response;
 }
 
@@ -59,12 +71,18 @@ export async function proxy(request: NextRequest) {
 
   let response = NextResponse.next({ request });
   const supabase = createServerClient(url, key, {
+    cookieOptions: SESSION_COOKIE_OPTIONS,
     cookies: {
       getAll: () => request.cookies.getAll(),
       setAll: (list) => {
         for (const { name, value } of list) request.cookies.set(name, value);
         response = NextResponse.next({ request });
         for (const { name, value, options } of list) response.cookies.set(name, value, options);
+        const change = hintChange(list);
+        if (change) {
+          const hint = hintCookie(change);
+          response.cookies.set(hint.name, hint.value, hint.options);
+        }
       },
     },
   });
@@ -72,8 +90,8 @@ export async function proxy(request: NextRequest) {
   const { data, error } = await supabase.auth.getUser();
 
   if (data.user) {
-    if (accountPage) return response;
-    return carryCookies(response, NextResponse.redirect(new URL("/account", request.url), 303));
+    if (accountPage) return withHint(request, response);
+    return withHint(request, carryCookies(response, NextResponse.redirect(new URL("/account", request.url), 303)));
   }
 
   const gone = sessionIsGone(error);

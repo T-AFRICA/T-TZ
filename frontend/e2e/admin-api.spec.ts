@@ -131,7 +131,7 @@ test("an order changed through the admin API is what the customer sees when trac
   ]);
 });
 
-test("a rider's delivery goes through this route with a full-size photo and signature; the customer sees the code while it is on its way", async ({ request, page }) => {
+test("a rider's delivery goes through this route with a full-size photo and signature; the order number and contact never show the code", async ({ request, page }) => {
   const stockBefore = await stockOf("sample-top-plug");
   const [placed] = await sql<{ result: { ok: boolean; order_number: string; total_minor: number } }>(
     `select place_cod_order($1::uuid, 'TZ',
@@ -148,14 +148,21 @@ test("a rider's delivery goes through this route with a full-size photo and sign
   expect(await (await call(request, "POST", `/deliveries/${number}/pickup`, "deliveries.perform", {})).json()).toMatchObject({ ok: true, status: "dispatched" });
   expect(await (await call(request, "POST", `/deliveries/${number}/start`, "deliveries.perform", {})).json()).toMatchObject({ ok: true, status: "in_transit" });
 
-  // The customer, tracking as a guest, sees the code now.
+  // Tracking with the order number and the checkout email, both of which the
+  // rider is shown, gives the status and says where the code is. It never
+  // shows the code (security audit 2026-11-21, F-01): that is in the
+  // signed-in account only.
   const [{ code }] = (await sql<{ code: string }>(`select d.code from deliveries d join orders o on o.id = d.order_id where o.order_number = $1`, [number])) as [{ code: string }];
   await page.goto(`${CONNECTED}/track-order`);
   await page.getByLabel(/Order number/).fill(number);
   await page.getByLabel(/Phone or email/).fill("rider.route@example.test");
   await page.getByRole("button", { name: "Track order" }).click();
-  await expect(page.getByRole("heading", { name: "Your delivery code" })).toBeVisible();
-  await expect(page.getByText(code, { exact: true })).toBeVisible();
+  await expect(page.getByText(new RegExp(`Order ${number}`))).toBeVisible();
+  await expect(page.getByText(/The delivery code to give the rider is in your account/)).toBeVisible();
+  await expect(page.getByRole("link", { name: "sign in and open the order" })).toHaveAttribute("href", "/account/orders");
+  await expect(page.getByRole("heading", { name: "Your delivery code" })).toHaveCount(0);
+  await expect(page.getByText(code, { exact: true })).toHaveCount(0);
+  expect(await page.content()).not.toContain(code);
 
   // Other endpoints keep the small limit; only "delivered" may carry the proofs.
   // (A body over the delivery limit is refused from its length before it is

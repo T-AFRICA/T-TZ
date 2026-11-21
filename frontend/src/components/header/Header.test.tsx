@@ -10,7 +10,7 @@ vi.mock("next/navigation", async (importOriginal) => ({
 }));
 
 afterEach(() => {
-  document.cookie = "sb-testproject-auth-token=; path=/; max-age=0";
+  document.cookie = "tronic-signed-in=; path=/; max-age=0";
 });
 
 describe("Header", () => {
@@ -38,7 +38,7 @@ describe("Header", () => {
   });
 
   it("offers a signed-in customer their account instead of Login, in the header and the drawer", () => {
-    document.cookie = "sb-testproject-auth-token=session; path=/";
+    document.cookie = "tronic-signed-in=1; path=/";
     render(<Header />);
     // hidden: true also finds the link inside the closed drawer.
     const accountLinks = screen.getAllByRole("link", { name: "Account", hidden: true });

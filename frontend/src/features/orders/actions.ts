@@ -1,8 +1,9 @@
 "use server";
 
-import { ANON, getDeliveryCode, trackOrder } from "@tronic/database";
+import { trackOrder } from "@tronic/database";
 import { normalizeTzPhone } from "@/features/checkout/validation";
 import { getDb, ordersEnabled } from "@/features/data/source";
+import { allowAttempt } from "@/features/security/throttle";
 import { ORDER_NUMBER_PATTERN } from "./status";
 
 /**
@@ -10,17 +11,25 @@ import { ORDER_NUMBER_PATTERN } from "./status";
  * checkout email or phone arrive in the POST body, with or without
  * JavaScript, and the answer goes back in the response: neither ever
  * appears in a URL, a log or browser history.
+ *
+ * The answer is the order's status, total and date. It never includes the
+ * delivery code: the rider is shown the order number and the customer's
+ * phone, so that pair must not be enough to read the code that proves the
+ * rider met the customer. The code is on the order's page in the signed-in
+ * account (security audit 2026-11-21, F-01).
  */
 export type TrackOrderState =
   | { status: "idle" }
   | { status: "unavailable" }
   | { status: "invalid"; fieldErrors: { orderNumber?: string; contact?: string } }
   | { status: "not_found" }
+  /** Too many tries for this order or from this client; nothing was looked up. */
+  | { status: "rate_limited" }
   | {
       status: "found";
       order: { orderNumber: string; status: string; createdAt: string; totalMinor: number; currency: string; itemCount: number };
-      /** The code for the rider, while the order is on its way; null otherwise. */
-      deliveryCode: string | null;
+      /** True while the order is on its way: the customer's code is waiting in their account. */
+      codeInAccount: boolean;
     };
 
 function text(form: FormData, key: string): string {
@@ -36,13 +45,14 @@ export async function trackOrderAction(_previous: TrackOrderState, form: FormDat
   if (!ORDER_NUMBER_PATTERN.test(orderNumber)) fieldErrors.orderNumber = "Enter the order number from your confirmation.";
   if (contactRaw.length < 5 || contactRaw.length > 254) fieldErrors.contact = "Enter the phone number or email used at checkout.";
   if (fieldErrors.orderNumber || fieldErrors.contact) return { status: "invalid", fieldErrors };
+  // The phone or email is the only secret here; without a limit it can be guessed.
+  if (!(await allowAttempt("trackOrder", orderNumber))) return { status: "rate_limited" };
 
   // Orders store the phone as +255…; accept it as typed at checkout too.
   const contact = contactRaw.includes("@") ? contactRaw : (normalizeTzPhone(contactRaw) ?? contactRaw);
   const found = await trackOrder(getDb(), orderNumber, contact);
   if (!found.found) return { status: "not_found" };
   const { orderNumber: number, status, createdAt, totalMinor, currency, itemCount } = found;
-  const onTheWay = status === "dispatched" || status === "in_transit";
-  const deliveryCode = onTheWay ? await getDeliveryCode(getDb(), ANON, number, contact) : null;
-  return { status: "found", order: { orderNumber: number, status, createdAt, totalMinor, currency, itemCount }, deliveryCode };
+  const codeInAccount = status === "dispatched" || status === "in_transit";
+  return { status: "found", order: { orderNumber: number, status, createdAt, totalMinor, currency, itemCount }, codeInAccount };
 }

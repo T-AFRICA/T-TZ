@@ -1,11 +1,14 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { connection } from "next/server";
+import { SESSION_COOKIE_OPTIONS, hintChange, hintCookie } from "./cookies";
 
 /**
  * Supabase Auth on the server. The browser never talks to Supabase: the
  * forms post to server actions, which call Supabase here and keep the
- * session in httpOnly cookies managed by @supabase/ssr.
+ * session in cookies managed by @supabase/ssr. They are written HttpOnly
+ * (and Secure in production) through SESSION_COOKIE_OPTIONS; that library's
+ * own default leaves them readable by scripts in the page.
  *
  * Configuration (server-only environment variables):
  *   SUPABASE_URL       the project URL
@@ -27,11 +30,17 @@ export async function supabaseServer() {
   if (!authConfigured()) throw new Error("Supabase Auth is not configured");
   const store = await cookies();
   return createServerClient(process.env.SUPABASE_URL as string, process.env.SUPABASE_ANON_KEY as string, {
+    cookieOptions: SESSION_COOKIE_OPTIONS,
     cookies: {
       getAll: () => store.getAll(),
       setAll: (list) => {
         try {
           for (const { name, value, options } of list) store.set(name, value, options);
+          const change = hintChange(list);
+          if (change) {
+            const hint = hintCookie(change);
+            store.set(hint.name, hint.value, hint.options);
+          }
         } catch {
           // Server components cannot set cookies; the proxy refreshes them.
         }

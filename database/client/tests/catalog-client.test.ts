@@ -74,6 +74,25 @@ describe("database catalogue client", () => {
     expect(load).toHaveBeenCalledTimes(4);
   });
 
+  it("prices many lines at once with one read, then reads again for the next quote", async () => {
+    const load = vi.fn((country: "TZ" | "KE" | "UG") => loadPublicProducts(t.db, country));
+    const fresh = new DatabaseCatalogClient(t.db, { load, cacheMs: 0 });
+    // A checkout quote asks for every line at the same moment (up to 50).
+    const products = await Promise.all(Array.from({ length: 50 }, () => fresh.getProduct("sample-extension", "TZ")));
+    expect(products.every((product) => product?.id === "sample-extension")).toBe(true);
+    expect(load).toHaveBeenCalledTimes(1);
+    // Nothing is kept: the next quote reads the current prices and stock.
+    await fresh.getProduct("sample-extension", "TZ");
+    expect(load).toHaveBeenCalledTimes(2);
+
+    // A read that fails is not handed to later calls.
+    const failing = vi.fn<(country: "TZ" | "KE" | "UG") => Promise<never>>(() => Promise.reject(new Error("database away")));
+    const broken = new DatabaseCatalogClient(t.db, { load: failing, cacheMs: 0 });
+    await expect(broken.getProduct("sample-extension", "TZ")).rejects.toThrow("database away");
+    await expect(broken.getProduct("sample-extension", "TZ")).rejects.toThrow("database away");
+    expect(failing).toHaveBeenCalledTimes(2);
+  });
+
   it("returns nothing for a country with no public catalogue", async () => {
     expect(await live.getProduct("sample-led-panel", "KE")).toBeNull();
     expect((await live.listProducts({ country: "UG" })).total).toBe(0);

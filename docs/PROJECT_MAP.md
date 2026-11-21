@@ -63,10 +63,14 @@ browser connections to POS, SAP, payment gateways or meter infrastructure.
 - Storefront: `next.config.ts` (transpilePackages), `eslint.config.mjs`,
   `vitest.config.ts` (jsdom + `@/` alias), `postcss.config.mjs`.
 - CI: `.github/workflows/ci.yml` (lint → typecheck → test → build) and
-  `security.yml` (hygiene + secret scan), actions pinned to SHAs.
+  `security.yml` (hygiene + secret scan + dependency audit), actions
+  pinned to SHAs.
 
 ## Documentation
 
 - `docs/PROGRESS.md` — module tracker. `docs/DESIGN_SYSTEM.md` — tokens and
   rules. `docs/CHANGELOG.md` — meaningful changes. `docs/ssd/ADR-001` —
   Module 01 foundation decisions.
+- `docs/security/` — `SECURITY_ARCHITECTURE.md` (what protects what),
+  `THREAT_MODEL.md`, `SECURITY_CHECKLIST.md` (every change, owner actions,
+  release gates), `SECURITY_AUDIT_REPORT.md` (findings, fixed and open).

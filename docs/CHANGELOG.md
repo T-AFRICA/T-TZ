@@ -3,6 +3,34 @@
 Meaningful implementation changes, newest first. Dates are work dates;
 nothing below is released.
 
+## 2026-11-21 — Security audit and first fixes
+
+- Audit of the whole repository: `docs/security/SECURITY_AUDIT_REPORT.md`
+  (29 findings, none critical; 9 fixed here, 20 open with a recommendation
+  each). New: `SECURITY_ARCHITECTURE.md`, `THREAT_MODEL.md`,
+  `SECURITY_CHECKLIST.md` (every-change list, owner actions, release
+  gates) and a "Security in every change" section in `CLAUDE.md`.
+- Delivery code: Track Order (order number plus phone or email) no longer
+  shows it, because the rider is shown both; it is on the order's page in
+  the signed-in account. Country migration
+  `0020_delivery_code_owner_only.sql` (draft) makes the database refuse it
+  too and closes new functions to everyone by default. Owner action: run
+  0020.
+- Storefront session cookies are HttpOnly, and Secure in production; the
+  header's Account/Login label reads a separate cookie with no token.
+- Attempt limits on sign-in, sign-up, password reset and Track Order (per
+  email or order number and per client; in memory per server instance).
+- The email-link route exchanges only sign-up and reset links.
+- A checkout quote reads the catalogue once instead of once per line.
+- `maplibre-gl` 5.24.0 to 6.16.0 in both apps (advisory
+  GHSA-jrc7-96c5-q579); CI runs `pnpm audit --prod` for high and critical
+  advisories ("Dependency audit" job, not yet a required check).
+- `myriad-pro/` is ignored by Git.
+- Tests: the functions a visitor and a signed-in customer can run are an
+  explicit list, with Row Level Security and search-path checks
+  (`function-grants.test.ts`); delivery code refusals; cookie options and
+  hint; attempt limits; email-link types; tracking answers.
+
 ## 2026-11-20 — Reports in the Central Admin
 
 - Owner decisions: four reports (sales; products and categories; orders

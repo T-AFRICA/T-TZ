@@ -62,10 +62,15 @@ interface ChildRow {
 
 export class DatabaseCatalogClient implements CatalogClient {
   private cache = new Map<CountryCode, { at: number; products: Promise<Product[]> }>();
+  /** Reads under way when nothing is cached: calls that arrive meanwhile share them. */
+  private reading = new Map<CountryCode, Promise<Product[]>>();
 
   /**
-   * `cacheMs` 0 reads the database on every call: checkout uses that, so a
-   * customer is always quoted the current price and stock.
+   * `cacheMs` 0 keeps nothing: checkout uses that, so a customer is always
+   * quoted the current price and stock. Calls that arrive while a read is
+   * under way share that read, so pricing fifty lines at once is one read
+   * of the catalogue, not fifty (a checkout quote is open to visitors, and
+   * each read is several queries); the next call after it reads again.
    * `load` replaces the read itself (default: loadPublicProducts on `db`);
    * it must return the same public catalogue for the country.
    */
@@ -85,7 +90,17 @@ export class DatabaseCatalogClient implements CatalogClient {
   /** The country's public catalogue, loaded as anon (RLS applies). */
   loadCountry(country: CountryCode): Promise<Product[]> {
     const cacheMs = this.options.cacheMs ?? CACHE_MS;
-    if (cacheMs <= 0) return this.read(country);
+    if (cacheMs <= 0) {
+      const underWay = this.reading.get(country);
+      if (underWay) return underWay;
+      const fresh = this.read(country);
+      this.reading.set(country, fresh);
+      const done = () => {
+        if (this.reading.get(country) === fresh) this.reading.delete(country);
+      };
+      fresh.then(done, done);
+      return fresh;
+    }
     const hit = this.cache.get(country);
     if (hit && this.now() - hit.at < cacheMs) return hit.products;
     const products = this.read(country);
