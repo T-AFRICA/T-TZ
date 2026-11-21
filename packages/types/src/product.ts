@@ -46,6 +46,14 @@ export interface Product {
   /** Pre-discount price in minor units; when present the UI shows a saving. */
   wasPriceMinor?: number;
   inStock: boolean;
+  /**
+   * Units available to buy in the listing country, when the catalogue
+   * knows (owner decision 2026-11-21, country migration 0022). Absent in
+   * the sample catalogue and before that migration: the storefront then
+   * says only "in stock" or "out of stock". Shown to customers. It is not a
+   * reservation: the order itself checks the stock again.
+   */
+  stockAvailable?: number;
   /** Countries whose storefront may show this product. */
   countries: readonly CountryCode[];
   /** Inactive products are hidden everywhere, including direct links. */

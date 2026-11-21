@@ -253,13 +253,26 @@ test("customers see only their own orders; guests track with number plus contact
   expect(new URL(guest.url()).search).toBe("");
 });
 
+/**
+ * Opens a page and reloads it until `text` is shown. The catalogue pages
+ * keep what they read for a few seconds (a minute on the live site), so a
+ * stock change made a moment ago appears on a later load, not at once.
+ */
+async function openUntilShown(page: Page, url: string, text: string) {
+  await expect(async () => {
+    await page.goto(url);
+    await expect(page.getByText(text).first()).toBeVisible({ timeout: 1_000 });
+  }).toPass({ timeout: 40_000, intervals: [1_000, 2_000, 3_000] });
+}
+
 test("a typed quantity above ten goes through the product page, the cart, checkout and the saved order, up to 500 units", async ({ page }) => {
   const email = "bulk.flow@example.test";
   const stockBefore = await stockOf(PANEL.slug);
   await setStock(PANEL.slug, 500);
   try {
     await signIn(page, ...SHOPPER);
-    await page.goto(`${BASE}/products/${PANEL.slug}`);
+    // The quantity cannot go above the stock the page knows about.
+    await openUntilShown(page, `${BASE}/products/${PANEL.slug}`, "500 in stock");
     await expect(page.getByRole("heading", { level: 1, name: PANEL.name })).toBeVisible();
 
     // The number between − and + can be typed (owner decision 2026-11-21).
@@ -296,6 +309,41 @@ test("a typed quantity above ten goes through the product page, the cart, checko
     );
     expect(lines.map((line) => Number(line.quantity))).toEqual([500]);
     expect(await stockOf(PANEL.slug)).toBe(0);
+  } finally {
+    await setStock(PANEL.slug, stockBefore);
+  }
+});
+
+test("the product page and the listing show how many units are available, and no more than that can be chosen", async ({ page }) => {
+  const stockBefore = await stockOf(PANEL.slug);
+  const product = `${BASE}/products/${PANEL.slug}`;
+  // Three stock changes, each seen only after the page's short cache: allow for the waits.
+  test.setTimeout(180_000);
+  await setStock(PANEL.slug, 37);
+  try {
+    // Owner decision 2026-11-21: the count, not only "In stock".
+    await openUntilShown(page, product, "37 in stock");
+    await expect(page.getByRole("heading", { level: 1, name: PANEL.name })).toBeVisible();
+    const quantity = page.getByRole("textbox", { name: "Quantity" }).first();
+    await quantity.fill("120");
+    await quantity.press("Enter");
+    await expect(quantity).toHaveValue("37");
+    await expect(page.getByRole("button", { name: "Increase quantity" }).first()).toBeDisabled();
+    await expect(page.getByText("Only 37 available").first()).toBeVisible();
+    await page.screenshot({ path: "test-results/quantity/stock-count.png" });
+
+    await openUntilShown(page, `${BASE}/categories/lighting/indoor-lighting/panel-lights`, "37 in stock");
+
+    // Few left, then none.
+    await setStock(PANEL.slug, 3);
+    await openUntilShown(page, product, "Only 3 left");
+    await setStock(PANEL.slug, 0);
+    await expect(async () => {
+      await page.goto(product);
+      // Nothing to choose and nothing to buy on this product's own panel.
+      await expect(page.getByRole("textbox", { name: "Quantity" }).first()).toBeDisabled({ timeout: 1_000 });
+      await expect(page.getByRole("button", { name: "Increase quantity" }).first()).toBeDisabled({ timeout: 1_000 });
+    }).toPass({ timeout: 40_000, intervals: [1_000, 2_000, 3_000] });
   } finally {
     await setStock(PANEL.slug, stockBefore);
   }

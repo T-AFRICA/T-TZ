@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { CartIcon, Tilt3D } from "@tronic/ui";
 import { WishlistButton } from "@/components/wishlist/WishlistButton";
+import { stockLabel } from "@/features/catalog/stock";
 import { AddToCartButton } from "./AddToCartButton";
 import { discountPercent, formatPrice, type SampleProduct } from "./sampleProducts";
 
@@ -97,7 +98,7 @@ export function ProductCard({
             }`}
           >
             <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-current" />
-            {product.inStock ? "In stock" : "Out of stock"}
+            {stockLabel(product)}
           </p>
           {product.inStock ? (
             <AddToCartButton product={product} />

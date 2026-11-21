@@ -51,7 +51,8 @@ finding), **Later** (the feature does not exist yet).
 | T7 | Pay less by changing a price, total or currency in the browser | The database prices every line and refuses a total that changed | Done |
 | T8 | Create duplicate orders by retrying or double-clicking | Idempotency key bound to the customer and the request | Done |
 | T9 | Buy stock that is not there, or two people buy the last unit | Row locks and a non-negative stock check in one transaction | Done |
-| T10 | Reserve all stock with unpaid Cash on Delivery orders | None beyond needing an account | Open (F-10) |
+| T10 | Reserve all stock with unpaid Cash on Delivery orders | None beyond needing an account. A line may hold 500 units and the stock count is shown on the site (owner decisions 2026-11-21), so the amount to reserve is known | Open (F-10) |
+| T10a | A competitor reads stock levels from the public site | Accepted by the owner: the count of products on sale is public. Counts of products not on sale stay private | Accepted |
 | T11 | Exhaust the database with cheap requests | Search is limited; a checkout quote is one catalogue read | Partly (no limit on quotes or page views; needs an edge rule) |
 | T12 | Track someone else's order with only its number | The number has 32 random bits and needs the checkout phone or email as well; tries per order are limited | Partly (F-12: the database itself does not count tries) |
 | T13 | Follow a rider or learn a customer's location | Shown only while the order is on its way, to someone who knows the number and the contact | Partly (F-12) |

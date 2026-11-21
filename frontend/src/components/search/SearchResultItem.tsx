@@ -2,6 +2,7 @@ import Image from "next/image";
 import type { ProductSearchHit } from "@tronic/types";
 import { ChevronRightIcon } from "@tronic/ui";
 import { ACTIVE_COUNTRY, formatMoney } from "@tronic/country-config";
+import { stockLabel } from "@/features/catalog/stock";
 
 /** Product page of a hit; the only product route (no duplicate pages). */
 export function productHref(hit: Pick<ProductSearchHit, "slug">): string {
@@ -86,7 +87,7 @@ export function SearchResultItem({ hit, query }: { hit: ProductSearchHit; query:
         <span
           className={`mt-0.5 text-[11px] font-medium ${hit.inStock ? "text-[var(--color-success)]" : "text-[var(--text-muted)]"}`}
         >
-          {hit.inStock ? "In stock" : "Out of stock"}
+          {stockLabel(hit)}
         </span>
       </span>
       <ChevronRightIcon size={16} className="search-row-chevron shrink-0 text-[var(--text-muted)] max-sm:hidden" />

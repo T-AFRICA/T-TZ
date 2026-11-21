@@ -74,6 +74,10 @@ changes orders; re-authentication before high-risk admin actions.
   without it).
 - Customers and visitors have no write access to orders, order lines, stock
   or payments. All changes go through functions.
+- The stock table is private. What the storefront shows is one number per
+  product on sale: the units available, through the `available` column of
+  `storefront_products` (migration 0022, owner decision 2026-11-21). The
+  count of a draft, hidden or unlisted product is not given out.
 - Functions that run with their owner's rights pin `search_path`, check the
   caller inside, and use no dynamic SQL.
 - The functions a visitor or a signed-in customer can run are an explicit

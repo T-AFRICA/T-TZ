@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { CartIcon } from "@tronic/ui";
 import { QuantityField } from "@/components/cart/QuantityField";
+import { limitHint, purchaseLimit, stockLabel } from "@/features/catalog/stock";
 import { MAX_PURCHASE_QUANTITY as MAX_QUANTITY, selectionLabel, usePurchaseActions } from "@/features/cart/purchase";
 import {
   discountPercent,
@@ -24,6 +25,8 @@ export function PurchasePanel({ product }: { product: SampleProduct }) {
   const [variant, setVariant] = useState<string | null>(product.variants?.[0] ?? null);
   const [color, setColor] = useState<string | null>(product.colors?.[0]?.name ?? null);
   const [quantity, setQuantity] = useState(1);
+  // No more than is available, when the catalogue says how many that is.
+  const maxQuantity = purchaseLimit(product, MAX_QUANTITY);
 
   const saving = discountPercent(product);
   const selection = selectionLabel(color, variant);
@@ -78,7 +81,7 @@ export function PurchasePanel({ product }: { product: SampleProduct }) {
           }`}
         >
           <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-current" />
-          {product.inStock ? "In stock" : "Out of stock"}
+          {stockLabel(product)}
         </span>
         <span className="tracking-wide text-[var(--text-muted)]">SKU {sku}</span>
       </div>
@@ -164,9 +167,9 @@ export function PurchasePanel({ product }: { product: SampleProduct }) {
           <p aria-hidden="true" className="text-sm font-semibold">
             Quantity
           </p>
-          {quantity >= MAX_QUANTITY ? (
+          {quantity >= maxQuantity ? (
             <p className="mt-0.5 text-[11px] leading-tight text-[var(--text-muted)]">
-              Maximum quantity reached
+              {limitHint(product, MAX_QUANTITY)}
             </p>
           ) : null}
         </div>
@@ -180,12 +183,12 @@ export function PurchasePanel({ product }: { product: SampleProduct }) {
           >
             −
           </button>
-          <QuantityField value={quantity} max={MAX_QUANTITY} onChange={setQuantity} label="Quantity" disabled={!product.inStock} className="h-9 w-12 text-[15px]" />
+          <QuantityField value={quantity} max={maxQuantity} onChange={setQuantity} label="Quantity" disabled={!product.inStock} className="h-9 w-12 text-[15px]" />
           <button
             type="button"
             aria-label="Increase quantity"
-            onClick={() => setQuantity((q) => Math.min(MAX_QUANTITY, q + 1))}
-            disabled={!product.inStock || quantity >= MAX_QUANTITY}
+            onClick={() => setQuantity((q) => Math.min(maxQuantity, q + 1))}
+            disabled={!product.inStock || quantity >= maxQuantity}
             className={plusClasses}
           >
             +

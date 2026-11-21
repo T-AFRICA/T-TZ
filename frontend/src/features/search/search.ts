@@ -78,6 +78,7 @@ export function toSearchHit(product: Product): ProductSearchHit {
     ...(product.wasPriceMinor !== undefined ? { wasPriceMinor: product.wasPriceMinor } : {}),
     currency: product.currency,
     inStock: product.inStock,
+    ...(product.stockAvailable !== undefined ? { stockAvailable: product.stockAvailable } : {}),
     ...(description ? { description: truncateText(description, PREVIEW_DESCRIPTION_CHARS) } : {}),
     ...(specifications.length > 0
       ? { specifications: orderSpecifications(specifications).slice(0, PREVIEW_SPEC_COUNT) }

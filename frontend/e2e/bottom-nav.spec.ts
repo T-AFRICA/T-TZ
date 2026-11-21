@@ -109,7 +109,8 @@ test("Products opens the list of every product, with categories, stock and sort"
   // Sort and stock live in the URL, so back and refresh keep them.
   await page.getByLabel("Sort by").selectOption("price-asc");
   await expect(page).toHaveURL(`${BASE}/products?sort=price-asc`);
-  const prices = (await cards.allTextContents()).map((text) => Number(/TZS\s*([\d,]+)/.exec(text)?.[1]?.replaceAll(",", "")));
+  // Thousands groups only: on a card the stock count ("25 in stock") follows the price with no space in the text.
+  const prices = (await cards.allTextContents()).map((text) => Number(/TZS\s*(\d{1,3}(?:,\d{3})*)/.exec(text)?.[1]?.replaceAll(",", "")));
   expect(prices.length).toBe(12);
   expect(prices).toEqual([...prices].sort((a, b) => a - b));
   await page.getByRole("link", { name: "In stock only" }).click();

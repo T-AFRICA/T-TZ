@@ -17,6 +17,7 @@ const FOR_EVERYONE = [
   "public_product_image",
   "search_compact",
   "search_products",
+  "storefront_available",
   "track_order",
 ];
 
