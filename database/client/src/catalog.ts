@@ -52,6 +52,8 @@ interface ViewRow {
   was_price_minor: unknown;
   in_stock: boolean;
   image: string | null;
+  /** Units available (migration 0022): undefined on a database without it, null without a stock record. */
+  available?: unknown;
   [key: string]: unknown;
 }
 
@@ -186,6 +188,8 @@ export function rowToProduct(
     row.was_price_minor === null || row.was_price_minor === undefined
       ? undefined
       : toSafeInteger(row.was_price_minor, `was_price_minor of ${row.slug}`);
+  // Units available: only when the view has the column (migration 0022) and the product has a stock record.
+  const stockAvailable = row.available === null || row.available === undefined ? undefined : toSafeInteger(row.available, `available of ${row.slug}`);
   const [first, ...rest] = extra.images.length > 0 ? extra.images : row.image ? [row.image] : [];
   return {
     id: row.slug,
@@ -205,6 +209,7 @@ export function rowToProduct(
     currency: row.currency,
     ...(wasPriceMinor !== undefined && wasPriceMinor > priceMinor ? { wasPriceMinor } : {}),
     inStock: row.in_stock,
+    ...(stockAvailable !== undefined ? { stockAvailable } : {}),
     countries: [row.country_code as CountryCode],
     active: true,
     sequence: Number(row.sequence),

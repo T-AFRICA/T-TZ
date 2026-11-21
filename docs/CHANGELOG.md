@@ -3,6 +3,28 @@
 Meaningful implementation changes, newest first. Dates are work dates;
 nothing below is released.
 
+## 2026-11-21 — Stock count on the storefront
+
+- Owner decision: customers see how many units of a product are available,
+  not only "In stock" or "Out of stock".
+- Country migration `0022_storefront_stock_count.sql` (draft): the
+  storefront view gains `available`, the count for a product on sale. The
+  stock table stays private; the count of a product that is not on sale is
+  not given out.
+- Storefront: product page, product cards, search results and the search
+  quick view say "120 in stock", or "Only 3 left" at five or fewer. The
+  quantity on the product page and the quick view cannot go above what is
+  available ("Only 37 available"). Without the migration, and in the sample
+  catalogue, the label is "In stock" as before.
+- The quantity field takes one digit more than its limit, so a number over
+  the limit becomes the limit instead of losing its last digit.
+- The count is information, not a reservation: the order checks the stock
+  again. It can be up to a minute behind (the catalogue cache,
+  `CATALOG_CACHE_SECONDS`). The cart page does not show the count yet.
+- Security: stock levels of products on sale are now public on purpose
+  (threat model T10a); finding F-10 (no limit on unpaid orders per account)
+  is still open and matters more with it.
+
 ## 2026-11-21 — Up to 500 units in an order line
 
 - Owner decision: a customer may order up to 500 units of one product in

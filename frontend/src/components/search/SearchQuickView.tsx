@@ -6,6 +6,7 @@ import Link from "next/link";
 import type { ProductSearchHit } from "@tronic/types";
 import { ArrowLeftIcon, ArrowRightIcon, CartIcon } from "@tronic/ui";
 import { QuantityField } from "@/components/cart/QuantityField";
+import { limitHint, purchaseLimit, stockLabel } from "@/features/catalog/stock";
 import { MAX_PURCHASE_QUANTITY, selectionLabel, usePurchaseActions } from "@/features/cart/purchase";
 import { placeholderDescription } from "@/features/catalog/description";
 import { formatHitPrice, isOnSale, productHref } from "./SearchResultItem";
@@ -149,7 +150,7 @@ export function SearchQuickView({
               }`}
             >
               <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-current" />
-              {active.inStock ? "In stock" : "Out of stock"}
+              {stockLabel(active)}
             </p>
           </div>
         </div>
@@ -175,6 +176,7 @@ function QuickViewDetails({
   const [color, setColor] = useState<string | null>(null);
   const [variant, setVariant] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
+  const maxQuantity = purchaseLimit(hit, MAX_PURCHASE_QUANTITY);
   const [expanded, setExpanded] = useState(false);
   const [status, setStatus] = useState<"idle" | "added" | "leaving">("idle");
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -359,12 +361,12 @@ function QuickViewDetails({
             >
               −
             </button>
-            <QuantityField value={quantity} max={MAX_PURCHASE_QUANTITY} onChange={setQuantity} label="Quantity" disabled={!hit.inStock} className="h-8 w-10 text-[13px]" />
+            <QuantityField value={quantity} max={maxQuantity} onChange={setQuantity} label="Quantity" disabled={!hit.inStock} className="h-8 w-10 text-[13px]" />
             <button
               type="button"
               aria-label="Increase quantity"
-              disabled={!hit.inStock || quantity >= MAX_PURCHASE_QUANTITY}
-              onClick={() => setQuantity((q) => Math.min(MAX_PURCHASE_QUANTITY, q + 1))}
+              disabled={!hit.inStock || quantity >= maxQuantity}
+              onClick={() => setQuantity((q) => Math.min(maxQuantity, q + 1))}
               className={stepButton}
             >
               +
@@ -405,7 +407,7 @@ function QuickViewDetails({
           >
             {status === "added"
               ? "Added to your cart."
-              : (hint ?? (quantity >= MAX_PURCHASE_QUANTITY ? "Maximum quantity reached" : "Prices in Tanzanian shillings (TZS)."))}
+              : (hint ?? (quantity >= maxQuantity ? limitHint(hit, MAX_PURCHASE_QUANTITY) : "Prices in Tanzanian shillings (TZS)."))}
           </p>
           <Link
             href={productHref(hit)}

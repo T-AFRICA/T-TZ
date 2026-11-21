@@ -7,7 +7,9 @@ import { useState, type KeyboardEvent } from "react";
  * customer can also type: with up to 500 units in a line, stepping one at a
  * time is not enough.
  *
- * Only digits are kept while typing. The value is applied when the field is
+ * Only digits are kept while typing, one more than the limit has, so a
+ * number over the limit becomes the limit instead of losing its last
+ * digit. The value is applied when the field is
  * left or Enter is pressed, held between 1 and `max`; an empty field goes
  * back to the quantity it had. This is a convenience only: the server
  * checks the quantity again when the order is priced and placed.
@@ -64,7 +66,7 @@ export function QuantityField({
         autoComplete="off"
         aria-label={label}
         disabled={disabled}
-        maxLength={String(max).length}
+        maxLength={String(max).length + 1}
         value={draft ?? String(value)}
         onFocus={(event) => event.currentTarget.select()}
         onChange={(event) => setDraft(event.target.value.replace(/\D/g, ""))}

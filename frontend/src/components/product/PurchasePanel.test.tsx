@@ -105,7 +105,7 @@ describe("PurchasePanel", () => {
     const field = screen.getByRole("textbox", { name: "Quantity" });
     const increase = screen.getByRole("button", { name: "Increase quantity" });
 
-    // The field takes three digits; anything over 500 becomes 500.
+    // Anything over 500 becomes 500.
     await user.clear(field);
     await user.type(field, "9999");
     await user.tab();
@@ -124,6 +124,26 @@ describe("PurchasePanel", () => {
     await user.clear(field);
     await user.tab();
     expect(field).toHaveValue("1");
+  });
+
+  it("shows how many units are available and lets no more than that be chosen (owner decision 2026-11-21)", async () => {
+    const user = userEvent.setup();
+    const { unmount } = renderPanel({ ...baseProduct, stockAvailable: 37 });
+    expect(screen.getByText("37 in stock")).toBeInTheDocument();
+    const field = screen.getByRole("textbox", { name: "Quantity" });
+    await user.clear(field);
+    await user.type(field, "120{Enter}");
+    expect(field).toHaveValue("37");
+    expect(screen.getByRole("button", { name: "Increase quantity" })).toBeDisabled();
+    expect(screen.getByText("Only 37 available")).toBeInTheDocument();
+    unmount();
+
+    // Few left is said plainly; without a count the label is as before.
+    const few = renderPanel({ ...baseProduct, stockAvailable: 3 });
+    expect(screen.getByText("Only 3 left")).toBeInTheDocument();
+    few.unmount();
+    renderPanel(baseProduct);
+    expect(screen.getByText("In stock")).toBeInTheDocument();
   });
 
   it("shows the product's own SKU, not one made from its id", () => {

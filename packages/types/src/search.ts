@@ -27,6 +27,8 @@ export interface ProductSearchHit {
   wasPriceMinor?: number;
   currency: string;
   inStock: boolean;
+  /** Units available, when the catalogue knows (see Product.stockAvailable). */
+  stockAvailable?: number;
   /**
    * Preview-panel extras, present only when the catalogue has them (the
    * same verified values the product page shows). Sent with the hit so
