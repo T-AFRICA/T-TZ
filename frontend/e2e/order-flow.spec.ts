@@ -30,7 +30,7 @@ async function ordersFor(email: string): Promise<OrderRow[]> {
 async function fillCheckout(page: Page, email: string) {
   await page.getByLabel(/Full name/).fill("Asha Mrema");
   await page.getByLabel(/Email address/).fill(email);
-  await page.getByLabel(/Phone number/).fill("0712 345 678");
+  await page.getByLabel(/WhatsApp number/).fill("0712 345 678");
   await page.getByLabel(/Region/).selectOption("Dar es Salaam");
   await page.getByLabel(/District or city/).fill("Kinondoni");
   await page.getByLabel(/Ward or area/).fill("Mikocheni");
@@ -122,6 +122,28 @@ test("a signed-in customer: catalogue → cart → checkout → confirmed order 
   const summary = page.getByRole("complementary", { name: "Order summary" });
   await expect(summary).toContainText("TZS 28,000");
   await fillCheckout(page, email);
+  // The contact number is a WhatsApp number with its country code. Typed in full, its code moves into the list.
+  await expect(page.getByLabel(/Phone number/)).toHaveCount(0);
+  const whatsapp = page.getByLabel(/WhatsApp number/);
+  await expect(page.getByLabel("Country code")).toHaveValue("+255");
+  await whatsapp.fill("+254 712 345 678");
+  await whatsapp.blur();
+  await expect(page.getByLabel("Country code")).toHaveValue("+254");
+  await expect(whatsapp).toHaveValue("712345678");
+  // A number that is not one is refused before anything is sent.
+  await whatsapp.fill("12");
+  await whatsapp.blur();
+  await expect(page.getByText(/Enter a WhatsApp number for \+254/)).toBeVisible();
+  await whatsapp.fill("0712 345 678");
+  await whatsapp.blur();
+  await page.screenshot({ path: "test-results/checkout-whatsapp-1280.png" });
+  // On a phone the country code and the number still sit side by side and nothing runs off the side.
+  await page.setViewportSize({ width: 320, height: 720 });
+  await expect(whatsapp).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
+  await whatsapp.scrollIntoViewIfNeeded();
+  await page.screenshot({ path: "test-results/checkout-whatsapp-320.png" });
+  await page.setViewportSize({ width: 1280, height: 720 });
   await placeOrder(page);
 
   await expect(page.getByText("Order placed")).toBeVisible();
@@ -145,6 +167,24 @@ test("a signed-in customer: catalogue → cart → checkout → confirmed order 
 
   // The cart is emptied only after the order is saved.
   expect(await page.evaluate((key) => window.localStorage.getItem(key), CART_KEY)).toBe("[]");
+
+  // The order keeps the number with the country code that was chosen, worked out on the server.
+  const [saved] = await sql<{ contact_phone: string }>(`select contact_phone from orders where order_number = $1`, [orderNumber]);
+  expect(saved!.contact_phone).toBe("+254712345678");
+  await page.goto(`${BASE}/account/orders/${orderNumber}`);
+  await expect(page.getByText("WhatsApp number", { exact: true })).toBeVisible();
+  await expect(page.getByText("+254712345678")).toBeVisible();
+  // A guest tracks it with the number as it is written (spaces and all); the same digits under Tanzania's code find nothing.
+  const guest = await (await page.context().browser()!.newContext()).newPage();
+  await guest.goto(`${BASE}/track-order`);
+  await guest.getByLabel(/Order number/).fill(orderNumber!);
+  await guest.getByLabel(/Phone or email/).fill("+255 712 345 678");
+  await guest.getByRole("button", { name: "Track order" }).click();
+  await expect(guest.getByText(/couldn't find an order/)).toBeVisible();
+  await guest.getByLabel(/Phone or email/).fill("+254 712 345 678");
+  await guest.getByRole("button", { name: "Track order" }).click();
+  await expect(guest.getByRole("status").filter({ hasText: "Order " })).toContainText(`Order ${orderNumber}`);
+  await guest.context().close();
 });
 
 test("a price change between quote and order is shown and nothing is saved until confirmed", async ({ page }) => {

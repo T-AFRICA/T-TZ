@@ -6,6 +6,7 @@ import { DeliverForm, FailedAttemptForm } from "@/components/deliveries";
 import { DeliveryMap } from "@/components/delivery-map";
 import { ConfirmAction } from "@/components/forms";
 import { Notice, PageHeader, Panel, StatusPill, buttonClass } from "@/components/ui";
+import { WhatsAppLink } from "@/components/whatsapp-link";
 import { riderStepAction } from "@/features/deliveries/actions";
 import { FAILURE_REASON_LABEL, RIDER_STEP, mapsSearchUrl } from "@/features/deliveries/labels";
 import { SERVICE_UNAVAILABLE_TEXT, formatDateTime } from "@/features/labels";
@@ -71,6 +72,8 @@ export default async function DeliveryPage({ params }: { params: Promise<{ count
             <a href={`tel:${delivery.contact.phone}`} className={buttonClass.primary}>
               Call {delivery.contact.phone}
             </a>
+            {/* Customers give a WhatsApp number at checkout: the rider can write instead of calling. */}
+            <WhatsAppLink phone={delivery.contact.phone} className={buttonClass.secondary} />
             {delivery.destination ? (
               <a
                 href={`https://www.google.com/maps/dir/?api=1&destination=${delivery.destination.lat},${delivery.destination.lng}`}

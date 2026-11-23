@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";
-import { ArrowRightIcon, CartIcon, ChevronDownIcon, Container, ErrorState, Input, Select, Textarea } from "@tronic/ui";
+import { ArrowRightIcon, CartIcon, ChevronDownIcon, Container, ErrorState, Field, Input, Select, Textarea, controlClasses, fieldDescribedBy } from "@tronic/ui";
 import { formatPrice } from "@/components/home/sampleProducts";
 import { withNext } from "@/features/auth/next";
 import { useCart, useHydrated } from "@/features/cart/hooks";
@@ -10,6 +10,7 @@ import type { CartLine } from "@/features/cart/store";
 import { cartStore } from "@/features/cart/store";
 import { getCheckoutQuote, placeOrderAction, type PlaceOrderResponse } from "@/features/checkout/actions";
 import { DELIVERY_METHODS, TZ_REGIONS, isPaymentMethodAvailable } from "@/features/checkout/config";
+import { DEFAULT_DIAL_CODE, DIAL_CODES, OTHER_DIAL_CODE, normalizeWhatsApp, splitWhatsApp, tzLocalNumber } from "@/features/checkout/phone";
 import type { CheckoutQuote } from "@/features/checkout/quote";
 import {
   EMPTY_CHECKOUT_FORM,
@@ -80,11 +81,19 @@ export interface CheckoutCustomer {
   phone: string | null;
 }
 
-/** A stored +255… number as the customer types it (0712 345 678); anything else as it is. */
-function localPhone(phone: string | null): string {
-  const match = /^\+255(\d{3})(\d{3})(\d{3})$/.exec(phone ?? "");
-  return match ? `0${match[1]} ${match[2]} ${match[3]}` : (phone ?? "");
+/**
+ * The account's number as the WhatsApp field starts with it: its country
+ * code chosen in the list and the rest in the field, or the whole number
+ * under "Other country" when its code is not in the list.
+ */
+function startingNumber(phone: string | null): { phoneCountry: string; phone: string } {
+  const split = splitWhatsApp(phone);
+  if (split) return { phoneCountry: split.dialCode, phone: split.national };
+  return phone ? { phoneCountry: OTHER_DIAL_CODE, phone } : { phoneCountry: DEFAULT_DIAL_CODE, phone: "" };
 }
+
+/** True for a number typed in full: it starts with a plus sign or 00, so it carries its own country code. */
+const typedInFull = (value: string) => /^\s*(\+|00)/.test(value);
 
 export function CheckoutView({
   buyNowLine,
@@ -150,7 +159,7 @@ export function CheckoutView({
           ...current,
           fullName: current.fullName || (customer.fullName ?? ""),
           email: current.email || (customer.email ?? ""),
-          phone: current.phone || localPhone(customer.phone),
+          ...(current.phone ? {} : startingNumber(customer.phone)),
         }));
       }
       return;
@@ -180,13 +189,15 @@ export function CheckoutView({
     (field: CheckoutField, value: string) => {
       setForm((current) => {
         const next = { ...current, [field]: value } as CheckoutForm;
-        // The wallet number starts as the contact number; the customer can change it.
+        // The wallet number starts as the contact number when that is a Tanzanian one; the customer can change it.
         if (field === "paymentMethod" && value === "mobile_money" && next.walletNumber.trim() === "") {
-          next.walletNumber = current.phone;
+          next.walletNumber = tzLocalNumber(normalizeWhatsApp(current.phone, current.phoneCountry)) ?? "";
         }
-        if (touched[field]) {
-          const fieldError = validateCheckout(next)[field];
-          setErrors((existing) => ({ ...existing, [field]: fieldError }));
+        // The country code has no message of its own: changing it checks the number again.
+        const checked = field === "phoneCountry" ? "phone" : field;
+        if (touched[checked]) {
+          const fieldError = validateCheckout(next)[checked];
+          setErrors((existing) => ({ ...existing, [checked]: fieldError }));
         }
         return next;
       });
@@ -198,7 +209,15 @@ export function CheckoutView({
   const blur = useCallback(
     (field: CheckoutField) => {
       setTouched((current) => ({ ...current, [field]: true }));
-      setErrors((existing) => ({ ...existing, [field]: validateCheckout(form)[field] }));
+      let next = form;
+      if (field === "phone" && typedInFull(form.phone)) {
+        // A number typed in full (+254 712…) moves its country code into the list, so the customer sees how it was
+        // read; a code that is not in the list stays in the field, under "Other country".
+        const split = splitWhatsApp(normalizeWhatsApp(form.phone));
+        next = split ? { ...form, phoneCountry: split.dialCode, phone: split.national } : { ...form, phoneCountry: OTHER_DIAL_CODE };
+        setForm(next);
+      }
+      setErrors((existing) => ({ ...existing, [field]: validateCheckout(next)[field] }));
     },
     [form],
   );
@@ -360,6 +379,7 @@ export function CheckoutView({
     onBlur: () => blur(name),
   });
 
+  const phoneError = touched.phone ? errors.phone : undefined;
   const placeLabel = submitting ? (ordersEnabled ? "Placing order…" : "Checking…") : "Place order";
 
   return (
@@ -430,18 +450,50 @@ export function CheckoutView({
                   hint="Your order confirmation goes here."
                   {...field("email")}
                 />
-                <Input
+                <Field
                   id="checkout-phone"
-                  label="Phone number"
-                  type="tel"
+                  label="WhatsApp number"
                   required
-                  autoComplete="tel"
-                  inputMode="tel"
-                  placeholder="0712 345 678"
-                  maxLength={FIELD_LIMITS.phone}
-                  hint="Tanzanian mobile number, for delivery contact."
-                  {...field("phone")}
-                />
+                  hint="With its country code. We contact you on this number about your delivery."
+                  error={phoneError}
+                >
+                  <div className="flex gap-2">
+                    <span className="relative block w-[8.5rem] shrink-0">
+                      <select
+                        name="phoneCountry"
+                        aria-label="Country code"
+                        autoComplete="tel-country-code"
+                        value={form.phoneCountry}
+                        onChange={(event) => update("phoneCountry", event.target.value)}
+                        className={`${controlClasses()} appearance-none truncate pr-8`}
+                      >
+                        {DIAL_CODES.map((entry) => (
+                          <option key={entry.iso} value={entry.code}>
+                            {entry.code} {entry.name}
+                          </option>
+                        ))}
+                        <option value={OTHER_DIAL_CODE}>Other country</option>
+                      </select>
+                      <ChevronDownIcon size={14} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" />
+                    </span>
+                    <input
+                      id="checkout-phone"
+                      name="phone"
+                      type="tel"
+                      required
+                      autoComplete={form.phoneCountry === OTHER_DIAL_CODE ? "tel" : "tel-national"}
+                      inputMode="tel"
+                      placeholder={form.phoneCountry === OTHER_DIAL_CODE ? "+255 712 345 678" : form.phoneCountry === DEFAULT_DIAL_CODE ? "712 345 678" : "Without the country code"}
+                      maxLength={FIELD_LIMITS.phone}
+                      value={form.phone}
+                      onChange={(event) => update("phone", event.target.value)}
+                      onBlur={() => blur("phone")}
+                      aria-invalid={phoneError ? true : undefined}
+                      aria-describedby={fieldDescribedBy("checkout-phone", phoneError ? undefined : "hint", phoneError)}
+                      className={`${controlClasses(phoneError)} min-w-0 flex-1`}
+                    />
+                  </div>
+                </Field>
               </div>
             </Section>
 
@@ -553,7 +605,7 @@ export function CheckoutView({
             <Section number={4} title="Review and place order" done={false}>
               <dl className="mb-4 divide-y divide-[var(--color-light-grey)] rounded-xl border border-[var(--color-light-grey)] text-sm">
                 <ReviewRow label="Contact" step={1} complete={contactDone}>
-                  {contactDone ? `${form.fullName.trim()} · ${form.phone.trim()}` : null}
+                  {contactDone ? `${form.fullName.trim()} · ${normalizeWhatsApp(form.phone, form.phoneCountry) ?? form.phone.trim()}` : null}
                 </ReviewRow>
                 <ReviewRow label="Deliver to" step={2} complete={deliveryDone}>
                   {deliveryDone

@@ -29,7 +29,7 @@ beforeEach(() => {
 async function fillDetails(user: ReturnType<typeof userEvent.setup>) {
   await user.type(screen.getByLabelText(/Full name/), "Amina Juma");
   await user.type(screen.getByLabelText(/Email address/), "amina@example.com");
-  await user.type(screen.getByLabelText(/Phone number/), "0712 345 678");
+  await user.type(screen.getByLabelText(/WhatsApp number/), "0712 345 678");
   await user.selectOptions(screen.getByLabelText(/Region/), "Arusha");
   await user.type(screen.getByLabelText(/District or city/), "Arusha City");
   await user.type(screen.getByLabelText(/Ward or area/), "Kaloleni");
@@ -81,11 +81,11 @@ describe("checkout page", () => {
 
     await user.type(screen.getByLabelText(/Full name/), "Amina Juma");
     await user.type(screen.getByLabelText(/Email address/), "amina@example.com");
-    await user.type(screen.getByLabelText(/Phone number/), "0812");
+    await user.type(screen.getByLabelText(/WhatsApp number/), "0812");
     await user.tab();
-    expect(screen.getByText("Enter a Tanzanian mobile number, like 0712 345 678.")).toBeInTheDocument();
-    await user.clear(screen.getByLabelText(/Phone number/));
-    await user.type(screen.getByLabelText(/Phone number/), "0712 345 678");
+    expect(screen.getByText("Enter a Tanzanian mobile number, like 712 345 678, or choose another country code.")).toBeInTheDocument();
+    await user.clear(screen.getByLabelText(/WhatsApp number/));
+    await user.type(screen.getByLabelText(/WhatsApp number/), "0712 345 678");
     await user.selectOptions(screen.getByLabelText(/Region/), "Arusha");
     await user.type(screen.getByLabelText(/District or city/), "Arusha City");
     await user.type(screen.getByLabelText(/Ward or area/), "Kaloleni");
@@ -176,7 +176,7 @@ describe("checkout page", () => {
     expect(within(review).getAllByText("Not complete yet")).toHaveLength(2);
     await fillDetails(user);
     expect(within(review).queryByText("Not complete yet")).toBeNull();
-    expect(review).toHaveTextContent("Amina Juma · 0712 345 678");
+    expect(review).toHaveTextContent("Amina Juma · +255712345678");
     expect(review).toHaveTextContent("Sokoine Road 5, Kaloleni, Arusha City, Arusha");
     expect(review).toHaveTextContent("PaymentCash on delivery");
   });
@@ -229,5 +229,75 @@ describe("track order page", () => {
     await user.click(screen.getByRole("button", { name: "Track order" }));
     expect(await screen.findByRole("status")).toHaveTextContent("Order TZ-261111-ABCD1234: Pending payment");
     expect(screen.getByRole("status")).toHaveTextContent("TZS 56,000");
+  });
+});
+
+describe("checkout: the WhatsApp number", () => {
+  const code = () => screen.getByLabelText("Country code") as HTMLSelectElement;
+  const number = () => screen.getByLabelText(/WhatsApp number/) as HTMLInputElement;
+
+  it("asks for a WhatsApp number with a country code, Tanzania chosen first", async () => {
+    cartStore.set([{ productId: panel.id, color: null, variant: null, quantity: 1 }]);
+    render(<CheckoutView buyNowLine={null} />);
+    await summary();
+    expect(screen.queryByLabelText(/Phone number/)).toBeNull();
+    expect(code().value).toBe("+255");
+    expect(within(code()).getByRole("option", { name: "+254 Kenya" })).toBeInTheDocument();
+    expect(within(code()).getByRole("option", { name: "Other country" })).toBeInTheDocument();
+    expect(number()).toHaveAttribute("type", "tel");
+    expect(number()).toBeRequired();
+  });
+
+  it("starts from the account's number, and moves the code of a number typed in full into the list", async () => {
+    const user = userEvent.setup({ delay: null });
+    cartStore.set([{ productId: panel.id, color: null, variant: null, quantity: 1 }]);
+    render(<CheckoutView buyNowLine={null} customer={{ fullName: "Amina Juma", email: "amina@example.com", phone: "+254712345678" }} />);
+    await summary();
+    await waitFor(() => expect(code().value).toBe("+254"));
+    expect(number().value).toBe("712345678");
+
+    await user.clear(number());
+    await user.type(number(), "+92 300 1234567");
+    await user.tab();
+    expect(code().value).toBe("+92");
+    expect(number().value).toBe("3001234567");
+
+    // A country that is not in the list keeps its number in full, under "Other country", without an error.
+    await user.clear(number());
+    await user.type(number(), "+358 40 123 4567");
+    await user.tab();
+    expect(code().value).toBe("");
+    expect(number().value).toBe("+358 40 123 4567");
+    expect(number()).not.toHaveAttribute("aria-invalid");
+
+    // Under "Other country" a number without its code is refused, in words.
+    await user.clear(number());
+    await user.type(number(), "401234567");
+    await user.tab();
+    expect(screen.getByText("Enter the number in full, with + and its country code, like +255 712 345 678.")).toBeInTheDocument();
+    expect(number()).toHaveAttribute("aria-invalid", "true");
+    // Choosing the country checks the number again.
+    await user.selectOptions(code(), "+254");
+    await user.clear(number());
+    await user.type(number(), "0712 345 678");
+    await user.tab();
+    expect(number()).not.toHaveAttribute("aria-invalid");
+  });
+
+  it("sends the number and its country code with the order", async () => {
+    const user = userEvent.setup({ delay: null });
+    cartStore.set([{ productId: panel.id, color: null, variant: null, quantity: 1 }]);
+    placeOrder.mockResolvedValueOnce({ ok: true, orderNumber: "TZ-261123-ABCD1234", totalMinor: panel.priceMinor, currency: "TZS", itemCount: 1 });
+    render(<CheckoutView buyNowLine={null} ordersEnabled />);
+    await summary();
+    await fillDetails(user);
+    await user.selectOptions(code(), "+254");
+    const review = screen.getByRole("heading", { name: /Review and place order/ }).closest("section")!;
+    expect(review).toHaveTextContent("Amina Juma · +254712345678");
+    await user.click(screen.getAllByRole("button", { name: /Place order/ })[0]!);
+    await waitFor(() => expect(placeOrder).toHaveBeenCalledTimes(1));
+    const call = placeOrder.mock.calls[0]![0] as { form: { phone: string; phoneCountry: string } };
+    expect(call.form).toMatchObject({ phone: "0712 345 678", phoneCountry: "+254" });
+    expect(await screen.findByText("Order placed")).toBeInTheDocument();
   });
 });

@@ -58,7 +58,7 @@ async function placeOrder(page: Page, email: string, lines: { productId: string;
   await page.goto(`${BASE}/checkout`);
   await page.getByLabel(/Full name/).fill("Carol Mushi");
   await page.getByLabel(/Email address/).fill(email);
-  await page.getByLabel(/Phone number/).fill("0712 345 678");
+  await page.getByLabel(/WhatsApp number/).fill("0712 345 678");
   await page.getByLabel(/Region/).selectOption("Dar es Salaam");
   await page.getByLabel(/District or city/).fill("Kinondoni");
   await page.getByLabel(/Ward or area/).fill("Mikocheni");

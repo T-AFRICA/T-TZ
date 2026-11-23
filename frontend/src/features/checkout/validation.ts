@@ -8,6 +8,7 @@ import {
   type DeliveryMethodId,
   type PaymentMethodId,
 } from "./config";
+import { DEFAULT_DIAL_CODE, OTHER_DIAL_CODE, isDialCode, normalizeWhatsApp } from "./phone";
 
 /**
  * Checkout form validation, shared by the browser (inline errors) and the
@@ -17,7 +18,10 @@ import {
 export interface CheckoutForm {
   fullName: string;
   email: string;
+  /** The WhatsApp number as typed: without its country code, or in full with a plus sign. */
   phone: string;
+  /** The country code chosen for it ("+255"), or "" for a country that is not in the list. */
+  phoneCountry: string;
   deliveryMethod: DeliveryMethodId;
   region: string;
   district: string;
@@ -38,6 +42,7 @@ export const EMPTY_CHECKOUT_FORM: CheckoutForm = {
   fullName: "",
   email: "",
   phone: "",
+  phoneCountry: DEFAULT_DIAL_CODE,
   deliveryMethod: "home",
   region: "",
   district: "",
@@ -114,8 +119,17 @@ export function validateCheckout(form: CheckoutForm): CheckoutErrors {
   if (email.length === 0) errors.email = "Enter your email address.";
   else if (!isValidEmail(email)) errors.email = "Enter a valid email address, like name@example.com.";
 
-  if (form.phone.trim().length === 0) errors.phone = "Enter your phone number.";
-  else if (!normalizeTzPhone(form.phone)) errors.phone = "Enter a Tanzanian mobile number, like 0712 345 678.";
+  // A country code that is not from the list is not used: the number must then carry its own.
+  const dialCode = isDialCode(form.phoneCountry) ? form.phoneCountry : OTHER_DIAL_CODE;
+  if (form.phone.trim().length === 0) errors.phone = "Enter your WhatsApp number.";
+  else if (form.phone.trim().length > FIELD_LIMITS.phone || !normalizeWhatsApp(form.phone, dialCode)) {
+    errors.phone =
+      dialCode === OTHER_DIAL_CODE
+        ? "Enter the number in full, with + and its country code, like +255 712 345 678."
+        : dialCode === DEFAULT_DIAL_CODE
+          ? "Enter a Tanzanian mobile number, like 712 345 678, or choose another country code."
+          : `Enter a WhatsApp number for ${dialCode}, without the country code.`;
+  }
 
   const method = DELIVERY_METHODS.find((item) => item.id === form.deliveryMethod);
   if (!method || !method.enabled) {
@@ -152,6 +166,7 @@ export function validateCheckout(form: CheckoutForm): CheckoutErrors {
 export const FIELD_ORDER: readonly CheckoutField[] = [
   "fullName",
   "email",
+  "phoneCountry",
   "phone",
   "deliveryMethod",
   "region",

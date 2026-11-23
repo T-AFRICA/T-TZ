@@ -9,6 +9,7 @@ import { AssignRiderForm } from "@/components/deliveries";
 import { FAILURE_REASON_LABEL } from "@/features/deliveries/labels";
 import { ConfirmAction } from "@/components/forms";
 import { Cell, DataTable, Notice, PageHeader, Panel, StatusPill, buttonClass } from "@/components/ui";
+import { WhatsAppLink } from "@/components/whatsapp-link";
 import { SERVICE_UNAVAILABLE_TEXT, formatDateTime } from "@/features/labels";
 import { updateOrderStatusAction } from "@/features/orders/actions";
 import {
@@ -132,7 +133,11 @@ export default async function OrderPage({ params }: { params: Promise<{ country:
         <Panel title="Customer">
           <dl className="grid gap-4 sm:grid-cols-2">
             <Fact label="Name">{order.contact.name}</Fact>
-            <Fact label="Phone">{order.contact.phone}</Fact>
+            {/* Checkout asks for a WhatsApp number since 2026-11-23; earlier orders hold a phone number in the same place. */}
+            <Fact label="WhatsApp / phone">
+              {order.contact.phone}
+              <WhatsAppLink phone={order.contact.phone} className="mt-1 flex w-fit items-center gap-1.5 text-sm font-semibold text-accent-ink underline-offset-4 hover:underline" />
+            </Fact>
             <div className="sm:col-span-2">
               <Fact label="Email">{order.contact.email}</Fact>
             </div>
