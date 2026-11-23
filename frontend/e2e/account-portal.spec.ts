@@ -157,6 +157,75 @@ test("the dashboard and order pages show the signed-in customer's own records", 
   await expect(page.getByText("Payment pending").first()).toBeVisible();
 });
 
+test("notifications follow the customer's own orders, count on the bell, and are marked read", async ({ page, browser }) => {
+  // A phone: the bell is in the header.
+  await page.setViewportSize({ width: 390, height: 844 });
+  await signIn(page, CAROL);
+  const header = page.getByRole("banner");
+  // Carol's two orders were placed and the first was picked up (the test above): three events.
+  const bell = header.getByRole("link", { name: /^Notifications/ });
+  await expect(bell).toHaveAccessibleName("Notifications, 3 unread");
+  await expect(header.getByTestId("notification-badge")).toHaveText("3");
+
+  await bell.click();
+  await expect(page).toHaveURL(`${BASE}/account/notifications`);
+  await expect(page.getByRole("heading", { level: 1, name: "Notifications" })).toBeVisible();
+  await expect(page.getByText("Not connected yet")).toHaveCount(0);
+  await expect(page.getByText("Updates about your orders. 3 unread.")).toBeVisible();
+  const list = page.getByRole("list", { name: "Notifications" });
+  const items = list.getByRole("listitem");
+  await expect(items).toHaveCount(3);
+  // Newest first: the pickup, then the two orders received.
+  await expect(items.nth(0)).toContainText("Order picked up");
+  await expect(items.nth(0).getByRole("link", { name: `Order ${carolOrders[0]}` })).toHaveAttribute("href", `/account/orders/${carolOrders[0]}`);
+  await expect(items.nth(1)).toContainText("Order received");
+  await expect(items.nth(2)).toContainText("Order received");
+  // What happened and to which order: no amount, address or phone.
+  await expect(list).not.toContainText(/TZS|Mwai Kibaki|Mikocheni|0712|\+255/);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
+  await page.screenshot({ path: path.join(SHOTS, "390-notifications.png"), fullPage: true });
+
+  // One, then the rest; the bell follows at once.
+  await items.nth(0).getByRole("button", { name: /^Mark "Order picked up"/ }).click();
+  await expect(page.getByText("Updates about your orders. 2 unread.")).toBeVisible();
+  await expect(header.getByTestId("notification-badge")).toHaveText("2");
+  await page.getByRole("button", { name: "Mark all as read" }).click();
+  await expect(page.getByRole("button", { name: "Mark all as read" })).toHaveCount(0);
+  await expect(page.getByText(/\d unread/)).toHaveCount(0);
+  await expect(header.getByTestId("notification-badge")).toHaveCount(0);
+  await expect(items).toHaveCount(3);
+  // Read stays read on another page and after a reload.
+  await page.goto(`${BASE}/`);
+  await expect(page.getByRole("banner").getByRole("link", { name: /^Notifications/ })).toHaveAccessibleName("Notifications");
+
+  // A new step of the order is a new notification.
+  await sql(`update orders set status = 'in_transit' where order_number = $1`, [carolOrders[0]]);
+  await page.goto(`${BASE}/account/notifications`);
+  await expect(page.getByText("Updates about your orders. 1 unread.")).toBeVisible();
+  await expect(items.nth(0)).toContainText("Out for delivery");
+  await sql(`update orders set status = 'dispatched' where order_number = $1`, [carolOrders[0]]);
+
+  // Another customer has none of them, and cannot mark Carol's.
+  const fatma: Customer = ["fatma.portal@example.test", "Fatma-Portal-Test-1"];
+  await createCustomer(...fatma);
+  const other = await (await browser.newContext({ viewport: { width: 390, height: 844 } })).newPage();
+  await signIn(other, fatma);
+  await other.goto(`${BASE}/account/notifications`);
+  await expect(other.getByText("No notifications yet")).toBeVisible();
+  await expect(other.getByRole("list", { name: "Notifications" })).toHaveCount(0);
+  expect(await (await other.request.get(`${BASE}/api/account/notifications/unread`)).json()).toEqual({ unread: 0 });
+  await other.context().close();
+  expect(await (await page.request.get(`${BASE}/api/account/notifications/unread`)).json()).toEqual({ unread: 2 });
+
+  // Signed out: the count says nothing, and the bell leads to sign-in.
+  const visitor = await (await browser.newContext({ viewport: { width: 390, height: 844 } })).newPage();
+  expect(await (await visitor.request.get(`${BASE}/api/account/notifications/unread`)).json()).toEqual({ unread: 0 });
+  await visitor.goto(`${BASE}/`);
+  await visitor.getByRole("banner").getByRole("link", { name: "Notifications" }).click();
+  await expect(visitor).toHaveURL(/\/login/);
+  await visitor.context().close();
+});
+
 test("live tracking shows the rider, a call link to the rider's phone and the latest position, and stops once delivered", async ({ page }) => {
   // A rider has the order and is on the way (done as the database owner, as fulfilment would).
   const number = carolOrders[0]!;

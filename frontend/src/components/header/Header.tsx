@@ -1,6 +1,5 @@
 import Link from "next/link";
 import {
-  BellIcon,
   BrandMark,
   CartIcon,
   Container,
@@ -13,6 +12,7 @@ import { METER_NAV_ITEM } from "@tronic/country-config";
 import { AccountButton } from "./AccountButton";
 import { MobileNav } from "./MobileNav";
 import { MobileSearch } from "./MobileSearch";
+import { NotificationBell } from "./NotificationBell";
 import { SmartScroll } from "./SmartScroll";
 import { SearchBox } from "@/components/search/SearchBox";
 import { CartCountBadge, CartCountText, WishlistCountBadge, WishlistCountText } from "@/components/cart/CountBadge";
@@ -92,13 +92,7 @@ export function Header() {
               tab bar; the header keeps search and then notifications
               (owner brief 2026-11-14: Menu, Logo, Search, Notification). */}
           <MobileSearch />
-          <Link
-            href="/notifications"
-            aria-label="Notifications"
-            className="flex h-10 w-10 items-center justify-center rounded-full bg-white shadow-sm transition-colors hover:bg-[var(--surface-card)] md:hidden"
-          >
-            <BellIcon size={20} />
-          </Link>
+          <NotificationBell />
           <Link
             href={WISHLIST_LINK.href}
             className="relative hidden h-10 w-10 items-center justify-center rounded-md transition-colors hover:text-[var(--color-action-red)] md:flex"

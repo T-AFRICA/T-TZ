@@ -36,7 +36,7 @@ project and setting the variables are owner actions.
 | `/account/security` | Password reset link, email verification state, sign out | Supabase Auth |
 | `/account/addresses` | Saved addresses | **Not connected** |
 | `/account/invoices` | Invoices and receipts | **Not connected** |
-| `/account/notifications` | Order and account updates | **Not connected** |
+| `/account/notifications` | What happened to the customer's orders, with read and unread; the unread count is on the phone header's bell and in the account navigation | `customer_notifications` (migration 0023), written by the database when the event happens |
 | `/account/support` | FAQs, policy pages, the existing WhatsApp link | Static; recent orders for the "ask about this order" links |
 
 `/track-order` (guests) is unchanged: order number **and** the checkout
@@ -60,6 +60,14 @@ unknown number.
   timestamp is the order date. Courier, tracking number and delivery
   estimate are "Not available yet". There are no demo orders, payments,
   invoices or notifications.
+- **Notifications are events, not messages.** The database writes one when
+  an order is placed, reaches a status or has a failed delivery attempt
+  (migration 0023); no page or request can create one. A row holds the kind
+  of event and the order: the wording is in
+  `features/account/notifications.ts`. The customer can only mark their own
+  as read. Nothing is sent by email, SMS or WhatsApp. The unread count
+  (`/api/account/notifications/unread`) answers for the verified session
+  only and 0 when signed out.
 - **No client-side order changes.** Cancellation and returns are not
   offered; the API roles cannot update `orders` at all.
 - **Profile photo: optional, private, checked on the server.**
@@ -99,7 +107,9 @@ record types. The database functions are in `database/client/src/orders.ts`.
 | `listPayments(query)` | `PaymentRecord[]` | From order records; `transactionReference` is always null |
 | `listAddresses()` | `SavedAddress[]` | `not_connected` |
 | `listInvoices()` | `InvoiceRecord[]` | `not_connected` |
-| `listNotifications()` | `CustomerNotification[]` | `not_connected` |
+| `listNotifications()` | `CustomerNotification[]` | Connected (`listCustomerNotifications`); `not_connected` until migration 0023 has run |
+| `countUnreadNotifications()` | `number` | Connected; 0 until migration 0023 has run |
+| `markNotificationsRead(id)` | `boolean` | Connected (`customer_mark_notifications_read`) |
 | `listSessions()` | `CustomerSession[]` | `not_connected` |
 
 A method without a backend returns `{ status: "not_connected", waitingFor }`
@@ -119,7 +129,6 @@ security-definer functions or the service role of a back-office process.
 | `payments` | One row per payment attempt, written only from verified provider callbacks | `order_id`, `provider`, `provider_reference` (unique), `method`, `amount_minor`, `currency`, `status`, `occurred_at`. No card data |
 | `customer_addresses` | Saved delivery addresses | `user_id`, `recipient_name`, `phone`, `region`, `district`, `ward`, `street`, `instructions`, `is_default` (one default per user) |
 | `wishlist_items` | Wishlist per customer | `user_id`, `product_id`, `created_at`; unique (`user_id`, `product_id`). Guest list merges on sign-in, keeping the union |
-| `customer_notifications` | Notification centre | `user_id`, `kind`, `order_id`, `title`, `body`, `created_at`, `read_at` |
 | `invoices` | Invoice metadata; the PDF lives in private storage behind signed, short-lived links | `order_id`, `invoice_number` (unique), `issued_at`, `total_minor`, `currency`, `storage_path` |
 
 Also proposed:
@@ -152,8 +161,11 @@ Also proposed:
 
 ## Not done yet
 
-- Addresses, invoices, notifications, sessions, phone verification and
-  communication preferences have screens but no backend.
+- Addresses, invoices, sessions, phone verification and communication
+  preferences have screens but no backend.
+- Notifications are shown inside the site only: no email, SMS, WhatsApp or
+  push, and no choice of which kinds to receive. Old notifications are not
+  removed; the page shows the newest 50.
 - Changing the email address, cancelling an order and requesting a return.
 - Wishlist sync between devices.
 - The profile photo on a real Supabase project: migration 0005 has not

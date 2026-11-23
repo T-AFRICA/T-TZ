@@ -4,6 +4,9 @@ import {
   DELIVERY_ACTIONS,
   DELIVERY_PROOF_KINDS,
   LOW_STOCK_THRESHOLD,
+  NOTIFICATION_AUDIENCES,
+  NOTIFICATION_ENDPOINTS,
+  notificationSeenBodySchema,
   customerListQuerySchema,
   riderLocationBodySchema,
   type CountrySummary,
@@ -42,6 +45,7 @@ import { customerFunctions } from "./customers";
 import { deliveryFunctions } from "./deliveries";
 import { categoryFunctions } from "./categories";
 import { inventoryFunctions } from "./inventory";
+import { notificationFunctions } from "./notifications";
 import { productFunctions } from "./products";
 import { reportFunctions } from "./reports";
 
@@ -81,6 +85,10 @@ const categories = categoryFunctions(withServiceAccess);
 const CATEGORY_ENDPOINTS: ReadonlySet<CountryAdminEndpoint> = new Set(["categoryTree", "saveTaxonomy", "setCategoryBanner", "getCategoryBanner", "saveBrand"]);
 const reports = reportFunctions(withServiceAccess);
 const REPORT_ENDPOINTS: ReadonlySet<CountryAdminEndpoint> = new Set(["salesReport", "productsReport", "ordersReport", "stockReport"]);
+const notifications = notificationFunctions(withServiceAccess);
+const NOTIFICATION_ENDPOINT_NAMES: ReadonlySet<CountryAdminEndpoint> = new Set(
+  NOTIFICATION_AUDIENCES.flatMap((audience) => [NOTIFICATION_ENDPOINTS[audience].list, NOTIFICATION_ENDPOINTS[audience].seen]),
+);
 
 const PRODUCT_ENDPOINTS: ReadonlySet<CountryAdminEndpoint> = new Set([
   "catalogueOptions",
@@ -488,6 +496,24 @@ export async function handleCountryAdminRequest(service: CountryAdminService, re
       return { status: 200, body };
     }
 
+    // Notifications (migration 0023). The audience is the endpoint's, so it
+    // is the one the token's permission was checked for; the administrator
+    // is the one who signed the request.
+    if (NOTIFICATION_ENDPOINT_NAMES.has(matched.endpoint)) {
+      const audience = NOTIFICATION_AUDIENCES.find((candidate) => NOTIFICATION_ENDPOINTS[candidate].list === matched.endpoint);
+      if (audience) return { status: 200, body: await notifications.list(db, countryCode, audience, verified.actorId) };
+      const seenAudience = NOTIFICATION_AUDIENCES.find((candidate) => NOTIFICATION_ENDPOINTS[candidate].seen === matched.endpoint);
+      let input: unknown;
+      try {
+        input = JSON.parse(request.body);
+      } catch {
+        return refuse(400, "invalid_request");
+      }
+      const body = notificationSeenBodySchema.safeParse(input);
+      if (!seenAudience || !body.success) return { status: 200, body: { ok: false, code: "invalid_request" } };
+      return { status: 200, body: await notifications.markSeen(db, countryCode, seenAudience, verified.actorId, body.data.through) };
+    }
+
     // Categories and brands (migration 0018).
     if (CATEGORY_ENDPOINTS.has(matched.endpoint)) {
       if (matched.endpoint === "categoryTree") return { status: 200, body: await categories.tree(db, countryCode) };
@@ -633,6 +659,7 @@ export async function handleCountryAdminRequest(service: CountryAdminService, re
       if (INVENTORY_ENDPOINTS.has(matched.endpoint)) return refuse(503, "inventory_missing");
       if (CATEGORY_ENDPOINTS.has(matched.endpoint)) return refuse(503, "categories_missing");
       if (REPORT_ENDPOINTS.has(matched.endpoint)) return refuse(503, "reports_missing");
+      if (NOTIFICATION_ENDPOINT_NAMES.has(matched.endpoint)) return refuse(503, "notifications_missing");
       const deliveryEndpoint = COUNTRY_ADMIN_ENDPOINTS[matched.endpoint].permission.startsWith("deliveries.");
       return refuse(503, deliveryEndpoint ? "delivery_admin_missing" : "order_admin_missing");
     }

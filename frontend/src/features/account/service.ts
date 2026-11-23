@@ -1,12 +1,16 @@
 import {
   countCustomerOrdersByStatus,
+  countUnreadCustomerNotifications,
   getCustomerOrder,
   getCustomerTracking,
   getDeliveryCode,
   setDeliveryPoint,
   type CustomerTracking,
   type DeliveryPointResult,
+  listCustomerNotifications,
   listCustomerOrderPage,
+  markCustomerNotificationsRead,
+  type CustomerNotificationKind,
   type CustomerOrderDetail,
   type CustomerOrderPage,
   type CustomerOrderQuery,
@@ -16,6 +20,7 @@ import { ACTIVE_COUNTRY } from "@tronic/country-config";
 import type { SessionUser } from "@/features/auth/server";
 import { getCatalog, getDb, ordersEnabled } from "@/features/data/source";
 import { avatarUrl } from "./avatar";
+import { NOTIFICATION_TEXT, notificationsMissing } from "./notifications";
 import { ACTIVE_STATUSES, buildTracking, type OrderTracking, type TrackableOrder } from "./tracking";
 
 /**
@@ -85,9 +90,9 @@ export interface InvoiceRecord {
 }
 
 export interface CustomerNotification {
-  id: string;
-  kind: "order_confirmed" | "payment_confirmed" | "processing" | "dispatched" | "out_for_delivery" | "delivered" | "cancelled" | "refunded";
-  orderNumber: string | null;
+  id: number;
+  kind: CustomerNotificationKind;
+  orderNumber: string;
   title: string;
   body: string;
   createdAt: string;
@@ -117,11 +122,17 @@ export interface AccountService {
   listPayments(query?: Pick<CustomerOrderQuery, "page" | "pageSize">): Promise<ServiceResult<{ items: PaymentRecord[]; page: number; pageCount: number; total: number }>>;
   listAddresses(): Promise<ServiceResult<SavedAddress[]>>;
   listInvoices(): Promise<ServiceResult<InvoiceRecord[]>>;
+  /** The customer's newest notifications (migration 0023), newest first. */
   listNotifications(): Promise<ServiceResult<CustomerNotification[]>>;
+  /** How many are unread; 0 when notifications are not connected. */
+  countUnreadNotifications(): Promise<number>;
+  /** Marks one of the customer's notifications read, or all of them (null). False when nothing could be saved. */
+  markNotificationsRead(id: number | null): Promise<boolean>;
   listSessions(): Promise<ServiceResult<CustomerSession[]>>;
 }
 
 const ORDERS_WAITING = "the order database (DATA_SOURCE=database)";
+const NOTIFICATIONS_WAITING = "the notifications in the order database (migration 0023_notifications.sql)";
 
 export function createAccountService(user: SessionUser): AccountService {
   const access = { role: "authenticated", userId: user.id } as const;
@@ -185,7 +196,38 @@ export function createAccountService(user: SessionUser): AccountService {
 
     listAddresses: async () => ({ status: "not_connected", waitingFor: "a saved-addresses table and API" }),
     listInvoices: async () => ({ status: "not_connected", waitingFor: "the invoicing workflow (accounting / SAP)" }),
-    listNotifications: async () => ({ status: "not_connected", waitingFor: "order status events and a notification service" }),
+    listNotifications: async () => {
+      if (!ordersEnabled()) return { status: "not_connected", waitingFor: ORDERS_WAITING };
+      try {
+        const rows = await listCustomerNotifications(getDb(), access);
+        return { status: "ok", data: rows.map((row) => ({ ...row, ...NOTIFICATION_TEXT[row.kind] })) };
+      } catch (error) {
+        // A database without migration 0023 says so instead of failing the page.
+        if (notificationsMissing(error)) return { status: "not_connected", waitingFor: NOTIFICATIONS_WAITING };
+        throw error;
+      }
+    },
+
+    countUnreadNotifications: async () => {
+      if (!ordersEnabled()) return 0;
+      try {
+        return await countUnreadCustomerNotifications(getDb(), access);
+      } catch (error) {
+        if (notificationsMissing(error)) return 0;
+        throw error;
+      }
+    },
+
+    markNotificationsRead: async (id) => {
+      if (!ordersEnabled()) return false;
+      try {
+        await markCustomerNotificationsRead(getDb(), access, id);
+        return true;
+      } catch (error) {
+        if (notificationsMissing(error)) return false;
+        throw error;
+      }
+    },
     listSessions: async () => ({ status: "not_connected", waitingFor: "session management in Supabase Auth" }),
   };
 }

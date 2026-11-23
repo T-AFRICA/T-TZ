@@ -25,6 +25,8 @@ const FOR_SIGNED_IN_CUSTOMERS = [
   ...FOR_EVERYONE,
   "customer_claim_guest_orders",
   "customer_delivery_code",
+  // Marks the caller's own notifications read (0023); 0 for anyone else's.
+  "customer_mark_notifications_read",
   "customer_set_delivery_point",
   "place_cod_order",
 ].sort();
