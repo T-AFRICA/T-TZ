@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
+  BellIcon,
   BikeIcon,
   BoxesIcon,
   ChartIcon,
@@ -32,6 +33,7 @@ import {
   type IconProps,
 } from "@tronic/ui";
 import { WhiteMark } from "@/components/brand";
+import { UNREAD_EVENT } from "@/components/notifications";
 import { countryIdFromPath, isCurrentNavItem, type NavIcon, type NavItem, type NavSection } from "@/features/nav";
 import { SIDEBAR_COOKIE, THEME_COOKIE, THEME_LABEL, nextTheme, type Theme } from "@/features/theme";
 
@@ -63,6 +65,8 @@ export interface ShellCountry {
   /** Short status text shown beside the name in the switcher, when not active. */
   note: string | null;
   items: NavItem[];
+  /** True when the administrator's role in the country has notifications (orders, stock or their own deliveries). */
+  notifications: boolean;
 }
 
 export interface ShellProps {
@@ -120,6 +124,73 @@ function Dropdown({ label, button, children, align = "right" }: { label: string;
         </div>
       ) : null}
     </div>
+  );
+}
+
+/** How often the bell asks again while the console is open and looked at. */
+const UNREAD_REFRESH_MS = 60_000;
+
+/**
+ * The bell: a link to the country's notifications with how many are unread.
+ * The count is a label asked from the console's own server (which asks the
+ * country for this administrator); the page it leads to reads the real list.
+ */
+function NotificationsLink({ countryId, countryName, pathname }: { countryId: string; countryName: string; pathname: string | null }) {
+  const [unread, setUnread] = useState(0);
+  const href = `/c/${countryId}/notifications`;
+
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      if (document.visibilityState !== "visible") return;
+      try {
+        const response = await fetch(`${href}/count`, { cache: "no-store", credentials: "same-origin" });
+        if (!response.ok) return;
+        const body: unknown = await response.json();
+        const value = (body as { unread?: unknown } | null)?.unread;
+        if (!cancelled && typeof value === "number" && Number.isSafeInteger(value) && value >= 0) setUnread(value);
+      } catch {
+        // Offline or interrupted: keep the last number.
+      }
+    };
+    const onCounted = (event: Event) => {
+      const value = (event as CustomEvent<unknown>).detail;
+      if (typeof value === "number" && Number.isSafeInteger(value) && value >= 0) setUnread(value);
+    };
+    void load();
+    const timer = window.setInterval(() => void load(), UNREAD_REFRESH_MS);
+    document.addEventListener("visibilitychange", load);
+    window.addEventListener(UNREAD_EVENT, onCounted);
+    return () => {
+      cancelled = true;
+      window.clearInterval(timer);
+      document.removeEventListener("visibilitychange", load);
+      window.removeEventListener(UNREAD_EVENT, onCounted);
+    };
+    // Asked again after each navigation: the page just opened may have changed what is unread.
+  }, [href, pathname]);
+
+  const badge = unread > 99 ? "99+" : unread > 0 ? String(unread) : null;
+  const current = pathname === href;
+  return (
+    <Link
+      href={href}
+      aria-label={badge ? `Notifications for ${countryName}, ${unread} unread` : `Notifications for ${countryName}`}
+      aria-current={current ? "page" : undefined}
+      title="Notifications"
+      className={`relative grid h-10 w-10 place-items-center rounded-lg hover:bg-raised hover:text-ink ${current ? "bg-raised text-ink" : "text-muted"}`}
+    >
+      <BellIcon size={18} />
+      {badge ? (
+        <span
+          aria-hidden="true"
+          data-testid="notification-badge"
+          className="absolute right-0.5 top-0.5 grid h-[1.125rem] min-w-[1.125rem] place-items-center rounded-full bg-accent px-1 text-[10px] font-bold leading-none text-white ring-2 ring-surface"
+        >
+          {badge}
+        </span>
+      ) : null}
+    </Link>
   );
 }
 
@@ -315,6 +386,7 @@ export function Shell({ platform, countries, allCountries, user, initialTheme, i
           ) : null}
 
           <div className="ml-auto flex items-center gap-2">
+            {current?.notifications ? <NotificationsLink countryId={current.id} countryName={current.name} pathname={pathname} /> : null}
             <button
               type="button"
               onClick={cycleTheme}

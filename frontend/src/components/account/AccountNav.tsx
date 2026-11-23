@@ -17,6 +17,8 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { ACCOUNT_NAV, isActiveNavItem } from "@/features/account/nav";
+import { unreadBadge } from "@/features/account/notifications";
+import { useUnreadNotifications } from "@/features/account/unread";
 
 const ICONS: Record<string, LucideIcon> = {
   "/account": LayoutDashboard,
@@ -32,6 +34,22 @@ const ICONS: Record<string, LucideIcon> = {
 };
 
 /**
+ * The red count beside a section; screen readers hear "3 unread" after the
+ * section's name. `relative` keeps that hidden text inside the swipeable
+ * row: without it the text is placed against the page and a pill that is
+ * scrolled out of view makes the whole page scroll sideways.
+ */
+function UnreadCount({ value, unread, className = "" }: { value: string | null; unread: number; className?: string }) {
+  if (!value) return null;
+  return (
+    <span className={`relative grid h-5 min-w-5 place-items-center rounded-full bg-[var(--color-action-red)] px-1.5 text-[11px] font-bold leading-none text-white ${className}`}>
+      <span aria-hidden="true">{value}</span>
+      <span className="sr-only">{`, ${unread} unread`}</span>
+    </span>
+  );
+}
+
+/**
  * Portal navigation in two shapes from one list: the desktop sidebar and a
  * swipeable row of pills on phones and tablets (the bottom tab bar already
  * holds Home, Wishlist, Cart and Profile, so this row is the account's own
@@ -41,6 +59,9 @@ const ICONS: Record<string, LucideIcon> = {
 export function AccountNav({ variant }: { variant: "sidebar" | "pills" }) {
   const pathname = usePathname();
   const activeRef = useRef<HTMLAnchorElement>(null);
+  const unread = useUnreadNotifications();
+  /** The unread count beside Notifications; nothing beside any other section. */
+  const countFor = (href: string) => (href === "/account/notifications" ? unreadBadge(unread) : null);
 
   useEffect(() => {
     if (variant !== "pills") return;
@@ -68,6 +89,7 @@ export function AccountNav({ variant }: { variant: "sidebar" | "pills" }) {
                 >
                   <Icon size={15} aria-hidden="true" />
                   {item.shortLabel ?? item.label}
+                  <UnreadCount value={countFor(item.href)} unread={unread} />
                 </Link>
               </li>
             );
@@ -100,6 +122,7 @@ export function AccountNav({ variant }: { variant: "sidebar" | "pills" }) {
                 />
                 <Icon size={18} aria-hidden="true" className={active ? "" : "text-[var(--text-secondary)] group-hover:text-[var(--text-primary)]"} />
                 {item.label}
+                <UnreadCount value={countFor(item.href)} unread={unread} className="ml-auto" />
               </Link>
             </li>
           );

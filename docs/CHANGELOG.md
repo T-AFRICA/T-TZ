@@ -3,6 +3,34 @@
 Meaningful implementation changes, newest first. Dates are work dates;
 nothing below is released.
 
+## 2026-11-23 — Notifications for customers, staff and riders
+
+- Owner request: the notification sections of the customer site, the
+  Central Admin and the rider's console show what really happened.
+- Country migration `0023_notifications.sql` (draft): the database writes
+  a notification when the event happens, in the same transaction: an order
+  placed, each status it reaches, a failed delivery attempt, a delivery
+  given to a rider or moved to another, a product reaching its low-stock
+  level or running out. A notification holds the kind of event and the
+  order or product, never a name, address, phone, price or delivery code.
+- Customer site: `/account/notifications` lists the customer's own
+  notifications (Row Level Security) with "Mark read" and "Mark all as
+  read"; the bell of the phone header and the account navigation show the
+  unread count. The bell led to a placeholder page; it now opens the list
+  (or sign-in). Before the migration has run the page says "not connected"
+  instead of failing.
+- Central Admin and riders: a bell in the console's header with the unread
+  count, and `/c/<country>/notifications`. Three audiences, each behind
+  its own permission and its own signed endpoint: orders (`orders.read`),
+  stock (`inventory.read`) and the rider's own (`deliveries.perform`, Rider
+  role). An administrator is not told about their own action. "Mark all as
+  read" moves that administrator's own mark, kept in the country.
+- Nothing is sent by email, SMS, WhatsApp or push: no provider is
+  connected. The counts refresh about once a minute, not instantly.
+- Owner action: run 0023 in the country's Supabase SQL editor. Until then
+  the customer page says "not connected" and the console says which
+  migration is missing.
+
 ## 2026-11-21 — Stock count on the storefront
 
 - Owner decision: customers see how many units of a product are available,

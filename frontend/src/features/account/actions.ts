@@ -147,3 +147,23 @@ export async function shareDeliveryPointAction(input: {
   const accuracy = input.accuracy === null ? null : Math.min(100_000, Math.round(input.accuracy));
   return createAccountService(user).setDeliveryPoint(input.orderNumber, { lat: input.lat, lng: input.lng, accuracy });
 }
+
+/**
+ * "Mark as read" on the notifications page (a plain form, so it works
+ * without JavaScript). The session decides whose notifications change; the
+ * optional id only chooses one of them, and the database ignores an id that
+ * is not the customer's (migration 0023). Signed-out or malformed requests
+ * change nothing.
+ */
+export async function markNotificationsReadAction(form: FormData): Promise<void> {
+  const raw = form.get("id");
+  let id: number | null = null;
+  if (typeof raw === "string" && raw !== "") {
+    if (!/^[1-9][0-9]{0,15}$/.test(raw)) return;
+    id = Number(raw);
+  }
+  const user = await currentUser();
+  if (!user) return;
+  await createAccountService(user).markNotificationsRead(id);
+  revalidatePath("/account/notifications");
+}

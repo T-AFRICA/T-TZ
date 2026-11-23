@@ -81,6 +81,18 @@ finding), **Later** (the feature does not exist yet).
 | T26 | Upload a file that runs as a page | Type checked by content, fixed response type, `nosniff`, sandbox | Done for products and banners; proofs by declared type (F-20) |
 | T27 | Put a formula into a CSV report | Cells that begin with a formula character are written as text | Done |
 
+### Notifications
+
+| # | Threat | Answer | Status |
+|---|---|---|---|
+| T40 | Read another customer's notifications, or mark them read | Row Level Security by `auth.uid()`; no insert, update or delete grant; `customer_mark_notifications_read` acts on the caller's rows only; the unread count has no parameter and answers the session | Done |
+| T41 | A request creates a false notification ("your order was delivered") | Rows are written only by triggers on the real event; no role but the owner can insert | Done |
+| T42 | Staff read notifications their role does not cover, or a rider reads another rider's | One audience per signed endpoint and permission; the rider audience is filtered by the administrator in the token; the console asks only for the audiences the role has | Done |
+| T43 | Personal data, amounts or the delivery code leak through a notification, a badge or a log | A row holds a kind and an order or product id; the wording is in the application and names no customer; the count endpoints log no identity | Done |
+| T44 | One administrator hides notifications from another, or from another country | The "seen" mark is per administrator, country and audience, taken from the signed token and the deployment's own country | Done |
+| T45 | A notification trigger fails and blocks an order, a delivery or a stock change | The triggers do one insert each with values the constraints allow; every path is exercised by the order, delivery, inventory and notification tests. A fault would stop the event rather than record it wrongly | Accepted |
+| T46 | The notification tables grow without limit | Lists read the newest 50 (customers) or 30 days (staff). Nothing removes old rows | Open (F-30) |
+
 ### Platform and supply chain
 
 | # | Threat | Answer | Status |

@@ -3,6 +3,7 @@ import { Shell, type ShellCountry } from "@/components/shell/Shell";
 import { signOutAction } from "@/features/auth/actions";
 import { COUNTRY_STATUS_LABEL, initials, roleName } from "@/features/labels";
 import { buildNav } from "@/features/nav";
+import { notificationAudiences } from "@/features/notifications/audiences";
 import { SIDEBAR_COOKIE, THEME_COOKIE, parseTheme } from "@/features/theme";
 import { requireAdmin } from "@/server/session";
 
@@ -21,6 +22,7 @@ export default async function ConsoleLayout({ children }: { children: React.Reac
     name: country.name,
     note: country.status === "active" ? null : COUNTRY_STATUS_LABEL[country.status],
     items: buildNav(admin.actor, country)[1]?.items ?? [],
+    notifications: notificationAudiences(admin.actor, country.id).length > 0,
   }));
 
   const first = admin.actor.assignments[0];

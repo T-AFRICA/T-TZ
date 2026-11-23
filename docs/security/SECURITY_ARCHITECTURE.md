@@ -78,6 +78,14 @@ changes orders; re-authentication before high-risk admin actions.
   product on sale: the units available, through the `available` column of
   `storefront_products` (migration 0022, owner decision 2026-11-21). The
   count of a draft, hidden or unlisted product is not given out.
+- Notifications (migration 0023) are written by triggers in the
+  transaction of the event, never by a request. A customer reads their own
+  rows (Row Level Security) and can only mark them read. Staff and riders
+  read theirs through the signed country API: three audiences, one
+  permission and one endpoint each (orders, stock, the rider's own), the
+  reader is the administrator who signed the request, and the tables have
+  no grants. A row holds the kind of event and the order or product, with
+  no personal data, amount or delivery code.
 - Functions that run with their owner's rights pin `search_path`, check the
   caller inside, and use no dynamic SQL.
 - The functions a visitor or a signed-in customer can run are an explicit
@@ -165,7 +173,8 @@ nonce-based policy is planned.
 ## 11. Not built yet
 
 Online payments (a gateway adapter, webhooks, refunds), SAP/POS
-integration, saved addresses, invoices, notifications, promotions and
-website content management do not exist. Nothing in this file describes
+integration, saved addresses, invoices, promotions, website content
+management, and notifications by email, SMS, WhatsApp or push do not exist
+(notifications inside the sites do, migration 0023). Nothing in this file describes
 them as protected. Each needs its own threat assessment before it is
 built (`CLAUDE.md`, "Security in every change").

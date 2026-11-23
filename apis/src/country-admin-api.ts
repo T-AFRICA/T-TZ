@@ -68,6 +68,14 @@ export const COUNTRY_ADMIN_ENDPOINTS = {
   productsReport: { method: "GET", path: "/reports/products", permission: "reports.read" },
   ordersReport: { method: "GET", path: "/reports/orders", permission: "reports.read" },
   stockReport: { method: "GET", path: "/reports/stock", permission: "reports.read" },
+  // Notifications (migration 0023). One audience per permission: the caller
+  // reads, and marks as seen, only what that permission lets them see.
+  orderNotifications: { method: "GET", path: "/notifications/orders", permission: "orders.read" },
+  inventoryNotifications: { method: "GET", path: "/notifications/inventory", permission: "inventory.read" },
+  riderNotifications: { method: "GET", path: "/notifications/rider", permission: "deliveries.perform" },
+  seeOrderNotifications: { method: "POST", path: "/notifications/orders/seen", permission: "orders.read" },
+  seeInventoryNotifications: { method: "POST", path: "/notifications/inventory/seen", permission: "inventory.read" },
+  seeRiderNotifications: { method: "POST", path: "/notifications/rider/seen", permission: "deliveries.perform" },
 } as const;
 
 export type CountryAdminEndpoint = keyof typeof COUNTRY_ADMIN_ENDPOINTS;
@@ -980,6 +988,66 @@ export type ProductsReport = z.infer<typeof productsReportSchema>;
 export type OrdersReport = z.infer<typeof ordersReportSchema>;
 export type StockReport = z.infer<typeof stockReportSchema>;
 
+// ----------------------------------------------------------- notifications --
+
+/**
+ * Who a notification is for. "orders" and "inventory" are shared by the
+ * staff who hold that permission; "rider" is the rider's own.
+ */
+export const NOTIFICATION_AUDIENCES = ["orders", "inventory", "rider"] as const;
+export type NotificationAudience = (typeof NOTIFICATION_AUDIENCES)[number];
+
+/** The endpoints of each audience; the permission of an audience is its endpoints' permission. */
+export const NOTIFICATION_ENDPOINTS = {
+  orders: { list: "orderNotifications", seen: "seeOrderNotifications" },
+  inventory: { list: "inventoryNotifications", seen: "seeInventoryNotifications" },
+  rider: { list: "riderNotifications", seen: "seeRiderNotifications" },
+} as const satisfies Record<NotificationAudience, { list: CountryAdminEndpoint; seen: CountryAdminEndpoint }>;
+
+export const STAFF_NOTIFICATION_KINDS = [
+  "order_placed",
+  "order_cancelled",
+  "order_delivered",
+  "delivery_failed",
+  "stock_low",
+  "stock_out",
+  "delivery_assigned",
+  "delivery_reassigned",
+  "delivery_cancelled",
+] as const;
+export type StaffNotificationKind = (typeof STAFF_NOTIFICATION_KINDS)[number];
+
+/** The newest notification the administrator's list showed (its id). */
+export const notificationSeenBodySchema = z.object({ through: z.number().int().min(0).max(Number.MAX_SAFE_INTEGER) });
+
+export const notificationListResponseSchema = z.object({
+  ok: z.literal(true),
+  /** Newer than what this administrator has seen, in the last 30 days. */
+  unread: z.number().int().nonnegative(),
+  seenId: z.number().int().nonnegative(),
+  /** Newest first, at most 50. What happened and to which order or product; never customer details. */
+  items: z.array(
+    z.object({
+      id: z.number().int().positive(),
+      kind: z.enum(STAFF_NOTIFICATION_KINDS),
+      createdAt: z.string().datetime(),
+      orderNumber: z.string().nullable(),
+      productSlug: z.string().nullable(),
+      productName: z.string().nullable(),
+      unread: z.boolean(),
+    }),
+  ),
+});
+
+export const notificationSeenResponseSchema = z.discriminatedUnion("ok", [
+  z.object({ ok: z.literal(true), seenId: z.number().int().nonnegative() }),
+  z.object({ ok: z.literal(false), code: z.literal("invalid_request") }),
+]);
+
+export type NotificationList = z.infer<typeof notificationListResponseSchema>;
+export type StaffNotification = NotificationList["items"][number];
+export type NotificationSeenResult = z.infer<typeof notificationSeenResponseSchema>;
+
 // ----------------------------------------------------------------- adapter --
 
 /** Why a country could not be asked, or did not give a usable answer. */
@@ -1001,6 +1069,7 @@ export type CountryUnavailableReason =
   | "country_inventory_missing" // the country's database lacks the inventory (migration 0017)
   | "country_categories_missing" // the country's database lacks the category administration (migration 0018)
   | "country_reports_missing" // the country's database lacks the reports (migration 0019)
+  | "country_notifications_missing" // the country's database lacks the notifications (migration 0023)
   | "unreachable" // no connection
   | "timeout"
   | "rejected" // the country refused the request (401/403)
@@ -1056,6 +1125,10 @@ export interface CountryAdminApi {
   productsReport(actorId: string, period: ReportPeriod): Promise<CountryApiResult<ProductsReport>>;
   ordersReport(actorId: string, period: ReportPeriod): Promise<CountryApiResult<OrdersReport>>;
   stockReport(actorId: string, period: ReportPeriod): Promise<CountryApiResult<StockReport>>;
+  /** The notifications of one audience for the administrator making the call (actorId). */
+  listNotifications(actorId: string, audience: NotificationAudience): Promise<CountryApiResult<NotificationList>>;
+  /** Records that the administrator making the call has seen that audience's notifications up to `through`. */
+  markNotificationsSeen(actorId: string, audience: NotificationAudience, through: number): Promise<CountryApiResult<NotificationSeenResult>>;
 }
 
 /** A country whose service cannot be called. Every request answers with the reason; nothing is sent anywhere. */
@@ -1102,6 +1175,8 @@ export function unavailableCountryApi(reason: CountryUnavailableReason): Country
     productsReport: answer,
     ordersReport: answer,
     stockReport: answer,
+    listNotifications: answer,
+    markNotificationsSeen: answer,
   };
 }
 
@@ -1192,6 +1267,7 @@ export function createCountryAdminApi(options: CountryAdminApiOptions): CountryA
         else if (code === "inventory_missing") reason = "country_inventory_missing";
         else if (code === "categories_missing") reason = "country_categories_missing";
         else if (code === "reports_missing") reason = "country_reports_missing";
+        else if (code === "notifications_missing") reason = "country_notifications_missing";
       }
       return { available: false, reason, statusCode: response.status, latencyMs: elapsed() };
     }
@@ -1342,6 +1418,12 @@ export function createCountryAdminApi(options: CountryAdminApiOptions): CountryA
     },
     stockReport(actorId, period) {
       return call("stockReport", stockReportSchema, actorId, { query: period });
+    },
+    listNotifications(actorId, audience) {
+      return call(NOTIFICATION_ENDPOINTS[audience].list, notificationListResponseSchema, actorId);
+    },
+    markNotificationsSeen(actorId, audience, through) {
+      return call(NOTIFICATION_ENDPOINTS[audience].seen, notificationSeenResponseSchema, actorId, { body: { through } });
     },
   };
 }
