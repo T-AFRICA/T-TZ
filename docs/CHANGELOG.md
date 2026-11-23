@@ -3,6 +3,36 @@
 Meaningful implementation changes, newest first. Dates are work dates;
 nothing below is released.
 
+## 2026-11-23 — Global Combined Reports for the Master Super Admin
+
+- Owner request with a design: one page that adds up every country.
+  `/reports` in the Central Admin, Master Super Admin only, linked as
+  "Global reports".
+- Each country is asked live through its own signed reports endpoints
+  (sales, the period before, orders, products, stock, summary) and the
+  answers are added up in the console. No new country endpoint and no
+  country migration.
+- On the page: period (7, 30, 90 days, 12 months or dates), one country or
+  all, US dollars or local currency; eight summary cards with the change on
+  the period before; sales by country, orders per day, revenue share and
+  order status by country as charts; a sortable country table; a card per
+  country; best-selling products joined by SKU with stock status; category
+  sales; insights worked out from the figures; CSV export.
+- Owner decision: money is added up in US dollars at a rate the Master
+  Super Admin types per country (admin migration
+  `0008_exchange_rates.sql`, draft). No rate service is called. A change
+  is in the audit log. A country without a rate keeps its own currency and
+  is left out of the dollar totals, and the page says so. Dollar figures
+  are rounded to the cent and are for reading, not accounting.
+- A country that is not connected is listed with the reason and no
+  figures. With only Tanzania connected, the page shows Tanzania.
+- Not built from the design: a filter by order status (the reports count
+  every status and show the split), a second "revenue" figure beside paid
+  sales (the countries report paid orders only), and a product's category
+  in the best-sellers table (the product report does not carry it).
+- Owner action: run `0008_exchange_rates.sql` in the Central Admin's
+  Supabase SQL editor, then type the rates at the bottom of the page.
+
 ## 2026-11-23 — Notifications for customers, staff and riders
 
 - Owner request: the notification sections of the customer site, the

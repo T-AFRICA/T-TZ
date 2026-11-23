@@ -78,6 +78,11 @@ changes orders; re-authentication before high-risk admin actions.
   product on sale: the units available, through the `available` column of
   `storefront_products` (migration 0022, owner decision 2026-11-21). The
   count of a draft, hidden or unlisted product is not given out.
+- The Global Combined Reports (Central Admin, `/reports`) are built in
+  the console from each country's own signed report endpoints; nothing is
+  copied into the Central Admin's database. The page, its CSV and the US
+  dollar rates (admin migration 0008) are for a Master Super Admin only.
+  The rates are typed by hand, audited, and used for reports only.
 - Notifications (migration 0023) are written by triggers in the
   transaction of the event, never by a request. A customer reads their own
   rows (Row Level Security) and can only mark them read. Staff and riders

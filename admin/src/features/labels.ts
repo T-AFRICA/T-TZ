@@ -52,6 +52,7 @@ const AUDIT_ACTION_LABEL: Record<string, string> = {
   "admin.suspend": "Account suspended",
   "admin.reinstate": "Account reinstated",
   "country.update": "Country configuration changed",
+  "country.exchange_rate": "US dollar rate changed",
   "country_service.update": "Country service registration changed",
 };
 
@@ -69,6 +70,11 @@ export function auditSummaryText(action: string, summary: Record<string, unknown
     const changed = Object.keys(after).filter((key) => before[key] !== after[key]);
     if (changed.length === 0) return "No values changed";
     return changed.map((key) => `${key.replaceAll("_", " ")}: ${show(before[key])} → ${show(after[key])}`).join("; ");
+  }
+  if (action === "country.exchange_rate") {
+    const currency = typeof summary.currency === "string" ? summary.currency : "";
+    const rate = (value: unknown) => (typeof value === "string" && value !== "" ? `1 USD = ${Number(value).toLocaleString("en-GB", { maximumFractionDigits: 6 })} ${currency}` : "no rate");
+    return `${rate(summary.before)} → ${rate(summary.after)}`;
   }
   if (action === "admin.suspend") {
     const reason = typeof summary.reason === "string" ? summary.reason : null;
