@@ -18,6 +18,7 @@ export { ToastProvider, useToast } from "./components/Toast";
 export type { TabItem } from "./components/Tabs";
 export type { ToastVariant } from "./components/Toast";
 export {
+  AlertTriangleIcon,
   ArrowLeftIcon,
   ArrowRightIcon,
   BankIcon,
@@ -39,6 +40,7 @@ export {
   ClipboardListIcon,
   ContactIcon,
   DashboardIcon,
+  DownloadIcon,
   FacebookIcon,
   FileTextIcon,
   GlobeIcon,
@@ -57,6 +59,7 @@ export {
   PackageIcon,
   PanelLeftIcon,
   PhoneIcon,
+  RefreshIcon,
   SearchIcon,
   SettingsIcon,
   ShieldAlertIcon,

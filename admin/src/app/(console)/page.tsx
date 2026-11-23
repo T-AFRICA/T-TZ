@@ -1,16 +1,15 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getAdminOverview, listAuditLog, listCountryServices } from "@tronic/database/admin";
-import { Cell, DataTable, EmptyRow, PageHeader, Panel, StatCard, StatusPill, UnavailableStat } from "@/components/ui";
+import { OverviewFigures, OverviewFiguresLoading } from "@/components/overview-figures";
+import { Cell, DataTable, EmptyRow, PageHeader, Panel, StatCard, StatusPill } from "@/components/ui";
 import { COUNTRY_STATUS_LABEL, COUNTRY_STATUS_TONE, auditActionLabel, auditSummaryText, formatDateTime, serviceState } from "@/features/labels";
 import { getAdminDb } from "@/server/db";
 import { requireAdmin } from "@/server/session";
 
 export const metadata: Metadata = { title: "Overview" };
-
-/** Figures that only a country's own service can give. They are never estimated or invented here. */
-const BUSINESS_FIGURES = ["Registered products", "Customers", "Orders", "Pending orders", "Sales by country", "Inventory alerts"];
 
 export default async function OverviewPage() {
   const admin = await requireAdmin();
@@ -25,10 +24,6 @@ export default async function OverviewPage() {
   ]);
   const serviceByCountry = new Map(services.map((service) => [service.countryId, service]));
   const connected = services.filter((service) => serviceState(service).connected).length;
-  const figuresReason =
-    connected === 0
-      ? "Comes from each country's own service. No country service is connected yet."
-      : "Reporting is not part of the country API yet.";
 
   return (
     <>
@@ -86,12 +81,10 @@ export default async function OverviewPage() {
       </Panel>
 
       <Panel title="Business figures" description="Products, customers, orders, sales and stock live in each country's own database and reach this console only through that country's service.">
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          {BUSINESS_FIGURES.map((label) => (
-            <UnavailableStat key={label} label={label} reason={figuresReason} />
-          ))}
-        </div>
-        <p className="mt-4 text-xs text-muted">Amounts will always be shown in each country&apos;s own currency. Different currencies are never added together.</p>
+        {/* Asked from the countries while the rest of the page is already shown. Never estimated or invented here. */}
+        <Suspense fallback={<OverviewFiguresLoading />}>
+          <OverviewFigures admin={admin} />
+        </Suspense>
       </Panel>
 
       {activity ? (

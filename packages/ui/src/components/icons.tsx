@@ -50,6 +50,10 @@ import {
   Tags,
   UserCog,
   Users,
+  // Reports (admin)
+  Download,
+  RefreshCw,
+  TriangleAlert,
   // Delivery riders (admin)
   Bike,
   // Sign-in fields (admin)
@@ -121,6 +125,9 @@ export const TagsIcon = wrap(Tags);
 export const UserCogIcon = wrap(UserCog);
 export const UsersIcon = wrap(Users);
 export const BikeIcon = wrap(Bike);
+export const DownloadIcon = wrap(Download);
+export const RefreshIcon = wrap(RefreshCw);
+export const AlertTriangleIcon = wrap(TriangleAlert);
 export const EyeIcon = wrap(Eye);
 export const EyeOffIcon = wrap(EyeOff);
 export const MailIcon = wrap(Mail);
