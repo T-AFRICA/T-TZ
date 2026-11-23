@@ -3,6 +3,81 @@
 Meaningful implementation changes, newest first. Dates are work dates;
 nothing below is released.
 
+## 2026-11-23 — Overview: the business figures are real
+
+- Owner request: the six "Unavailable" cards on the Master Super Admin's
+  Overview show figures. They are each country's own summary (the one its
+  dashboard already shows), asked with a signed request when the page is
+  opened: products on sale, customers, orders, pending orders, sales by
+  country and inventory alerts. No new endpoint and no migration.
+- Counts are added up across the countries that answered. Sales are listed
+  per country in that country's own currency (paid orders of the last 30
+  days), never added together and never converted; the dollar view is on
+  Global reports, which the card links to.
+- A country is asked only where the administrator holds `reports.read`.
+  Countries that are not counted are named with the reason (not connected,
+  connection failed, not in your role). When no country can be counted the
+  cards still say "Unavailable" and why, never a number.
+- The first card was called "Registered products". The countries report
+  products that are active and priced, so it is now "Products on sale".
+- The figures load after the rest of the page, with an outline meanwhile.
+- Fixed on the way: on a 320px phone the console's top bar ran 17px off the
+  side on every page (the country switcher could not shrink). The layout
+  test now starts at 320px.
+
+## 2026-11-23 — Global Combined Reports: layout and wording reworked
+
+Owner brief: make the page read as an executive dashboard. Presentation
+only: no migration, no country endpoint, no change to who may open the page
+or the file, and no change to how a figure is worked out.
+
+- A link to a part of a console page (`#countries` after sorting, `#rates`
+  from the rate warning) stopped underneath the sticky top bar. The console
+  now keeps such a target below the bar (`scroll-padding-top`, all pages).
+- Header: the title in the display face, the brief's subtitle, when the
+  countries were last read and how many are connected, **Refresh** (asks
+  the countries again without leaving the page) and **Export CSV**. PDF and
+  Excel exports do not exist and are not offered.
+- Filters in two tight rows: quick periods and the currency view as
+  segmented controls; dates, country, Show and Reset beside them. On a
+  phone the dates and country fold behind one button that says what is
+  chosen. The period is still each country's own calendar days and every
+  choice is still in the address.
+- Summary cards are about a third shorter. A figure with no number says why
+  in words where the number would be: **Unavailable** (no country
+  answered), **Not configured** (no US dollar rate), **No data** (nothing
+  in the period). A zero is still shown as a zero. A dollar total that
+  leaves a connected country out is marked **Partial**.
+- The rate warning is one line with a "Set exchange rate" button, names the
+  countries left out and shows their sales in their own currency. Nothing
+  is converted without a rate and currencies are never added together.
+- Charts: a card with the exact figures under the pointer; sales by country
+  keeps a place for every country and says "No rate" or "Not connected"
+  where there is no column; the orders axis no longer shows half an order;
+  each dollar chart says which countries are not in it. Order status now
+  shows four groups from the country's own statuses (awaiting confirmation,
+  in progress, delivered, cancelled) in colours checked for colour
+  blindness in both themes, with the figures as a table underneath.
+- Country table: Paid orders and Connection columns (Connected, Not
+  connected, Switched off, Connection failed), numbers right-aligned, a
+  search box that only hides rows already on the page, and sorting by paid
+  orders. Delivered, in progress and cancelled moved from table columns to
+  the status chart and its table; the CSV still has them.
+- Country cards: a connected country shows orders, paid sales, growth and
+  its daily sales in its own colour; a country without figures is a short
+  dashed card with the reason, never a number.
+- Insights: "Most orders" added; a product's dollar amount is left out when
+  there is no rate (it read "$0.00"). When there is nothing to say the
+  panel says so in the brief's words. Nothing is labelled AI: no AI is
+  involved.
+- A loading outline of the page while the countries are asked; the filter
+  and sort links no longer prefetch.
+- Three icons added to `@tronic/ui` (refresh, download, warning), from the
+  icon set already in use. No new dependency.
+- Not done: PDF or Excel export (none exists), tooltips on the ring chart
+  beyond the browser's own (its legend carries the figures), and a search
+  that asks the server (five countries: it filters in the page).
+
 ## 2026-11-23 — Global Combined Reports for the Master Super Admin
 
 - Owner request with a design: one page that adds up every country.

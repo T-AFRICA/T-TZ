@@ -70,6 +70,8 @@ export interface CountryRow {
   /** Placed and neither delivered nor cancelled. */
   pending: number;
   cancelled: number;
+  /** The orders placed in the period by where they stand now, in four groups; null when the country's orders report could not be read. */
+  statusGroups: StatusGroups | null;
   /** Paid sales against the period before, in percent; null when there is nothing to compare with. */
   growth: number | null;
   /** Share of the dollar total, in percent; null without a rate or without sales anywhere. */
@@ -161,6 +163,38 @@ const sum = (values: number[]) => values.reduce((total, value) => total + value,
 const top = <T,>(items: readonly T[], value: (item: T) => number): T | null =>
   items.reduce<T | null>((best, item) => (value(item) > 0 && (best === null || value(item) > value(best)) ? item : best), null);
 
+/**
+ * A country's order statuses in the four groups the status chart shows.
+ * Display only: the country's own statuses are counted as they came, and
+ * every status belongs to exactly one group, so the four add up to the
+ * orders the country reported by status.
+ */
+export interface StatusGroups {
+  /** Placed, payment or confirmation still awaited (pending_payment). */
+  awaiting: number;
+  /** Confirmed, processing, packed, dispatched or in transit. */
+  inProgress: number;
+  delivered: number;
+  cancelled: number;
+}
+
+export const STATUS_GROUP_LABELS: Record<keyof StatusGroups, string> = {
+  awaiting: "Awaiting confirmation",
+  inProgress: "In progress",
+  delivered: "Delivered",
+  cancelled: "Cancelled",
+};
+
+export function statusGroupsOf(byStatus: OrdersReport["byStatus"]): StatusGroups {
+  const of = (...statuses: (keyof OrdersReport["byStatus"])[]) => sum(statuses.map((status) => byStatus[status] ?? 0));
+  return {
+    awaiting: of("pending_payment"),
+    inProgress: of("confirmed", "processing", "packed", "dispatched", "in_transit"),
+    delivered: of("delivered"),
+    cancelled: of("cancelled"),
+  };
+}
+
 /** The stock list of a country is cut at this many products: past it, a product that is not listed may still be short. */
 export const STOCK_ATTENTION_LIMIT = 50;
 
@@ -190,6 +224,7 @@ function rowOf(input: CountryInput): CountryRow {
       delivered: null,
       pending: 0,
       cancelled: 0,
+      statusGroups: null,
       growth: null,
       contribution: null,
       rank: null,
@@ -218,6 +253,7 @@ function rowOf(input: CountryInput): CountryRow {
     delivered: data.orders ? (data.orders.byStatus.delivered ?? 0) : null,
     pending: totals.open,
     cancelled: totals.cancelled,
+    statusGroups: data.orders ? statusGroupsOf(data.orders.byStatus) : null,
     growth: growthPercent(totals.paidMinor, data.previous?.totals.paidMinor),
     contribution: null,
     rank: null,
@@ -303,6 +339,19 @@ export function insightsOf(rows: CountryRow[], totals: Totals, products: Combine
       tone: "ok",
     });
   }
+  const busiest = top(
+    rows.filter((row) => row.connected),
+    (row) => row.orders,
+  );
+  if (busiest) {
+    insights.push({
+      key: "orders",
+      label: "Most orders",
+      // The share says something only when another country answered too.
+      text: `${busiest.name}: ${busiest.orders.toLocaleString("en-US")} ${busiest.orders === 1 ? "order" : "orders"} placed${totals.connected > 1 && totals.orders > 0 ? ` (${((busiest.orders / totals.orders) * 100).toFixed(1)}% of all orders)` : ""}`,
+      tone: "info",
+    });
+  }
   const grower = top(
     rows.filter((row) => row.growth !== null && row.growth > 0),
     (row) => row.growth ?? 0,
@@ -319,7 +368,9 @@ export function insightsOf(rows: CountryRow[], totals: Totals, products: Combine
   }
   const product = products[0];
   if (product && product.units > 0) {
-    insights.push({ key: "product", label: "Top product", text: `${product.name}: ${product.units.toLocaleString("en-US")} units, ${usd(product.usdCents)}`, tone: "info" });
+    // Without a rate there is no dollar amount: the units are said alone, never "$0.00".
+    const amount = product.usdCents > 0 ? `, ${usd(product.usdCents)}` : "";
+    insights.push({ key: "product", label: "Top product", text: `${product.name}: ${product.units.toLocaleString("en-US")} ${product.units === 1 ? "unit" : "units"}${amount}`, tone: "info" });
   }
   const short = products.slice(0, 10).find((item) => item.stock === "out" || item.stock === "low");
   if (short) {
@@ -399,13 +450,14 @@ export function combine(inputs: CountryInput[]): Combined {
   return { rows, totals, products, categories, trend: combineTrend(inputs), insights: insightsOf(rows, totals, products, categories) };
 }
 
-export const SORT_KEYS = ["rank", "name", "orders", "sales", "customers", "average", "delivered", "pending", "cancelled", "growth", "contribution"] as const;
+export const SORT_KEYS = ["rank", "name", "orders", "sales", "paidOrders", "customers", "average", "delivered", "pending", "cancelled", "growth", "contribution"] as const;
 export type SortKey = (typeof SORT_KEYS)[number];
 
 const SORT_VALUE: Record<Exclude<SortKey, "name">, (row: CountryRow) => number | null> = {
   rank: (row) => row.rank,
   orders: (row) => (row.connected ? row.orders : null),
   sales: (row) => row.salesUsdCents,
+  paidOrders: (row) => (row.connected ? row.paidOrders : null),
   customers: (row) => row.customers,
   average: (row) => row.averageUsdCents,
   delivered: (row) => row.delivered,

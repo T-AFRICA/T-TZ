@@ -105,14 +105,14 @@ function Dropdown({ label, button, children, align = "right" }: { label: string;
     };
   }, [open]);
   return (
-    <div ref={ref} className="relative">
+    <div ref={ref} className="relative min-w-0">
       <button
         type="button"
         aria-haspopup="true"
         aria-expanded={open}
         aria-label={label}
         onClick={() => setOpen((value) => !value)}
-        className="flex min-h-10 items-center gap-2 rounded-lg border border-line bg-surface px-3 py-1.5 text-sm font-medium text-ink transition-colors hover:bg-raised"
+        className="flex min-h-10 max-w-full items-center gap-2 rounded-lg border border-line bg-surface px-3 py-1.5 text-sm font-medium text-ink transition-colors hover:bg-raised"
       >
         {button}
       </button>
@@ -347,9 +347,10 @@ export function Shell({ platform, countries, allCountries, user, initialTheme, i
               align="left"
               button={
                 <>
-                  <GlobeIcon size={16} className="text-muted" />
-                  <span className="max-w-[9rem] truncate sm:max-w-none">{current?.name ?? "All countries"}</span>
-                  <ChevronDownIcon size={14} className="text-muted" />
+                  <GlobeIcon size={16} className="shrink-0 text-muted" />
+                  {/* On the narrowest phones the name gives way (cut with an ellipsis), so the bar never runs off the side. */}
+                  <span className="min-w-0 max-w-[9rem] truncate sm:max-w-none">{current?.name ?? "All countries"}</span>
+                  <ChevronDownIcon size={14} className="shrink-0 text-muted" />
                 </>
               }
             >
@@ -385,7 +386,7 @@ export function Shell({ platform, countries, allCountries, user, initialTheme, i
             </span>
           ) : null}
 
-          <div className="ml-auto flex items-center gap-2">
+          <div className="ml-auto flex shrink-0 items-center gap-1 sm:gap-2">
             {current?.notifications ? <NotificationsLink countryId={current.id} countryName={current.name} pathname={pathname} /> : null}
             <button
               type="button"

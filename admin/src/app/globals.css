@@ -162,6 +162,9 @@
 
 html {
   background: var(--a-canvas);
+  /* The console's top bar is sticky (4rem): a link to a part of a page
+     (#countries, #rates) stops below it, not underneath it. */
+  scroll-padding-top: 5rem;
 }
 
 body {

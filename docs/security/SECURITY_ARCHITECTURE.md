@@ -83,6 +83,13 @@ changes orders; re-authentication before high-risk admin actions.
   copied into the Central Admin's database. The page, its CSV and the US
   dollar rates (admin migration 0008) are for a Master Super Admin only.
   The rates are typed by hand, audited, and used for reports only.
+- The Overview's business figures (Central Admin, `/`) are each country's
+  own summary (the one its dashboard shows), asked with a signed request
+  when the page is opened and added up in the console. A country is asked
+  only if the administrator holds `reports.read` there (checked in the
+  console before anything is sent, and by the country on the request).
+  Counts are added up; sales stay in each country's currency and are never
+  added together or converted on this page. Nothing is stored.
 - Notifications (migration 0023) are written by triggers in the
   transaction of the event, never by a request. A customer reads their own
   rows (Row Level Security) and can only mark them read. Staff and riders

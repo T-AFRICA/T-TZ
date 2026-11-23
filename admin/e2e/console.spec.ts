@@ -415,9 +415,10 @@ test("signing out ends the session; a session revoked elsewhere stops working", 
   await expect(page).toHaveURL(/\/sign-in$/);
 });
 
-test("layout from 375px to 1920px: no sideways scrolling, navigation reachable", async ({ page }) => {
+test("layout from 320px to 1920px: no sideways scrolling, navigation reachable", async ({ page }) => {
   await signInWithCode(page, ACCOUNTS.master);
-  for (const width of [375, 768, 1280, 1920]) {
+  // 320px: the narrowest phone. The top bar ran off its side there until the country switcher was allowed to shrink.
+  for (const width of [320, 375, 768, 1280, 1920]) {
     await page.setViewportSize({ width, height: width < 768 ? 812 : 900 });
     for (const address of ["/", "/countries", "/administrators", "/audit", "/c/tz", "/c/tz/staff", "/c/tz/settings", "/c/tz/orders"]) {
       await page.goto(address);

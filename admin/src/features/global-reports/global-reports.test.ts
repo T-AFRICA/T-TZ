@@ -1,8 +1,9 @@
 import { describe, expect, it } from "vitest";
 import type { OrdersReport, ProductsReport, SalesReport, StockReport } from "@tronic/api-contracts";
-import { combine, growthPercent, sortRows, toUsdCents, type CountryInput } from "./combine";
+import { combine, growthPercent, sortRows, statusGroupsOf, toUsdCents, type CountryInput } from "./combine";
 import { globalReportCsv } from "./csv";
 import { globalHref, readGlobalQuery, signedPercent, usd, usdShort } from "./query";
+import { CONNECTION_LABEL, connectionOf } from "./states";
 
 /**
  * The combined report's arithmetic: what is added up, what is converted at
@@ -191,11 +192,17 @@ describe("combining the countries", () => {
 
   it("states insights that the figures support, and none it cannot", () => {
     const keys = combined.insights.map((insight) => insight.key);
-    expect(keys).toEqual(["highest", "growth", "lowest", "category", "product", "restock", "cancelled"]);
+    expect(keys).toEqual(["highest", "orders", "growth", "lowest", "category", "product", "restock", "cancelled"]);
+    expect(combined.insights.find((insight) => insight.key === "orders")?.text).toBe("Tanzania: 10 orders placed (76.9% of all orders)");
     expect(combined.insights.find((insight) => insight.key === "highest")?.text).toBe("Tanzania: $5,000.00 (71.4% of the total)");
     expect(combined.insights.find((insight) => insight.key === "growth")?.text).toBe("Kenya: +100.0% on the period before");
     expect(combined.insights.find((insight) => insight.key === "restock")?.text).toBe("LED Panel 24W is a best seller and is out of stock in Tanzania.");
     expect(combine([uganda]).insights).toEqual([]);
+    // One country alone: its share of the orders says nothing, so it is not said. Without a rate there is no dollar amount, never "$0.00".
+    const alone = combine([{ ...tanzania, rate: null }]).insights;
+    expect(alone.find((insight) => insight.key === "orders")?.text).toBe("Tanzania: 10 orders placed");
+    expect(alone.find((insight) => insight.key === "product")?.text).toBe("13A Top Plug: 50 units");
+    expect(alone.map((insight) => insight.text).join(" ")).not.toContain("$");
     expect(combine([]).totals).toMatchObject({ countries: 0, orders: 0, salesUsdCents: 0, customers: null, averageUsdCents: null });
   });
 
@@ -205,6 +212,33 @@ describe("combining the countries", () => {
     expect(sortRows(combined.rows, "growth", "desc").map((r) => r.id)).toEqual(["ke", "tz", "ug"]);
     expect(sortRows(combined.rows, "name", "desc").map((r) => r.id)).toEqual(["ug", "tz", "ke"]);
     expect(sortRows(combined.rows, "rank", "asc").map((r) => r.id)).toEqual(["tz", "ke", "ug"]);
+    expect(sortRows(combined.rows, "paidOrders", "desc").map((r) => r.id)).toEqual(["tz", "ke", "ug"]);
+    expect(sortRows(combined.rows, "paidOrders", "asc").map((r) => r.id)).toEqual(["ke", "tz", "ug"]);
+  });
+
+  it("puts every order status in exactly one of the chart's four groups", () => {
+    const byStatus = { pending_payment: 3, confirmed: 1, processing: 2, packed: 4, dispatched: 5, in_transit: 6, delivered: 7, cancelled: 8 };
+    const groups = statusGroupsOf(byStatus);
+    expect(groups).toEqual({ awaiting: 3, inProgress: 18, delivered: 7, cancelled: 8 });
+    // Nothing is counted twice or dropped: the groups add up to the orders the country reported.
+    expect(Object.values(groups).reduce((sum, value) => sum + value, 0)).toBe(Object.values(byStatus).reduce((sum, value) => sum + value, 0));
+    expect(statusGroupsOf({})).toEqual({ awaiting: 0, inProgress: 0, delivered: 0, cancelled: 0 });
+    expect(row("tz").statusGroups).toEqual({ awaiting: 0, inProgress: 0, delivered: 6, cancelled: 0 });
+    // A country that did not answer has no breakdown, and one whose orders report failed has none either: never zeros that look real.
+    expect(row("ug").statusGroups).toBeNull();
+    expect(combine([{ ...tanzania, data: { ...tanzania.data!, orders: null } }]).rows[0]?.statusGroups).toBeNull();
+  });
+
+  it("tells a country that was never set up from one whose connection failed", () => {
+    expect(connectionOf(true, null)).toBe("connected");
+    expect([connectionOf(false, "not_configured"), connectionOf(false, "no_iso_code")]).toEqual(["not_connected", "not_connected"]);
+    expect(connectionOf(false, "disabled")).toBe("switched_off");
+    for (const reason of ["unreachable", "timeout", "rejected", "server_error", "invalid_response", "signing_key_invalid", "country_reports_missing"] as const) {
+      expect(connectionOf(false, reason), reason).toBe("failed");
+    }
+    // No reason at all is a failure too: a planned country always has one.
+    expect(connectionOf(false, null)).toBe("failed");
+    expect(CONNECTION_LABEL.failed).toBe("Connection failed");
   });
 });
 
