@@ -7,7 +7,8 @@ import { parseCart } from "@/features/cart/store";
 import { getCatalog, getDb, ordersEnabled } from "@/features/data/source";
 import { PAYMENT_POLICY, type DeliveryMethodId } from "./config";
 import { MAX_CHECKOUT_LINES, quoteCheckout, type CheckoutQuote } from "./quote";
-import { normalizeTzPhone, readCheckoutForm, validateCheckout, type CheckoutErrors } from "./validation";
+import { normalizeWhatsApp } from "./phone";
+import { readCheckoutForm, validateCheckout, type CheckoutErrors } from "./validation";
 
 /**
  * Server action: prices the checkout lines the browser holds (cart or Buy
@@ -53,7 +54,8 @@ export async function placeOrderAction(input: {
   const form = readCheckoutForm(input.form);
   const fieldErrors = validateCheckout(form);
   if (Object.keys(fieldErrors).length > 0) return { ok: false, reason: "invalid", fieldErrors };
-  const phone = normalizeTzPhone(form.phone);
+  // The WhatsApp number in the form the orders table keeps: +<country code><number>. Worked out here again, never taken from the browser.
+  const phone = normalizeWhatsApp(form.phone, form.phoneCountry);
   const lines = parseCart(input.lines).slice(0, MAX_CHECKOUT_LINES);
   if (
     form.paymentMethod !== "pay_on_delivery" ||

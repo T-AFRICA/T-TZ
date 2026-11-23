@@ -42,7 +42,7 @@ export function TrackOrderView({ enabled }: { enabled: boolean }) {
     }
     const next: typeof errors = {};
     if (!ORDER_NUMBER_PATTERN.test(orderNumber.trim())) next.orderNumber = "Enter the order number from your confirmation.";
-    if (contact.trim().length < 5 || contact.trim().length > 254) next.contact = "Enter the phone number or email used at checkout.";
+    if (contact.trim().length < 5 || contact.trim().length > 254) next.contact = "Enter the WhatsApp number or email used at checkout.";
     setErrors(next);
     if (next.orderNumber || next.contact) event.preventDefault();
   }
@@ -52,7 +52,7 @@ export function TrackOrderView({ enabled }: { enabled: boolean }) {
       <form action={action} noValidate onSubmit={onSubmit} className="rounded-2xl bg-white p-4 md:border md:border-[var(--color-light-grey)] md:p-6">
         <h2 className="text-base font-bold md:text-lg">Find your order</h2>
         <p className="mt-1 text-sm text-[var(--text-secondary)]">
-          Use the order number from your confirmation and the phone number or email you checked out with.
+          Use the order number from your confirmation and the WhatsApp number (with its country code) or email you checked out with.
         </p>
         <div className="mt-5 grid gap-4 sm:grid-cols-2">
           <Input

@@ -102,7 +102,7 @@ export default async function OrderDetailsPage({ params }: { params: Promise<{ o
             <dl className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <Field label="Method">{DELIVERY_METHOD_LABELS[order.deliveryMethod] ?? order.deliveryMethod}</Field>
               <Field label="Recipient">{order.contact.name}</Field>
-              <Field label="Phone">{order.contact.phone}</Field>
+              <Field label="WhatsApp number">{order.contact.phone}</Field>
               <Field label="Email">{order.contact.email}</Field>
               {addressLines.length > 0 ? (
                 <div className="sm:col-span-2">

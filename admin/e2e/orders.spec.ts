@@ -111,6 +111,8 @@ test("Order Manager lists, searches and opens Tanzania's orders", async ({ page 
   await expect(page.getByRole("heading", { level: 1, name: `Order ${asha}` })).toBeVisible();
   await expect(page.getByRole("region", { name: "Customer" })).toContainText("asha@example.test");
   await expect(page.getByRole("region", { name: "Customer" })).toContainText("+255712000001");
+  await expect(page.getByRole("region", { name: "Customer" })).toContainText("WhatsApp / phone");
+  await expect(page.getByRole("region", { name: "Customer" }).getByRole("link", { name: "Message on WhatsApp" })).toHaveAttribute("href", "https://wa.me/255712000001");
   await expect(page.getByRole("region", { name: "Delivery and payment" })).toContainText("Cash on Delivery · Payment pending");
   await expect(page.getByRole("region", { name: "Items" })).toContainText("24W LED Panel Light");
   await expect(page.getByRole("region", { name: "Items" })).toContainText("TZS 56,000");

@@ -40,7 +40,7 @@ project and setting the variables are owner actions.
 | `/account/support` | FAQs, policy pages, the existing WhatsApp link | Static; recent orders for the "ask about this order" links |
 
 `/track-order` (guests) is unchanged: order number **and** the checkout
-email or phone must match, and a wrong pair gives the same answer as an
+email or WhatsApp number must match, and a wrong pair gives the same answer as an
 unknown number.
 
 ## Rules the portal follows

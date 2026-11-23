@@ -1,7 +1,7 @@
 "use server";
 
 import { trackOrder } from "@tronic/database";
-import { normalizeTzPhone } from "@/features/checkout/validation";
+import { DEFAULT_DIAL_CODE, normalizeWhatsApp } from "@/features/checkout/phone";
 import { getDb, ordersEnabled } from "@/features/data/source";
 import { allowAttempt } from "@/features/security/throttle";
 import { ORDER_NUMBER_PATTERN } from "./status";
@@ -43,13 +43,14 @@ export async function trackOrderAction(_previous: TrackOrderState, form: FormDat
   const contactRaw = text(form, "contact");
   const fieldErrors: { orderNumber?: string; contact?: string } = {};
   if (!ORDER_NUMBER_PATTERN.test(orderNumber)) fieldErrors.orderNumber = "Enter the order number from your confirmation.";
-  if (contactRaw.length < 5 || contactRaw.length > 254) fieldErrors.contact = "Enter the phone number or email used at checkout.";
+  if (contactRaw.length < 5 || contactRaw.length > 254) fieldErrors.contact = "Enter the WhatsApp number or email used at checkout.";
   if (fieldErrors.orderNumber || fieldErrors.contact) return { status: "invalid", fieldErrors };
   // The phone or email is the only secret here; without a limit it can be guessed.
   if (!(await allowAttempt("trackOrder", orderNumber))) return { status: "rate_limited" };
 
-  // Orders store the phone as +255…; accept it as typed at checkout too.
-  const contact = contactRaw.includes("@") ? contactRaw : (normalizeTzPhone(contactRaw) ?? contactRaw);
+  // Orders store the number as +<country code><number>; accept it as typed at checkout too: with a plus sign
+  // and spaces for any country, or the Tanzanian way (0712 345 678).
+  const contact = contactRaw.includes("@") ? contactRaw : (normalizeWhatsApp(contactRaw, DEFAULT_DIAL_CODE) ?? contactRaw);
   const found = await trackOrder(getDb(), orderNumber, contact);
   if (!found.found) return { status: "not_found" };
   const { orderNumber: number, status, createdAt, totalMinor, currency, itemCount } = found;

@@ -3,6 +3,38 @@
 Meaningful implementation changes, newest first. Dates are work dates;
 nothing below is released.
 
+## 2026-11-23 — Checkout asks for a WhatsApp number with its country code
+
+- Owner request: the checkout's "Phone number" is now "WhatsApp number",
+  with a country code. A list of country codes (Tanzania first, then East
+  and Southern Africa and the countries customers most often have a number
+  from) sits beside the number; "Other country" takes any number typed in
+  full with a plus sign. A number typed in full moves its code into the
+  list, so the customer sees how it was read.
+- Nothing changed in the database: the order keeps the number where it
+  kept the phone, as `+<country code><number>`, and the database's own
+  check already allowed any country. No migration.
+- The server works the number out again from what was typed and never
+  takes the browser's result; a country code that is not in the list is
+  not used. A Tanzanian number must still be a mobile one.
+- The customer's order page calls it "WhatsApp number". Order tracking by
+  number plus contact accepts the number as written, spaces and all, for
+  any country.
+- The mobile money wallet field starts from the contact number only when
+  that is a Tanzanian one.
+- Central Admin (owner decision, same day): the order page shows the
+  number under "WhatsApp / phone" (earlier orders hold a phone number in
+  the same place) and the rider's delivery page has a "Message on
+  WhatsApp" button beside "Call". Both open a WhatsApp chat with the
+  number in a new tab (`wa.me`). The link is built from the digits only,
+  for a number in the international form; it carries no message text and
+  no order number, and the console's address is not passed on as the
+  referrer. The console sends nothing itself: the person writes the
+  message in WhatsApp.
+- Not changed: registration and the profile still ask for a Tanzanian
+  mobile number; no WhatsApp message is sent by TRONIC's systems and the
+  number is not verified (SECURITY_AUDIT_REPORT F-33).
+
 ## 2026-11-23 — Overview: the business figures are real
 
 - Owner request: the six "Unavailable" cards on the Master Super Admin's

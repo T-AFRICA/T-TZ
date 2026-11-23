@@ -59,3 +59,13 @@ export function formatMinor(minor: number, currency: string, exponent: number): 
   const number = new Intl.NumberFormat("en-GB", { minimumFractionDigits: whole ? 0 : exponent, maximumFractionDigits: exponent }).format(major);
   return `${currency} ${number}`;
 }
+
+/**
+ * The address that opens a WhatsApp chat with a customer's number, or null
+ * when the number is not `+<country code><number>` (9 to 15 digits): the
+ * link is built from digits only, never from text as it came. No message
+ * text and no order number go into it: only the number WhatsApp needs.
+ */
+export function whatsAppHref(phone: string | null | undefined): string | null {
+  return typeof phone === "string" && /^\+[1-9][0-9]{8,14}$/.test(phone) ? `https://wa.me/${phone.slice(1)}` : null;
+}

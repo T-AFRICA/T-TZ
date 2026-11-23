@@ -68,6 +68,14 @@ test("an order manager gives a packed order to a rider; the rider delivers it wi
   await card.click();
   await expect(rider.getByRole("heading", { level: 1, name: "Juma Said" })).toBeVisible();
   await expect(rider.getByRole("link", { name: /Call \+255712000004/ })).toHaveAttribute("href", "tel:+255712000004");
+  // The customer gave a WhatsApp number: the rider can write to it. Only the number is in the link, it opens
+  // apart from the console and the console's address is not passed on.
+  const whatsapp = rider.getByRole("link", { name: "Message on WhatsApp" });
+  await expect(whatsapp).toHaveAttribute("href", "https://wa.me/255712000004");
+  await expect(whatsapp).toHaveAttribute("target", "_blank");
+  await expect(whatsapp).toHaveAttribute("rel", "noopener noreferrer");
+  await expect(whatsapp).toHaveAttribute("referrerpolicy", "no-referrer");
+  expect(await sideways(rider)).toBeLessThanOrEqual(1);
 
   await confirmStep(rider, "Next step", "I have picked it up");
   await expect(rider.getByText(`Order ${juma} picked up.`).first()).toBeVisible();
