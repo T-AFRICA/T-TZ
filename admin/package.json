@@ -20,6 +20,7 @@
     "@tronic/database": "workspace:*",
     "@tronic/permissions": "workspace:*",
     "@tronic/ui": "workspace:*",
+    "country-flag-icons": "1.6.20",
     "maplibre-gl": "6.16.0",
     "next": "^16.4.5",
     "react": "^19.0.0",
