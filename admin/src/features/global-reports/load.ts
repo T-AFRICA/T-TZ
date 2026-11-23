@@ -48,7 +48,7 @@ async function loadCountry(admin: AdminContext, country: AdminCountry, period: R
 
 export interface GlobalReport extends Combined {
   /** Every country of the Central Admin, with its rate when it has one: for the rate form and the country filter. */
-  countries: { id: string; name: string; currency: string | null; rate: (CountryRate & { text: string }) | null }[];
+  countries: { id: string; name: string; isoCode: string | null; currency: string | null; rate: (CountryRate & { text: string }) | null }[];
   /** When the countries were asked. */
   readAt: string;
 }
@@ -81,7 +81,7 @@ export async function loadGlobalReport(admin: AdminContext, period: ReportPeriod
     ...combine(inputs),
     countries: admin.countries.map((country) => {
       const rate = rateOf(country);
-      return { id: country.id, name: country.name, currency: country.currency, rate: rate ? { unitsPerUsd: rate.unitsPerUsd, setAt: rate.setAt, text: rate.text } : null };
+      return { id: country.id, name: country.name, isoCode: country.isoCode, currency: country.currency, rate: rate ? { unitsPerUsd: rate.unitsPerUsd, setAt: rate.setAt, text: rate.text } : null };
     }),
     readAt: new Date().toISOString(),
   };

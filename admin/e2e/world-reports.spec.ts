@@ -44,6 +44,16 @@ test("a Master Super Admin reads the combined figures, sets the dollar rate, sor
   const table = page.getByRole("region", { name: "Country performance" });
   const tanzania = table.getByRole("row").filter({ hasText: "Tanzania" });
 
+  // Each country carries its flag, from its confirmed ISO code; Congo, whose code is not confirmed, a neutral globe.
+  const highlights = page.getByRole("region", { name: "Country highlights" });
+  for (const code of ["TZ", "KE", "UG", "RW"]) {
+    await expect(highlights.locator(`[data-flag="${code}"] svg`)).toBeVisible();
+    await expect(table.locator(`[data-flag="${code}"] svg`)).toBeVisible();
+  }
+  await expect(highlights.getByRole("listitem").filter({ hasText: "Congo" }).locator('[data-flag="none"]')).toBeVisible();
+  await expect(highlights.getByRole("listitem").filter({ hasText: "Tanzania" }).locator("[data-flag]")).toHaveAttribute("data-flag", "TZ");
+  await highlights.screenshot({ path: path.join(SHOTS, "country-flags.png") });
+
   // Before a rate: counts are added up, money stays in shillings and out of the dollar totals.
   await expect(page.getByText("Some sales are not in the dollar totals")).toBeVisible();
   await expect(summary).toContainText(`Total orders${placed!.n}`);

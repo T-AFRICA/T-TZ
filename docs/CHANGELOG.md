@@ -30,6 +30,11 @@ nothing below is released.
   every status and show the split), a second "revenue" figure beside paid
   sales (the countries report paid orders only), and a product's category
   in the best-sellers table (the product report does not carry it).
+- Flags (owner request, same day): each country shows its flag in the
+  country cards, the country table and the rate list, drawn as SVG
+  (`country-flag-icons` 1.6.20, MIT, no dependencies; flag emoji show as
+  two letters on Windows). The flag follows the country's confirmed ISO
+  code; Congo, whose code is not confirmed, shows a neutral globe.
 - Owner action: run `0008_exchange_rates.sql` in the Central Admin's
   Supabase SQL editor, then type the rates at the bottom of the page.
 

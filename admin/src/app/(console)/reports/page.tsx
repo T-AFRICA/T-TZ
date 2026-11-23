@@ -12,6 +12,7 @@ import {
   UsersIcon,
   type IconProps,
 } from "@tronic/ui";
+import { CountryFlag } from "@/components/flag";
 import { CountryColumns, Donut, LineChart, Sparkline, StackedBars } from "@/components/global-charts";
 import { ExchangeRateForm } from "@/components/global-reports";
 import { RankedBars, TableView } from "@/components/report-charts";
@@ -346,6 +347,7 @@ export default async function GlobalReportsPage({ searchParams }: { searchParams
                   <td className="px-3 py-3.5 tabular-nums text-muted">{row.rank ?? "—"}</td>
                   <td className="px-3 py-3.5">
                     <div className="flex flex-wrap items-center gap-2">
+                      <CountryFlag isoCode={row.isoCode} size="sm" />
                       {row.connected ? (
                         <Link href={`/c/${row.id}/reports?from=${period.from}&to=${period.to}`} className="font-semibold text-ink underline-offset-2 hover:underline">
                           {row.name}
@@ -436,7 +438,10 @@ export default async function GlobalReportsPage({ searchParams }: { searchParams
           {report.rows.map((row) => (
             <li key={row.id} className="flex min-w-0 flex-col gap-3 rounded-xl border border-line bg-surface p-4 shadow-panel">
               <div className="flex items-center justify-between gap-2">
-                <h3 className="min-w-0 truncate text-base font-bold text-ink">{row.name}</h3>
+                <h3 className="flex min-w-0 items-center gap-2 text-base font-bold text-ink">
+                  <CountryFlag isoCode={row.isoCode} />
+                  <span className="min-w-0 truncate">{row.name}</span>
+                </h3>
                 <StatusPill tone={COUNTRY_STATUS_TONE[row.status as keyof typeof COUNTRY_STATUS_TONE] ?? "neutral"}>
                   {COUNTRY_STATUS_LABEL[row.status as keyof typeof COUNTRY_STATUS_LABEL] ?? row.status}
                 </StatusPill>
@@ -552,7 +557,10 @@ export default async function GlobalReportsPage({ searchParams }: { searchParams
         <ul className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
           {report.countries.map((country) => (
             <li key={country.id} className="flex flex-col gap-2 rounded-lg border border-line p-4">
-              <p className="text-sm font-semibold text-ink">{country.name}</p>
+              <p className="flex items-center gap-2 text-sm font-semibold text-ink">
+                <CountryFlag isoCode={country.isoCode} size="sm" />
+                {country.name}
+              </p>
               {country.currency ? (
                 <>
                   <ExchangeRateForm countryId={country.id} countryName={country.name} currency={country.currency} current={country.rate ? String(country.rate.unitsPerUsd) : null} />
