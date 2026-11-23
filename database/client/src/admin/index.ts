@@ -730,3 +730,39 @@ export async function recordCountryAction(
   ]);
   return result.ok === true ? { ok: true } : failure(result);
 }
+
+// ----------------------------------------------------------- exchange rates --
+
+/** A country's US dollar rate for the combined reports (admin migration 0008). */
+export interface CountryExchangeRate {
+  countryId: string;
+  /** The currency the rate was typed for: the country's current one. */
+  currency: string;
+  /** Units of that currency for one US dollar, exactly as stored ("2650.000000"). */
+  unitsPerUsd: string;
+  setAt: string;
+}
+
+/** Every country's rate, for a Master Super Admin; an empty list for anyone else. */
+export async function listCountryExchangeRates(db: Db, access: AdminAccess): Promise<CountryExchangeRate[]> {
+  const rows = await withAdminAccess(db, access, (tx) => tx.query<{ result: unknown }>(`select list_country_exchange_rates() as result`));
+  const raw: unknown = typeof rows[0]?.result === "string" ? JSON.parse(rows[0].result) : rows[0]?.result;
+  if (!Array.isArray(raw)) return [];
+  return (raw as Json[]).map((row) => ({
+    countryId: text(row.country_id),
+    currency: text(row.currency).trim(),
+    unitsPerUsd: text(row.units_per_usd),
+    setAt: iso(row.set_at),
+  }));
+}
+
+/**
+ * Sets a country's rate (Master Super Admin only; written to the audit
+ * log). `unitsPerUsd` is a plain decimal number as text, so no digit is
+ * lost on the way to the database.
+ */
+export async function setCountryExchangeRate(db: Db, access: AdminAccess, countryId: string, unitsPerUsd: string): Promise<AdminResult> {
+  if (!/^[0-9]{1,10}(\.[0-9]{1,6})?$/.test(unitsPerUsd)) return { ok: false, code: "invalid_request" };
+  const result = await callFunction(db, access, `select set_country_exchange_rate($1, $2::numeric) as result`, [countryId, unitsPerUsd]);
+  return result.ok === true ? { ok: true } : failure(result);
+}

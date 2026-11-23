@@ -61,6 +61,8 @@ export function buildNav(actor: Actor, country: { id: string; name: string } | n
   const platform: NavItem[] = [{ href: "/", label: "Overview", icon: "overview" }];
   if (master) {
     platform.push(
+      // Every country's figures added up (app/(console)/reports); the page checks the role again.
+      { href: "/reports", label: "Global reports", icon: "reports" },
       { href: "/countries", label: "Countries", icon: "countries" },
       { href: "/administrators", label: "Administrators", icon: "administrators" },
     );

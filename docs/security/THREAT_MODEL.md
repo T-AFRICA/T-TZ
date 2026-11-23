@@ -80,6 +80,9 @@ finding), **Later** (the feature does not exist yet).
 | T25 | Forge or replay a request to a country | Signed, short-lived tokens bound to the request; writes applied once | Partly (F-18: replay memory is per instance) |
 | T26 | Upload a file that runs as a page | Type checked by content, fixed response type, `nosniff`, sandbox | Done for products and banners; proofs by declared type (F-20) |
 | T27 | Put a formula into a CSV report | Cells that begin with a formula character are written as text | Done |
+| T27a | Staff of one country read the combined figures of all countries | The page and its CSV are for a Master Super Admin only, checked on the server on every request; anyone else gets "not found" and the attempt is recorded. Each country is still asked with a signed request it checks itself | Done |
+| T27b | Someone changes a US dollar rate to distort the combined reports | Only a Master Super Admin can set one (checked in the action and again in the database); the value must be a plain positive number; every change is in the audit log with the rate before and after. The rate is used for reports only: no price, charge or stored order amount depends on it | Done |
+| T27c | A made-up figure is shown for a country that did not answer, or currencies are added together | A country without an answer has no figures and shows the reason; money joins a total only through that country's own rate, and a country without a rate is named and left out | Done |
 
 ### Notifications
 

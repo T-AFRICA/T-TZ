@@ -66,7 +66,7 @@ describe("navigation", () => {
   it("shows a Master Super Admin the platform pages and every module of the chosen country", () => {
     const sections = buildNav(actor([{ role: "master_super_admin", countryId: null }]), tanzania);
     expect(labels(sections)).toEqual([
-      ["Platform", ["Overview", "Countries", "Administrators", "Audit log", "Security events"]],
+      ["Platform", ["Overview", "Global reports", "Countries", "Administrators", "Audit log", "Security events"]],
       ["Tanzania", ["Dashboard", "Products", "Categories", "Inventory", "Orders", "Customers", "Website content", "Promotions", "Reports", "Riders", "Staff", "Settings"]],
     ]);
     expect(sections[1]!.items.find((item) => item.label === "Orders")?.href).toBe("/c/tz/orders");

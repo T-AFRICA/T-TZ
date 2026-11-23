@@ -54,6 +54,8 @@ export const ACCOUNTS = {
   tzFinance: "tz.finance@example.test",
   /** A second Order Manager in Tanzania: reads the notifications of what colleagues and riders did. */
   tzDesk: "tz.desk@example.test",
+  /** A second Master Super Admin, with an authenticator: reads the Global Combined Reports. */
+  groupFinance: "group.finance@example.test",
 } as const;
 
 export interface Stack {
@@ -165,11 +167,13 @@ async function seed(db: Db, auth: FakeAuth, secret: string): Promise<FakeUser> {
   const tzRider = await add(ACCOUNTS.tzRider, false);
   const tzFinance = await add(ACCOUNTS.tzFinance, false);
   const tzDesk = await add(ACCOUNTS.tzDesk, false);
+  await add(ACCOUNTS.groupFinance, true);
   await add(ACCOUNTS.stranger, false);
   await add(ACCOUNTS.invited, false);
 
   // The provisioning step, as an owner runs it in the SQL editor.
   await db.query(`select app_private.provision_master_super_admin($1)`, [ACCOUNTS.master]);
+  await db.query(`select app_private.provision_master_super_admin($1)`, [ACCOUNTS.groupFinance]);
 
   const as = (user: FakeUser, aal: AdminAccess["aal"] = "aal2"): AdminAccess => ({ userId: user.id, aal });
   const onboard = async (inviter: FakeUser, person: FakeUser, role: string, countryId: string) => {

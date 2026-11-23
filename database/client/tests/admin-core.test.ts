@@ -166,12 +166,15 @@ describe("grants and exposure", () => {
       // Two: with and without the person's name and phone (0004).
       "public.invite_admin",
       "public.invite_admin",
+      // Master Super Admin only, checked inside (0008).
+      "public.list_country_exchange_rates",
       "public.record_country_action",
       "public.record_country_health_check",
       "public.record_security_event",
       "public.revoke_admin_invitation",
       "public.revoke_admin_role",
       "public.set_admin_status",
+      "public.set_country_exchange_rate",
       "public.update_country",
       "public.update_country_service",
     ]);

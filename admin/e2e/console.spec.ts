@@ -117,7 +117,7 @@ test("Master Super Admin: second step, every country, every platform page", asyn
   // Business figures are never numbers while no country is connected.
   const figures = page.getByRole("region", { name: "Business figures" });
   await expect(figures.getByText("Unavailable", { exact: true })).toHaveCount(6);
-  await expect(consoleNav(page).getByRole("link")).toHaveText(["Overview", "Countries", "Administrators", "Audit log", "Security events"]);
+  await expect(consoleNav(page).getByRole("link")).toHaveText(["Overview", "Global reports", "Countries", "Administrators", "Audit log", "Security events"]);
   await page.screenshot({ path: path.join(SHOTS, "master-overview.png"), fullPage: true });
 
   // The country switcher lists all five and opens a country.
