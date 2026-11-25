@@ -3,6 +3,45 @@
 Meaningful implementation changes, newest first. Dates are work dates;
 nothing below is released.
 
+## 2026-11-24 — Homepage hero: three category banners, one shape per screen
+
+- Owner artwork: three banners (switchgear and protection, home
+  appliances, switches and sockets), each supplied in three shapes:
+  1600x833 for phones, 1600x700 for tablets and 1600x400 for desktop.
+  They are in `frontend/public/banners/hero-<name>-<shape>.jpg`, byte for
+  byte as supplied.
+- Owner decision: the two existing slides stay. The slideshow is now the
+  animated room, the lighting range, then the three banners (five slides);
+  after the last one the room comes back.
+- `BannerHero` shows the shape made for the screen: the phone banner edge
+  to edge over a strip with the button; the tablet banner under the copy;
+  the desktop banner across the full width with the copy in the part its
+  designer left clear. Only that one file is downloaded.
+- Desktop: the hero is taller than the 4:1 banner below 1920px, so the
+  banner stands on the hero's bottom edge and the wall continues above it
+  in the artwork's own colours (sampled from each banner's top row; see
+  `hero-banners.ts`). Nothing is cropped. From 1920px the hero is 4:1
+  itself for every slide (it was fixed at 480px high before), so the
+  banner is whole on wider screens too.
+- Phones: five dots beside the button would have covered it, so the dots
+  sit centred under the button, and the strip under every slide is 24px
+  taller.
+- Copy and links for the three slides are ours, not the owner's: "Protect
+  Every Circuit." (Shop Switchgear), "Comfort for Every Home." (Shop Home
+  Appliances), "Switch On in Style." (Shop Switches & Sockets). The red
+  second line is kept only on the light grey banner; on the beige and the
+  darker grey it would fall under 3:1, so those headlines are all black.
+- Tests: unit tests for the nine files and their shapes, the links'
+  categories and the copy's contrast on every wall colour; the browser
+  test `e2e/home-hero.spec.ts` now covers five slides, each banner's
+  shape, position and copy from 320px to 2560px, that the dots do not
+  cover the button, and that a screen downloads only its own shape.
+- Not changed: the room and lighting slides' content. Tablets between
+  769px and 1023px wide crop a little off the top and bottom of the
+  tablet banner (none at 768px, about 3% each at 820px). The files are
+  1600px wide, so they are slightly soft on screens wider than that;
+  larger originals can replace them under the same names.
+
 ## 2026-11-23 — Checkout asks for a WhatsApp number with its country code
 
 - Owner request: the checkout's "Phone number" is now "WhatsApp number",
