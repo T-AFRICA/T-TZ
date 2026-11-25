@@ -13,7 +13,7 @@ What lives where in the `T-AFRICA/T-TZ` monorepo (pnpm + Turborepo).
     (noindex placeholder for W06 content pages).
   - `src/components` — feature-grouped UI: `header/` (Header, Navbar,
     MobileNav, AnnouncementTicker), `search/SearchBox`,
-    `country/CountrySelector`, `home/` (Hero, ProductCard, ProductSection,
+    `country/CountrySelector`, `home/` (Hero, HeroCarousel, LightingHero, BannerHero, ProductCard, ProductSection,
     AddToCartButton, sampleProducts data), `product/` (ProductGallery,
     PurchasePanel, RecentlyViewed), `motion/Reveal`, `footer/Footer`.
   - `src/fonts` — self-hosted Montserrat/Poppins WOFF2 + SIL OFL licenses

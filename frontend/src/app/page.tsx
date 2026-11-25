@@ -5,6 +5,8 @@ import { externalLinkProps } from "@/config/site";
 import { Hero } from "@/components/home/Hero";
 import { HeroCarousel } from "@/components/home/HeroCarousel";
 import { LightingHero } from "@/components/home/LightingHero";
+import { BannerHero } from "@/components/home/BannerHero";
+import { HERO_BANNERS } from "@/components/home/hero-banners";
 import { CategoryRail } from "@/components/home/CategoryRail";
 import { HomeCollections } from "@/components/home/HomeCollections";
 import { HomeEssentials } from "@/components/home/HomeEssentials";
@@ -27,10 +29,14 @@ import { Reveal } from "@/components/motion/Reveal";
 export default function HomePage() {
   return (
     <>
-      {/* The animated room first; when its lighting cycle ends, the lighting range (owner request 2026-11-19). */}
-      <HeroCarousel labels={["Power Every Space", "Light Up Every Room"]}>
+      {/* The animated room first; when its lighting cycle ends, the lighting range (owner request 2026-11-19),
+          then the three category banners (owner artwork 2026-11-24), and the room again. */}
+      <HeroCarousel labels={["Power Every Space", "Light Up Every Room", ...HERO_BANNERS.map((banner) => banner.label)]}>
         <Hero />
         <LightingHero />
+        {HERO_BANNERS.map((banner) => (
+          <BannerHero key={banner.name} banner={banner} />
+        ))}
       </HeroCarousel>
       <Container id="departments" className="scroll-mt-24 pt-5 md:pt-10 lg:pt-12">
         <CategoryRail />

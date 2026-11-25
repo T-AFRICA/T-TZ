@@ -23,7 +23,7 @@ export function LightingHero() {
       className="relative flex h-full flex-col overflow-hidden text-[var(--color-premium-black)] lg:min-h-[max(22rem,30vw)] lg:justify-center 2xl:min-h-[30rem]"
       style={{ backgroundColor: WALL }}
     >
-      <Container className="relative z-10 py-9 max-lg:text-center max-md:absolute max-md:inset-x-0 max-md:bottom-0 max-md:pb-3.5 max-md:pt-0 lg:py-10">
+      <Container className="relative z-10 py-9 max-lg:text-center max-md:absolute max-md:inset-x-0 max-md:bottom-0 max-md:pb-[2.375rem] max-md:pt-0 lg:py-10">
         <div className="lg:max-w-[32%] xl:max-w-[24rem]">
           {/* As on the first slide, phones show only the photograph and the button. */}
           <h2 className="font-display text-[length:var(--text-display)] leading-[1.04] max-md:sr-only">
@@ -46,7 +46,7 @@ export function LightingHero() {
         </div>
       </Container>
 
-      <div aria-hidden="true" className="relative w-full overflow-hidden max-md:pb-16 md:h-[21rem] lg:absolute lg:inset-0 lg:h-auto">
+      <div aria-hidden="true" className="relative w-full overflow-hidden max-md:pb-[5.5rem] md:h-[21rem] lg:absolute lg:inset-0 lg:h-auto">
         <div className="relative aspect-[1600/833] w-full md:absolute md:inset-0 md:aspect-auto lg:inset-y-0 lg:left-auto lg:right-0 lg:aspect-[1600/833] lg:w-auto lg:max-w-[78%]">
           <Image
             src="/banners/hero-lighting-collection.webp"

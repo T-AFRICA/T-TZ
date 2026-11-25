@@ -85,7 +85,7 @@ export function Hero() {
       aria-label="TRONIC — electrical supplies, lighting and switchgear"
       className="relative flex h-full flex-col overflow-hidden bg-[#f6f3ee] text-[var(--color-premium-black)] lg:min-h-[max(22rem,30vw)] lg:justify-center lg:bg-[#2b221e] lg:text-white 2xl:min-h-[30rem]"
     >
-      <Container className="relative z-10 py-9 max-lg:text-center max-md:absolute max-md:inset-x-0 max-md:bottom-0 max-md:pb-3.5 max-md:pt-0 lg:py-10">
+      <Container className="relative z-10 py-9 max-lg:text-center max-md:absolute max-md:inset-x-0 max-md:bottom-0 max-md:pb-[2.375rem] max-md:pt-0 lg:py-10">
         <div className="lg:max-w-[32%] xl:max-w-[24rem]">
           {/* Phones show only the banner and CTA; the copy stays for screen
               readers and search engines. */}
@@ -115,7 +115,7 @@ export function Hero() {
           object-right-bottom cover crop, or the pulses and fan drift. */}
       <div
         aria-hidden="true"
-        className="relative w-full overflow-hidden bg-[#2b221e] max-md:pb-16 md:h-[21rem] lg:absolute lg:inset-0 lg:h-auto"
+        className="relative w-full overflow-hidden bg-[#2b221e] max-md:pb-[5.5rem] md:h-[21rem] lg:absolute lg:inset-0 lg:h-auto"
       >
         {/* On phones this 96:50 box shows all three lamps edge to edge; the
             strip below it, in the wall colour, carries the CTA. */}

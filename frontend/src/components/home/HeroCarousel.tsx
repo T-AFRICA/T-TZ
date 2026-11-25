@@ -10,8 +10,9 @@ const SLIDE_MS = 7000;
 /**
  * The homepage hero as a slideshow (owner request 2026-11-19). The first
  * slide is the animated "Power Every Space" room; when its lighting cycle
- * ends (the room has just gone dark) the next slide fades in, stays
- * SLIDE_MS, and the room comes back and lights up again. The room's
+ * ends (the room has just gone dark) the next slide fades in and stays
+ * SLIDE_MS, then each later slide in turn, and after the last one the room
+ * comes back and lights up again. The room's
  * animations are paused while it is hidden, so it always restarts from the
  * start of its cycle.
  *
@@ -91,7 +92,9 @@ export function HeroCarousel({ labels, children }: { labels: readonly string[]; 
           </div>
         );
       })}
-      <div className="absolute bottom-3 right-3 z-20 flex items-center rounded-full bg-black/35 px-1 backdrop-blur-sm md:bottom-4 md:right-5">
+      {/* Phones: centred under the slide's button, in the strip each slide keeps
+          for the two (five dots beside the button would cover it). */}
+      <div className="absolute z-20 flex items-center rounded-full bg-black/35 px-1 backdrop-blur-sm max-md:bottom-1.5 max-md:left-1/2 max-md:-translate-x-1/2 md:bottom-4 md:right-5">
         {labels.slice(0, count).map((label, index) => (
           <button
             key={label}
