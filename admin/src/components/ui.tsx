@@ -148,13 +148,13 @@ export function Cell({ children, className = "" }: { children: ReactNode; classN
 
 export const buttonClass = {
   primary:
-    "inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-accent-hover disabled:pointer-events-none disabled:opacity-60",
+    "m-press inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white hover:bg-accent-hover disabled:pointer-events-none disabled:opacity-60",
   secondary:
-    "inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-line-strong bg-surface px-4 py-2 text-sm font-semibold text-ink transition-colors hover:bg-raised disabled:pointer-events-none disabled:opacity-60",
+    "m-press inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-line-strong bg-surface px-4 py-2 text-sm font-semibold text-ink hover:bg-raised disabled:pointer-events-none disabled:opacity-60",
   quiet:
-    "inline-flex min-h-9 items-center justify-center gap-1.5 rounded-md px-2.5 py-1.5 text-sm font-medium text-muted transition-colors hover:bg-raised hover:text-ink disabled:pointer-events-none disabled:opacity-60",
+    "m-press inline-flex min-h-9 items-center justify-center gap-1.5 rounded-md px-2.5 py-1.5 text-sm font-medium text-muted hover:bg-raised hover:text-ink disabled:pointer-events-none disabled:opacity-60",
   danger:
-    "inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-danger/50 bg-surface px-4 py-2 text-sm font-semibold text-danger transition-colors hover:bg-danger-soft disabled:pointer-events-none disabled:opacity-60",
+    "m-press inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-danger/50 bg-surface px-4 py-2 text-sm font-semibold text-danger hover:bg-danger-soft disabled:pointer-events-none disabled:opacity-60",
 } as const;
 
 export const inputClass =

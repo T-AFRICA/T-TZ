@@ -262,7 +262,7 @@ export function MobileNav() {
             <Link
               href={accountLink.href}
               onClick={close}
-              className="mt-3 flex items-center justify-center gap-2 rounded-full bg-[var(--color-action-red)] px-4 py-2.5 font-semibold text-white transition-all duration-200 hover:-translate-y-0.5 hover:bg-[var(--color-action-red-dark)] hover:shadow-[0_8px_18px_-8px_rgba(215,25,32,0.6)]"
+              className="mt-3 flex items-center justify-center gap-2 rounded-full m-press bg-[var(--color-action-red)] px-4 py-2.5 font-semibold text-white hover:-translate-y-0.5 hover:bg-[var(--color-action-red-dark)] hover:shadow-[0_8px_18px_-8px_rgba(215,25,32,0.6)]"
             >
               <UserIcon size={18} />
               {accountLink.label}

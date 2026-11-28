@@ -342,7 +342,7 @@ export function CheckoutView({
         </p>
         <Link
           href="/"
-          className="mt-6 inline-flex h-11 items-center gap-2 rounded-full bg-[var(--color-action-red)] px-6 text-sm font-semibold text-white transition-colors hover:bg-[var(--color-action-red-dark)]"
+          className="mt-6 inline-flex h-11 items-center gap-2 rounded-full m-press bg-[var(--color-action-red)] px-6 text-sm font-semibold text-white hover:bg-[var(--color-action-red-dark)]"
         >
           Browse products
           <ArrowRightIcon size={16} />
@@ -630,7 +630,7 @@ export function CheckoutView({
               <button
                 type="submit"
                 disabled={!canSubmit}
-                className="mt-4 hidden h-12 w-full items-center justify-center gap-2 rounded-full bg-[var(--color-action-red)] text-[15px] font-semibold text-white shadow-[0_10px_26px_-12px_rgba(215,25,32,0.7)] transition-[background-color,transform] hover:bg-[var(--color-action-red-dark)] active:scale-[0.99] disabled:cursor-not-allowed disabled:bg-[var(--color-light-grey)] disabled:text-[var(--text-muted)] disabled:shadow-none lg:inline-flex"
+                className="mt-4 hidden h-12 w-full items-center justify-center gap-2 rounded-full m-press bg-[var(--color-action-red)] text-[15px] font-semibold text-white shadow-[0_10px_26px_-12px_rgba(215,25,32,0.7)] hover:bg-[var(--color-action-red-dark)] disabled:cursor-not-allowed disabled:bg-[var(--color-light-grey)] disabled:text-[var(--text-muted)] disabled:shadow-none lg:inline-flex"
               >
                 {placeLabel} · {formatPrice(quote.totalMinor)}
               </button>

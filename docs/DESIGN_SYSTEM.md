@@ -121,3 +121,71 @@ Master prompt §10 primitives (complete, 2026-11-02):
 - `AccordionSection` — §10 disclosure row on native `<details>`, used by
   the product details page (overview/specs/delivery/warranty); the open
   animation uses the app-level `accordion-in` keyframes.
+
+## Motion — 2026-11-28
+
+One motion system for the storefront and the Central Admin, in
+`packages/ui`: `src/motion.css` (tokens and classes, imported after
+`tokens.css`) and `src/motion.ts` (the same numbers for TypeScript, and
+the one-shot effects). A storefront test (`components/motion/motion.test.ts`)
+fails if the two files disagree.
+
+### Durations
+
+| Token | Value | Use |
+|---|---|---|
+| `--motion-instant` | 100ms | A control going down under a press |
+| `--motion-fast` | 160ms | Hover, colour, a control coming back up. Also the default for every Tailwind `transition-*` utility |
+| `--motion-base` | 240ms | Menus, popovers, toasts, backdrops, exits |
+| `--motion-slow` | 320ms | Dialogs, sheets, page-level entrances |
+| `--motion-slower` | 420ms | The drawer crossing the screen, success feedback |
+| `--motion-stagger` | 40ms | Gap between items entering one after another |
+
+### Curves
+
+| Token (Tailwind utility) | Use |
+|---|---|
+| `--ease-out` (`ease-out`) | Something arriving: fast start, long soft landing |
+| `--ease-in` (`ease-in`) | Something leaving |
+| `--ease-standard` (`ease-standard`) | A change of state in place; the default curve |
+| `--ease-in-out` (`ease-in-out`) | A move across the page |
+| `--ease-spring` (`ease-spring`) | A small element settling with one visible overshoot (16%) |
+| `--ease-settle` (`ease-settle`) | A larger element settling with a barely visible overshoot (4.5%) |
+
+Spring curves go on scale and short moves only. A panel that slides in from
+an edge must not overshoot past that edge.
+
+### Classes
+
+- `m-press`: press feedback for any button or button-like link. Down in
+  100ms to `--press-scale` (squashed more in height than width), back up on
+  the spring curve. It owns the element's transition list, so do not add
+  `transition-*` or `duration-*` beside it. `m-press-icon` squashes evenly,
+  for round icon buttons.
+- `m-hit`: a touch area of at least 44 by 44 CSS pixels around a control
+  drawn smaller. The control must be positioned. `m-hit-y` grows the height
+  only, for controls side by side.
+- `m-rise-in`, `m-dialog`, `m-stagger`, `m-skeleton`: arriving in place,
+  the shared dialog entrance with its dimming backdrop, children entering in
+  turn (each sets `--i`), and the loading pulse.
+
+### One-shot effects (`@tronic/ui`)
+
+- `playMotion(element, "pop" | "release" | "bump" | "shake")`: success,
+  its quieter opposite, a supporting element reacting, and a refusal.
+- `flyBetween(from, to, { image })`: a dot travels from one element to
+  another on an arc (across and up-and-down run on different curves).
+- They use the Web Animations API, move transform and opacity only, never
+  delay the action they follow, and do nothing under reduced motion or
+  where the API is missing.
+
+### Rules
+
+- Animate transform and opacity only.
+- Feedback follows the action; it never stands in for it. A button says
+  "Added" only after the cart has taken the product, and nothing is shown
+  as paid or placed before the server says so.
+- Both apps keep a global reduced-motion rule that brings every duration to
+  nothing; the actions themselves still work.
+- Ambient loops (the hero room, tickers) keep their own long timings and
+  are not part of these tokens.

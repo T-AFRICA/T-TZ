@@ -1,10 +1,15 @@
 "use client";
 
-import { useState } from "react";
-import { CartIcon } from "@tronic/ui";
+import { useState, type MouseEvent } from "react";
+import { CartIcon, CheckCircleIcon } from "@tronic/ui";
 import { QuantityField } from "@/components/cart/QuantityField";
 import { limitHint, purchaseLimit, stockLabel } from "@/features/catalog/stock";
-import { MAX_PURCHASE_QUANTITY as MAX_QUANTITY, selectionLabel, usePurchaseActions } from "@/features/cart/purchase";
+import {
+  MAX_PURCHASE_QUANTITY as MAX_QUANTITY,
+  selectionLabel,
+  useAddedFeedback,
+  usePurchaseActions,
+} from "@/features/cart/purchase";
 import {
   discountPercent,
   formatPrice,
@@ -34,8 +39,11 @@ export function PurchasePanel({ product }: { product: SampleProduct }) {
 
   const line = { productId: product.id, name: product.name, quantity, color, variant };
 
-  function addToCart() {
-    purchase.addToCart(line);
+  const [added, flashAdded] = useAddedFeedback();
+
+  function addToCart(event: MouseEvent<HTMLButtonElement>) {
+    purchase.addToCart(line, { from: event.currentTarget, image: product.image });
+    flashAdded();
   }
 
   function buyNow() {
@@ -43,14 +51,14 @@ export function PurchasePanel({ product }: { product: SampleProduct }) {
   }
 
   const primaryClasses =
-    "inline-flex h-[3.25rem] w-full items-center justify-center gap-2 rounded-full bg-[var(--color-action-red)] text-[15px] font-semibold text-white shadow-[0_10px_26px_-10px_rgba(215,25,32,0.7)] transition-[background-color,transform] active:scale-[0.98] hover:bg-[var(--color-action-red-dark)] disabled:cursor-not-allowed disabled:bg-[var(--color-light-grey)] disabled:text-[var(--text-muted)] disabled:shadow-none";
+    "inline-flex h-[3.25rem] w-full items-center justify-center gap-2 rounded-full bg-[var(--color-action-red)] text-[15px] font-semibold text-white shadow-[0_10px_26px_-10px_rgba(215,25,32,0.7)] m-press hover:bg-[var(--color-action-red-dark)] disabled:cursor-not-allowed disabled:bg-[var(--color-light-grey)] disabled:text-[var(--text-muted)] disabled:shadow-none";
   const secondaryClasses =
-    "inline-flex h-[3.25rem] w-full items-center justify-center gap-2 rounded-full border border-[var(--color-light-grey)] bg-white text-[15px] font-semibold text-[var(--text-primary)] transition-[border-color,color,transform] active:scale-[0.98] hover:border-[var(--color-action-red)] hover:text-[var(--color-action-red)] disabled:cursor-not-allowed disabled:border-[var(--color-light-grey)] disabled:text-[var(--text-muted)] disabled:hover:border-[var(--color-light-grey)]";
+    "inline-flex h-[3.25rem] w-full items-center justify-center gap-2 rounded-full border border-[var(--color-light-grey)] bg-white text-[15px] font-semibold text-[var(--text-primary)] m-press hover:border-[var(--color-action-red)] hover:text-[var(--color-action-red)] disabled:cursor-not-allowed disabled:border-[var(--color-light-grey)] disabled:text-[var(--text-muted)] disabled:hover:border-[var(--color-light-grey)]";
 
   // One pill holds both steps: a quiet minus, the count, and a filled plus.
   // Buttons are 40px inside a 44px pill, so each is a comfortable tap target.
   const stepBase =
-    "flex h-10 w-10 items-center justify-center rounded-full text-xl font-medium leading-none transition-[background-color,color,transform] active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-action-red)] disabled:cursor-not-allowed disabled:active:scale-100";
+    "flex h-10 w-10 items-center justify-center rounded-full m-press m-press-icon text-xl font-medium leading-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-action-red)] disabled:cursor-not-allowed disabled:active:scale-100";
   const minusClasses = `${stepBase} text-[var(--text-primary)] hover:bg-[var(--surface-card)] disabled:text-[var(--text-muted)] disabled:opacity-40 disabled:hover:bg-transparent`;
   const plusClasses = `${stepBase} bg-[var(--color-action-red)] text-white shadow-[0_6px_14px_-8px_rgba(215,25,32,0.8)] hover:bg-[var(--color-action-red-dark)] disabled:bg-[var(--color-light-grey)] disabled:text-[var(--text-muted)] disabled:shadow-none`;
 
@@ -199,8 +207,8 @@ export function PurchasePanel({ product }: { product: SampleProduct }) {
       {/* Actions: large stacked CTAs (in-flow on md+; phones use the sticky bar) */}
       <div className="mt-7 hidden flex-col gap-3 md:flex">
         <button type="button" onClick={addToCart} disabled={!product.inStock} className={primaryClasses}>
-          <CartIcon size={18} />
-          Add to Cart
+          {added ? <CheckCircleIcon size={18} /> : <CartIcon size={18} />}
+          {added ? "Added to Cart" : "Add to Cart"}
         </button>
         <button type="button" onClick={buyNow} disabled={!product.inStock} className={secondaryClasses}>
           Buy Now
@@ -234,7 +242,7 @@ export function PurchasePanel({ product }: { product: SampleProduct }) {
               type="button"
               onClick={buyNow}
               disabled={!product.inStock}
-              className="inline-flex h-11 items-center justify-center rounded-full border-[1.5px] border-[var(--color-action-red)] px-4 text-[13px] font-semibold leading-none text-[var(--color-action-red)] transition-[transform,background-color] active:scale-[0.97] active:bg-[#fdecec] disabled:border-[var(--color-light-grey)] disabled:text-[var(--text-muted)] disabled:active:bg-transparent max-[359px]:flex-1 max-[359px]:px-3"
+              className="inline-flex h-11 items-center justify-center rounded-full border-[1.5px] border-[var(--color-action-red)] px-4 text-[13px] font-semibold leading-none text-[var(--color-action-red)] m-press active:bg-[#fdecec] disabled:border-[var(--color-light-grey)] disabled:text-[var(--text-muted)] disabled:active:bg-transparent max-[359px]:flex-1 max-[359px]:px-3"
             >
               Buy Now
             </button>
@@ -242,12 +250,12 @@ export function PurchasePanel({ product }: { product: SampleProduct }) {
               type="button"
               onClick={addToCart}
               disabled={!product.inStock}
-              className="inline-flex h-11 items-center justify-center gap-1.5 rounded-full bg-[var(--color-action-red)] px-5 text-[13px] font-semibold leading-none text-white shadow-[0_8px_18px_-10px_rgba(215,25,32,0.8)] transition-[transform,background-color] active:scale-[0.97] active:bg-[var(--color-action-red-dark)] disabled:bg-[var(--color-light-grey)] disabled:text-[var(--text-muted)] disabled:shadow-none max-[359px]:flex-1 max-[359px]:px-3"
+              className="inline-flex h-11 items-center justify-center gap-1.5 rounded-full bg-[var(--color-action-red)] px-5 text-[13px] font-semibold leading-none text-white shadow-[0_8px_18px_-10px_rgba(215,25,32,0.8)] m-press active:bg-[var(--color-action-red-dark)] disabled:bg-[var(--color-light-grey)] disabled:text-[var(--text-muted)] disabled:shadow-none max-[359px]:flex-1 max-[359px]:px-3"
             >
               <span className="max-[359px]:hidden">
-                <CartIcon size={15} />
+                {added ? <CheckCircleIcon size={15} /> : <CartIcon size={15} />}
               </span>
-              {product.inStock ? "Add to Cart" : "Out of Stock"}
+              {!product.inStock ? "Out of Stock" : added ? "Added" : "Add to Cart"}
             </button>
           </div>
         </div>

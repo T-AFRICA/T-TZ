@@ -103,14 +103,14 @@ export function ToastProvider({ children }: { children: ReactNode }) {
           <div
             key={toast.id}
             role="status"
-            className={`pointer-events-auto flex w-full max-w-sm items-center justify-between gap-3 rounded-xl border-l-4 bg-[var(--color-premium-black)] px-4 py-3 text-sm text-white shadow-lg animate-[ticker-in_250ms_ease-out] ${VARIANT_ACCENT[toast.variant]}`}
+            className={`pointer-events-auto flex w-full max-w-sm items-center justify-between gap-3 rounded-xl border-l-4 bg-[var(--color-premium-black)] px-4 py-3 text-sm text-white shadow-lg m-rise-in ${VARIANT_ACCENT[toast.variant]}`}
           >
             {toast.message}
             <button
               type="button"
               onClick={() => dismiss(toast.id)}
               aria-label="Dismiss notification"
-              className="shrink-0 rounded p-1 text-white/70 transition-colors hover:text-white"
+              className="m-press m-press-icon m-hit relative shrink-0 rounded p-1 text-white/70 hover:text-white"
             >
               <svg aria-hidden="true" width="14" height="14" viewBox="0 0 18 18" fill="none">
                 <path d="M4 4l10 10M14 4L4 14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />

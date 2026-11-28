@@ -60,7 +60,7 @@ export function PromoBanner() {
           <div className="mt-6 flex flex-wrap gap-3 max-md:justify-center">
             <Link
               href="/categories/lighting"
-              className="inline-flex h-12 items-center gap-2 rounded-full bg-[var(--color-action-red)] px-6 text-sm font-semibold text-white shadow-[0_12px_28px_-12px_rgba(215,25,32,0.8)] transition-colors hover:bg-[var(--color-action-red-dark)]"
+              className="inline-flex h-12 items-center gap-2 rounded-full m-press bg-[var(--color-action-red)] px-6 text-sm font-semibold text-white shadow-[0_12px_28px_-12px_rgba(215,25,32,0.8)] hover:bg-[var(--color-action-red-dark)]"
             >
               Shop lighting
               <ArrowRightIcon size={16} />

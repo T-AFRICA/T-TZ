@@ -37,7 +37,7 @@ export function LightingHero() {
           <div className="md:mt-6">
             <Link
               href="/categories/lighting"
-              className="inline-flex items-center gap-2 rounded-full bg-[var(--color-action-red)] px-7 py-3.5 text-sm font-semibold text-white shadow-[0_12px_28px_-12px_rgba(215,25,32,0.65)] transition-all duration-200 hover:-translate-y-0.5 hover:bg-[var(--color-action-red-dark)]"
+              className="inline-flex items-center gap-2 rounded-full m-press bg-[var(--color-action-red)] px-7 py-3.5 text-sm font-semibold text-white shadow-[0_12px_28px_-12px_rgba(215,25,32,0.65)] hover:-translate-y-0.5 hover:bg-[var(--color-action-red-dark)]"
             >
               Shop Lighting
               <ArrowRightIcon size={16} />

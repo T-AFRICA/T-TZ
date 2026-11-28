@@ -77,7 +77,7 @@ export function ProfileForm({ fullName, phone, email }: { fullName: string; phon
         <button
           type="submit"
           disabled={pending}
-          className="inline-flex h-11 items-center rounded-full bg-[var(--color-action-red)] px-6 text-sm font-semibold text-white transition-colors hover:bg-[var(--color-premium-black)] disabled:cursor-wait disabled:opacity-70"
+          className="inline-flex h-11 items-center rounded-full m-press bg-[var(--color-action-red)] px-6 text-sm font-semibold text-white hover:bg-[var(--color-premium-black)] disabled:cursor-wait disabled:opacity-70"
         >
           {pending ? "Saving…" : "Save changes"}
         </button>

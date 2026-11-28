@@ -1,22 +1,22 @@
 "use client";
 
-import { useState } from "react";
-import { CartIcon, Dialog } from "@tronic/ui";
+import { useRef, useState } from "react";
+import { CartIcon, CheckCircleIcon, Dialog } from "@tronic/ui";
 import type { Product } from "@tronic/types";
-import { usePurchaseActions } from "@/features/cart/purchase";
+import { useAddedFeedback, usePurchaseActions } from "@/features/cart/purchase";
 
 /**
  * Two compact CTAs in one row: Buy Now (quiet outline, fixed width) and
  * Add to Cart (filled, takes the rest). 34px tall; each button is its own
  * tap target. Add is brand red and turns black on hover/focus (owner
  * request 2026-11-12); Buy Now is a neutral outline so the red stays on the
- * one main action. Press feedback is CSS (active:scale) so SSR markup never
- * depends on the reduced-motion preference — the global CSS override
- * disables it there.
+ * one main action. Press feedback is the shared m-press class (CSS, so SSR
+ * markup never depends on the reduced-motion preference), and m-hit-y
+ * gives each 34px button a 44px tall touch area.
  */
 const ROW_CLASSES = "mt-2 flex gap-1.5";
 const BASE_CLASSES =
-  "flex h-[34px] items-center justify-center gap-1 rounded-full text-[11px] font-semibold transition-colors duration-200 active:scale-[0.97]";
+  "m-press m-hit-y relative flex h-[34px] items-center justify-center gap-1 rounded-full text-[11px] font-semibold";
 const BUY_CLASSES = `${BASE_CLASSES} shrink-0 border border-[var(--color-light-grey)] px-2.5 text-[var(--text-primary)] hover:border-[var(--color-premium-black)] max-[359px]:px-2 md:px-3`;
 const ADD_CLASSES = `${BASE_CLASSES} min-w-0 flex-1 bg-[var(--color-action-red)] px-2 text-white hover:bg-[var(--color-premium-black)] focus-visible:bg-[var(--color-premium-black)]`;
 
@@ -28,10 +28,17 @@ type Mode = "add" | "buy";
  * confirms with a toast; Buy Now opens the checkout with that one product
  * and leaves the cart as it is. A product with colours or
  * variants first opens a small dialog where each must be chosen, so a line
- * never lands in the cart without its options.
+ * never lands in the cart without its options. After an add the button says
+ * "Added" for a moment and the product's photo travels to the cart icon.
  */
-export function AddToCartButton({ product }: { product: Pick<Product, "id" | "name" | "colors" | "variants" | "variantLabel"> }) {
+export function AddToCartButton({
+  product,
+}: {
+  product: Pick<Product, "id" | "name" | "colors" | "variants" | "variantLabel"> & { image?: string };
+}) {
   const purchase = usePurchaseActions();
+  const [added, flashAdded] = useAddedFeedback();
+  const addButton = useRef<HTMLButtonElement>(null);
   const [mode, setMode] = useState<Mode | null>(null);
   const [color, setColor] = useState<string | null>(null);
   const [variant, setVariant] = useState<string | null>(null);
@@ -47,7 +54,8 @@ export function AddToCartButton({ product }: { product: Pick<Product, "id" | "na
     if (action === "buy") {
       purchase.buyNow(line);
     } else {
-      purchase.addToCart(line);
+      purchase.addToCart(line, { from: addButton.current, image: product.image });
+      flashAdded();
     }
   }
 
@@ -87,13 +95,16 @@ export function AddToCartButton({ product }: { product: Pick<Product, "id" | "na
           type="button"
           aria-haspopup={hasOptions ? "dialog" : undefined}
           aria-label={`Add to cart: ${product.name}${suffix}`}
+          ref={addButton}
+          data-added={added ? "" : undefined}
           onClick={() => start("add")}
           className={ADD_CLASSES}
         >
           {/* Cards are 170-190px wide in every grid, so the label is "Add";
-              the accessible name still says "Add to cart". */}
-          <CartIcon size={13} />
-          <span>Add</span>
+              the accessible name still says "Add to cart". The toast
+              announces the add; this is its visible echo on the button. */}
+          {added ? <CheckCircleIcon size={13} /> : <CartIcon size={13} />}
+          <span>{added ? "Added" : "Add"}</span>
         </button>
       </div>
       {hasOptions ? (
@@ -114,7 +125,7 @@ export function AddToCartButton({ product }: { product: Pick<Product, "id" | "na
                       aria-label={option.name}
                       aria-pressed={selected}
                       onClick={() => setColor(option.name)}
-                      className={`flex h-9 w-9 items-center justify-center rounded-full border-2 transition-colors ${
+                      className={`m-press m-press-icon m-hit relative flex h-9 w-9 items-center justify-center rounded-full border-2 ${
                         selected ? "border-[var(--color-action-red)]" : "border-transparent hover:border-[var(--color-light-grey)]"
                       }`}
                     >
@@ -141,7 +152,7 @@ export function AddToCartButton({ product }: { product: Pick<Product, "id" | "na
                       type="button"
                       aria-pressed={selected}
                       onClick={() => setVariant(option)}
-                      className={`rounded-full border px-3.5 py-2 text-sm font-medium transition-colors ${
+                      className={`m-press m-hit-y relative rounded-full border px-3.5 py-2 text-sm font-medium ${
                         selected
                           ? "border-[var(--color-action-red)] bg-[var(--color-action-red)] text-white"
                           : "border-[var(--color-light-grey)] hover:border-[var(--color-action-red)] hover:text-[var(--color-action-red)]"
@@ -158,7 +169,7 @@ export function AddToCartButton({ product }: { product: Pick<Product, "id" | "na
             type="button"
             onClick={confirm}
             disabled={!complete}
-            className="mt-5 inline-flex h-11 w-full items-center justify-center gap-2 rounded-full bg-[var(--color-action-red)] text-sm font-semibold text-white transition-colors hover:bg-[var(--color-action-red-dark)] disabled:cursor-not-allowed disabled:bg-[var(--color-light-grey)] disabled:text-[var(--text-muted)]"
+            className="m-press mt-5 inline-flex h-11 w-full items-center justify-center gap-2 rounded-full bg-[var(--color-action-red)] text-sm font-semibold text-white hover:bg-[var(--color-action-red-dark)] disabled:cursor-not-allowed disabled:bg-[var(--color-light-grey)] disabled:text-[var(--text-muted)]"
           >
             <CartIcon size={16} />
             {mode === "buy" ? "Buy Now" : "Add to Cart"}

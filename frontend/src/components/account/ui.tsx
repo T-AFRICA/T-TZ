@@ -119,7 +119,7 @@ export function ButtonLink({
   return (
     <Link
       href={href}
-      className={`inline-flex h-11 items-center justify-center gap-2 rounded-full px-5 text-sm font-semibold transition-colors ${
+      className={`inline-flex h-11 items-center justify-center gap-2 m-press rounded-full px-5 text-sm font-semibold ${
         variant === "primary"
           ? "bg-[var(--color-action-red)] text-white hover:bg-[var(--color-premium-black)]"
           : "border border-[var(--color-light-grey)] bg-white text-[var(--text-primary)] hover:border-[var(--color-premium-black)]"

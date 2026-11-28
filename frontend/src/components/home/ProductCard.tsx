@@ -59,7 +59,7 @@ export function ProductCard({
         <WishlistButton
           productId={product.id}
           productName={product.name}
-          className="absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-full bg-white shadow-[0_2px_8px_rgba(17,17,17,0.12)] transition-all hover:scale-110 active:scale-90"
+          className="absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-full bg-white shadow-[0_2px_8px_rgba(17,17,17,0.12)] hover:scale-110"
         />
       </div>
       <div className="flex flex-1 flex-col px-1 pb-0.5 pt-2.5">

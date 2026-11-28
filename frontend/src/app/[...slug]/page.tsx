@@ -36,7 +36,7 @@ export default function PlaceholderPage() {
       <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
         <Link
           href="/"
-          className="inline-flex items-center gap-2 rounded-full bg-[var(--color-action-red)] px-6 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[var(--color-action-red-dark)]"
+          className="inline-flex items-center gap-2 rounded-full m-press bg-[var(--color-action-red)] px-6 py-2.5 text-sm font-semibold text-white hover:bg-[var(--color-action-red-dark)]"
         >
           Back to home
         </Link>

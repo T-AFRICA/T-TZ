@@ -1,0 +1,181 @@
+/*
+ * TRONIC motion system: one set of durations, easing curves and feedback
+ * classes for the storefront and the Central Admin (and every country
+ * storefront built on @tronic/ui). Import it after tokens.css.
+ *
+ * The same numbers are exported to TypeScript from motion.ts, for the few
+ * one-shot effects that run through the Web Animations API; motion.test.ts
+ * fails if the two files disagree.
+ *
+ * Rules of use:
+ *   - Animate transform (translate, scale, rotate) and opacity only.
+ *   - Pick a duration by what moves, not by taste:
+ *       instant  100ms  the press itself (a control going down)
+ *       fast     160ms  hover, colour, a control coming back up
+ *       base     240ms  menus, popovers, toasts, small overlays
+ *       slow     320ms  dialogs, sheets, page-level entrances
+ *       slower   420ms  drawers crossing the screen, success feedback
+ *   - Pick a curve by direction:
+ *       out       something arriving (fast start, long soft landing)
+ *       in        something leaving
+ *       standard  a change of state in place, and moves across the page
+ *       spring    a small element settling with one visible overshoot
+ *       settle    a larger element settling with a barely visible overshoot
+ *     Spring curves go on scale and short moves only; a panel that slides
+ *     in from an edge must not overshoot past that edge.
+ *   - Every app that imports this keeps its global reduced-motion rule
+ *     (durations forced to ~0); the one-shot effects in motion.ts check the
+ *     preference themselves and do nothing.
+ */
+
+/* Tailwind names: ease-out, ease-in, ease-in-out, ease-standard, ease-spring
+   and ease-settle utilities, and the default for every transition-* utility
+   that sets no duration or curve of its own. */
+@theme static {
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  /* Damped springs (damping ratio 0.5 and 0.7) sampled as linear() stops:
+     16% and 4.5% overshoot. Browsers without linear() fall back to "ease". */
+  --ease-spring: linear(
+    0, 0.108, 0.351, 0.626, 0.866, 1.037, 1.132, 1.163, 1.149, 1.111, 1.066, 1.026, 0.997, 0.98, 0.974, 0.975, 0.981,
+    0.988, 0.995, 1, 1.003, 1.004, 1.004, 1.003, 1
+  );
+  --ease-settle: linear(
+    0, 0.084, 0.267, 0.475, 0.665, 0.815, 0.923, 0.991, 1.029, 1.044, 1.045, 1.039, 1.03, 1.021, 1.013, 1.006, 1.002, 1,
+    0.998, 0.998, 1
+  );
+  --default-transition-duration: 160ms;
+  --default-transition-timing-function: cubic-bezier(0.2, 0, 0, 1);
+}
+
+:root {
+  --motion-instant: 100ms;
+  --motion-fast: 160ms;
+  --motion-base: 240ms;
+  --motion-slow: 320ms;
+  --motion-slower: 420ms;
+  /* Gap between items that enter one after another. */
+  --motion-stagger: 40ms;
+  /* A pressed control: squashed a little more in height than in width. */
+  --press-scale: 0.975 0.945;
+}
+
+/*
+ * Press feedback for any button or button-like link. Going down is instant
+ * (100ms); coming back up overshoots once on the spring curve, which is the
+ * stretch after the squash. The class owns the element's transition list,
+ * so colour and hover-lift changes on the same element share its timing.
+ * Uses the scale property, so it adds to (never replaces) a translate or
+ * rotate the element already has.
+ */
+.m-press {
+  transition:
+    color var(--motion-fast) var(--ease-standard),
+    background-color var(--motion-fast) var(--ease-standard),
+    border-color var(--motion-fast) var(--ease-standard),
+    box-shadow var(--motion-fast) var(--ease-standard),
+    opacity var(--motion-fast) var(--ease-standard),
+    translate var(--motion-fast) var(--ease-out),
+    scale var(--motion-slow) var(--ease-spring);
+}
+
+.m-press:active:not(:disabled, [aria-disabled="true"]) {
+  scale: var(--press-scale);
+  transition-duration: var(--motion-instant);
+  transition-timing-function: var(--ease-out);
+}
+
+/* Icon-sized controls squash evenly; a lopsided squash on a circle reads as a glitch. */
+.m-press-icon {
+  --press-scale: 0.88;
+}
+
+/*
+ * A touch area of at least 44 by 44 CSS pixels around a control that is
+ * drawn smaller. The control must be positioned (relative, absolute or
+ * fixed). m-hit-y grows the height only, for controls that sit side by side.
+ */
+.m-hit::after,
+.m-hit-y::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: max(100%, 2.75rem);
+  height: max(100%, 2.75rem);
+  translate: -50% -50%;
+}
+
+.m-hit-y::after {
+  width: 100%;
+}
+
+/* Something arriving in place: menus, popovers, toasts. */
+@keyframes m-rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.m-rise-in {
+  animation: m-rise-in var(--motion-base) var(--ease-settle) both;
+}
+
+/* A dialog taking the stage: it grows the last few percent into place. */
+@keyframes m-dialog-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes m-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Children entering one after another: each sets --i (0, 1, 2, ...). */
+.m-stagger > * {
+  animation: m-rise-in var(--motion-slow) var(--ease-out) both;
+  animation-delay: calc(var(--i, 0) * var(--motion-stagger));
+}
+
+/* A loading placeholder: a slow pulse, never a spinner on a blank page. */
+@keyframes m-skeleton {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}
+
+.m-skeleton {
+  animation: m-skeleton 1.4s var(--ease-in-out) infinite;
+}
+
+/* The shared Dialog (and any <dialog class="m-dialog">): it settles into
+   place while the page behind it dims, so it is the one thing in focus. */
+.m-dialog[open] {
+  animation: m-dialog-in var(--motion-slow) var(--ease-settle);
+}
+
+.m-dialog[open]::backdrop {
+  animation: m-fade-in var(--motion-base) var(--ease-standard);
+}

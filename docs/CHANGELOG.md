@@ -3,6 +3,48 @@
 Meaningful implementation changes, newest first. Dates are work dates;
 nothing below is released.
 
+## 2026-11-28 — One motion system; feedback for Add to Cart, wishlist and presses
+
+First part of the owner's "Premium UI/UX & Motion Design Transformation"
+brief. What is done and what is not, principle by principle, is in
+`docs/MOTION-UX-REPORT-2026-11-28.md`.
+
+- `packages/ui`: `motion.css` (durations 100/160/240/320/420ms, six easing
+  curves including two springs, and the classes `m-press`, `m-hit`,
+  `m-rise-in`, `m-dialog`, `m-stagger`, `m-skeleton`) and `motion.ts`
+  (`playMotion`, `flyBetween`, the same numbers for TypeScript). Both apps
+  import it. No new dependency. See DESIGN_SYSTEM.md, "Motion".
+- Every Tailwind `transition-*` utility without its own timing now takes
+  160ms on the standard curve, and `ease-out`, `ease-in` and `ease-in-out`
+  are the system's curves, in both apps.
+- Press feedback (`m-press`): the shared `Button`, the storefront's red
+  call-to-action buttons and links, the card and product page buttons,
+  quantity steppers, header icons, the bottom bar, and the admin's four
+  button styles. Down in 100ms, back up on a spring.
+- Add to Cart: the button says "Added" for 1.6s, the product's photo
+  travels on an arc to the cart icon on screen (header on desktop, bottom
+  bar on phones), the icon bumps when it arrives, and the count's bubble
+  bumps whenever its number changes. The cart changes first; all of this
+  only shows that it did.
+- Wishlist: the heart pops when a product is saved and dips when removed.
+- Touch areas of 44px (`m-hit`) on controls drawn smaller: the card's
+  heart, the card's Add and Buy now buttons, option swatches and pills,
+  the dialog's close button, the toast's dismiss button, the hero's dots.
+- The storefront's drawer, sheets, dialog, mega menu, search panel,
+  category tree and account entrances now use the tokens instead of their
+  own numbers. Exits are shorter than entrances and use the leaving curve.
+  The dialog settles in while its backdrop fades.
+- Reduced motion: nothing travels, pops or squashes; every action works.
+- Tests: `motion.test.ts` (tokens agree between the two files, timing
+  ranges, transform and opacity only, effects off without the API or under
+  reduced motion, the dot's clean-up) and the browser test
+  `e2e/motion.spec.ts` (tokens in the page, press, Add to Cart at 1440px
+  and 375px with the dot's path measured, wishlist, reduced motion, 44px
+  touch areas, the dialog's entrance).
+- Not done in this change: a page-by-page redesign, new skeletons, 3D
+  lighting presentations, animated figures in the admin, Lighthouse and
+  Core Web Vitals measurements, and tests on a real low-powered phone.
+
 ## 2026-11-24 — Homepage hero: three category banners, one shape per screen
 
 - Owner artwork: three banners (switchgear and protection, home

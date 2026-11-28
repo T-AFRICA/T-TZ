@@ -102,7 +102,7 @@ export function Hero() {
           <div className="animate-[hero-copy-in_500ms_ease-out_240ms_both] md:mt-6">
             <Link
               href="/#departments"
-              className="inline-flex items-center gap-2 rounded-full bg-[var(--color-action-red)] px-7 py-3.5 text-sm font-semibold text-white shadow-[0_12px_28px_-12px_rgba(215,25,32,0.65)] transition-all duration-200 hover:-translate-y-0.5 hover:bg-[var(--color-action-red-dark)]"
+              className="inline-flex items-center gap-2 rounded-full m-press bg-[var(--color-action-red)] px-7 py-3.5 text-sm font-semibold text-white shadow-[0_12px_28px_-12px_rgba(215,25,32,0.65)] hover:-translate-y-0.5 hover:bg-[var(--color-action-red-dark)]"
             >
               Explore Products
               <ArrowRightIcon size={16} />

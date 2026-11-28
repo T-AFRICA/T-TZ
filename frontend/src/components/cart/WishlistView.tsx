@@ -46,7 +46,7 @@ export function WishlistView({ embedded = false }: { embedded?: boolean }) {
         </p>
         <Link
           href="/"
-          className="mt-6 inline-flex h-11 items-center gap-2 rounded-full bg-[var(--color-action-red)] px-6 text-sm font-semibold text-white transition-colors hover:bg-[var(--color-action-red-dark)]"
+          className="mt-6 inline-flex h-11 items-center gap-2 rounded-full m-press bg-[var(--color-action-red)] px-6 text-sm font-semibold text-white hover:bg-[var(--color-action-red-dark)]"
         >
           Browse products
           <ArrowRightIcon size={16} />

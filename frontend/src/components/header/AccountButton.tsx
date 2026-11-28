@@ -25,7 +25,7 @@ export function AccountButton() {
     <Link
       href={link.href}
       aria-label={badge ? `${link.label}, ${unread} unread ${unread === 1 ? "notification" : "notifications"}` : link.label}
-      className="relative hidden items-center gap-2 rounded-full bg-[var(--color-action-red)] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[var(--color-action-red-dark)] md:flex"
+      className="relative hidden items-center gap-2 rounded-full m-press bg-[var(--color-action-red)] px-4 py-2 text-sm font-semibold text-white hover:bg-[var(--color-action-red-dark)] md:flex"
     >
       <UserIcon size={18} />
       <span className="hidden lg:inline">{link.label}</span>

@@ -406,7 +406,7 @@ export function SearchBox({ client, autoFocus = false, onClose, onNavigate }: Se
       <button
         type="submit"
         aria-label="Search"
-        className="absolute right-1 top-1/2 flex h-9 w-11 -translate-y-1/2 items-center justify-center rounded-full transition-colors max-md:text-[var(--text-secondary)] max-md:hover:text-[var(--text-primary)] md:bg-[var(--color-action-red)] md:text-white md:hover:bg-[var(--color-action-red-dark)]"
+        className="m-press absolute right-1 top-1/2 flex h-9 w-11 -translate-y-1/2 items-center justify-center rounded-full max-md:text-[var(--text-secondary)] max-md:hover:text-[var(--text-primary)] md:bg-[var(--color-action-red)] md:text-white md:hover:bg-[var(--color-action-red-dark)]"
       >
         {/* Mobile shows a filter-style affordance (approved UI reference). */}
         <SearchIcon size={18} className="max-md:hidden" />

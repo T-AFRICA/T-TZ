@@ -42,7 +42,7 @@ export function Dialog({ open, onClose, title, children }: DialogProps) {
           onClose();
         }
       }}
-      className="m-auto w-[calc(100vw-2rem)] max-w-md rounded-2xl bg-white p-0 shadow-xl backdrop:bg-black/50"
+      className="m-dialog m-auto w-[calc(100vw-2rem)] max-w-md rounded-2xl bg-white p-0 shadow-xl backdrop:bg-black/50"
     >
       <div className="flex items-center justify-between gap-4 border-b border-[var(--color-light-grey)] px-5 py-4">
         <h2 id={titleId} className="font-semibold">
@@ -52,7 +52,7 @@ export function Dialog({ open, onClose, title, children }: DialogProps) {
           type="button"
           onClick={onClose}
           aria-label="Close dialog"
-          className="group flex h-9 w-9 items-center justify-center rounded-full bg-[var(--surface-card)] transition-colors hover:bg-[var(--color-light-grey)]"
+          className="m-press m-press-icon m-hit group relative flex h-9 w-9 items-center justify-center rounded-full bg-[var(--surface-card)] hover:bg-[var(--color-light-grey)]"
         >
           <svg
             aria-hidden="true"
