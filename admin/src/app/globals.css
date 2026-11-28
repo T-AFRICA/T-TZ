@@ -1,5 +1,7 @@
 @import "tailwindcss";
 @import "@tronic/ui/tokens.css";
+/* Shared durations, easing curves and feedback classes (m-press, m-hit, ...). */
+@import "@tronic/ui/motion.css";
 
 /* Tailwind only auto-scans this app; include the shared UI package sources. */
 @source "../../../packages/ui/src";

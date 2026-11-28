@@ -95,7 +95,7 @@ export function Header() {
           <NotificationBell />
           <Link
             href={WISHLIST_LINK.href}
-            className="relative hidden h-10 w-10 items-center justify-center rounded-md transition-colors hover:text-[var(--color-action-red)] md:flex"
+            className="m-press m-press-icon m-hit relative hidden h-10 w-10 items-center justify-center rounded-md hover:text-[var(--color-action-red)] md:flex"
           >
             <HeartIcon size={23} />
             <span className="sr-only">{WISHLIST_LINK.label}</span>
@@ -104,7 +104,8 @@ export function Header() {
           </Link>
           <Link
             href={CART_LINK.href}
-            className="relative hidden h-10 w-10 items-center justify-center rounded-md transition-colors hover:text-[var(--color-action-red)] md:flex"
+            data-cart-target
+            className="m-press m-press-icon m-hit relative hidden h-10 w-10 items-center justify-center rounded-md hover:text-[var(--color-action-red)] md:flex"
           >
             <CartIcon size={24} />
             <span className="sr-only">{CART_LINK.label}</span>

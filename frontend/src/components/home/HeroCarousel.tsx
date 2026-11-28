@@ -105,7 +105,7 @@ export function HeroCarousel({ labels, children }: { labels: readonly string[]; 
               setAuto(false);
               setActive(index);
             }}
-            className="grid h-6 w-7 place-items-center rounded-full focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-white"
+            className="m-hit-y relative grid h-6 w-7 place-items-center rounded-full focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-white"
           >
             <span
               aria-hidden="true"

@@ -1,5 +1,7 @@
 @import "tailwindcss";
 @import "@tronic/ui/tokens.css";
+/* Shared durations, easing curves and feedback classes (m-press, m-hit, ...). */
+@import "@tronic/ui/motion.css";
 
 /* Tailwind only auto-scans this app; include the shared UI package sources. */
 @source "../../../packages/ui/src";
@@ -89,7 +91,7 @@ h4 {
    actually closes (MobileNav keeps the dialog open until drawer-out ends).
    Transform and opacity only, so the work stays on the compositor. */
 :root {
-  --drawer-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --drawer-ease: var(--ease-out);
 }
 
 @keyframes drawer-in {
@@ -129,12 +131,12 @@ h4 {
 }
 
 .mobile-drawer[open] {
-  animation: drawer-in 400ms var(--drawer-ease) both;
+  animation: drawer-in var(--motion-slower) var(--drawer-ease) both;
   will-change: transform;
 }
 
 .mobile-drawer[open][data-closing] {
-  animation: drawer-out 280ms var(--drawer-ease) both;
+  animation: drawer-out var(--motion-base) var(--ease-in) both;
   pointer-events: none;
 }
 
@@ -157,14 +159,14 @@ h4 {
 }
 
 .mobile-drawer[open]::backdrop {
-  animation: backdrop-in 250ms ease-out both;
+  animation: backdrop-in var(--motion-base) var(--ease-standard) both;
   background: rgba(0, 0, 0, 0.45);
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
 }
 
 .mobile-drawer[open][data-closing]::backdrop {
-  animation: backdrop-out 250ms ease-out both;
+  animation: backdrop-out var(--motion-base) var(--ease-standard) both;
 }
 
 /* The page behind the open drawer must not scroll. */
@@ -186,8 +188,8 @@ body:has(.mobile-drawer[open]) {
 }
 
 .mobile-drawer[open] .drawer-reveal {
-  animation: drawer-item-in 300ms var(--drawer-ease) both;
-  animation-delay: calc(80ms + var(--i, 0) * 40ms);
+  animation: drawer-item-in var(--motion-slow) var(--drawer-ease) both;
+  animation-delay: calc(80ms + var(--i, 0) * var(--motion-stagger));
 }
 
 .mobile-drawer[open][data-closing] .drawer-reveal {
@@ -197,9 +199,9 @@ body:has(.mobile-drawer[open]) {
 /* Accordion chevron and the subcategory list's own small stagger. */
 .drawer-acc summary .drawer-chevron {
   transition:
-    transform 280ms var(--drawer-ease),
-    background-color 200ms,
-    color 200ms;
+    transform var(--motion-base) var(--drawer-ease),
+    background-color var(--motion-fast) var(--ease-standard),
+    color var(--motion-fast) var(--ease-standard);
 }
 
 @keyframes accordion-item-in {
@@ -214,7 +216,7 @@ body:has(.mobile-drawer[open]) {
 }
 
 details.drawer-acc[open] > ul > li {
-  animation: accordion-item-in 260ms var(--drawer-ease) both;
+  animation: accordion-item-in var(--motion-base) var(--drawer-ease) both;
   animation-delay: calc(40ms + var(--i, 0) * 35ms);
 }
 
@@ -414,7 +416,7 @@ details.drawer-acc[open] > ul > li {
      strip is left under its buttons. */
   [data-sticky-purchase] {
     padding-bottom: calc(var(--bottom-nav-space) + 0.5rem);
-    transition: transform 300ms cubic-bezier(0.22, 0.8, 0.26, 1);
+    transition: transform var(--motion-slow) var(--ease-out);
   }
 
   html[data-nav-hidden="true"] [data-sticky-purchase] {
@@ -658,11 +660,11 @@ details.drawer-acc[open] > ul > li {
 }
 
 .account-enter {
-  animation: account-enter 320ms cubic-bezier(0.21, 0.47, 0.32, 0.98) both;
+  animation: account-enter var(--motion-slow) var(--ease-out) both;
 }
 
 .timeline-step {
-  animation: account-enter 360ms cubic-bezier(0.21, 0.47, 0.32, 0.98) both;
+  animation: account-enter var(--motion-slow) var(--ease-out) both;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -807,7 +809,7 @@ details.drawer-acc[open] > ul > li {
 }
 
 .mega-panel-in {
-  animation: mega-panel-in 180ms ease-out;
+  animation: mega-panel-in var(--motion-base) var(--ease-out);
 }
 
 /* Header search panel (2026-11-10): stays mounted so it can fade and drop
@@ -822,9 +824,9 @@ details.drawer-acc[open] > ul > li {
   pointer-events: none;
   transform: translateY(-6px);
   transition:
-    opacity 160ms ease,
-    transform 160ms ease-out,
-    visibility 0s linear 160ms;
+    opacity var(--motion-fast) var(--ease-standard),
+    transform var(--motion-fast) var(--ease-in),
+    visibility 0s linear var(--motion-fast);
 }
 
 .search-panel[data-open="true"] {
@@ -833,8 +835,8 @@ details.drawer-acc[open] > ul > li {
   pointer-events: auto;
   transform: none;
   transition:
-    opacity 160ms ease,
-    transform 160ms ease-out,
+    opacity var(--motion-fast) var(--ease-standard),
+    transform var(--motion-base) var(--ease-out),
     visibility 0s;
 }
 
@@ -910,7 +912,7 @@ details.drawer-acc[open] > ul > li {
 @media (max-width: 47.999rem) {
   .site-header,
   .bottom-nav {
-    transition: transform 300ms cubic-bezier(0.22, 0.8, 0.26, 1);
+    transition: transform var(--motion-slow) var(--ease-out);
     will-change: transform;
   }
 
@@ -928,11 +930,11 @@ details.drawer-acc[open] > ul > li {
    the top of the page that drops in, with the results panel as wide as
    the bar (it runs under the close button's column: gap plus button). */
 .mobile-search[open] .mobile-search-bar {
-  animation: mobile-search-in 240ms cubic-bezier(0.22, 0.8, 0.26, 1) both;
+  animation: mobile-search-in var(--motion-base) var(--ease-out) both;
 }
 
 .mobile-search[open]::backdrop {
-  animation: mobile-search-fade 240ms ease-out both;
+  animation: mobile-search-fade var(--motion-base) var(--ease-standard) both;
 }
 
 .mobile-search .search-panel {
@@ -976,18 +978,12 @@ details.drawer-acc[open] > ul > li {
 /* Modal dialog entrance (quick-select and future modals). The mobile
    drawer keeps its own slide-in. */
 dialog:not(.mobile-drawer):not(.filter-sheet):not(.search-sheet)[open] {
-  animation: dialog-in 200ms cubic-bezier(0.2, 0.8, 0.3, 1);
+  animation: m-dialog-in var(--motion-slow) var(--ease-settle);
 }
 
-@keyframes dialog-in {
-  from {
-    opacity: 0;
-    transform: translateY(10px) scale(0.97);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
+/* The page dims as the dialog arrives, so the dialog is the one thing in focus. */
+dialog:not(.mobile-drawer):not(.filter-sheet):not(.search-sheet)[open]::backdrop {
+  animation: m-fade-in var(--motion-base) var(--ease-standard);
 }
 
 /* Motion is decorative everywhere on the storefront (master prompt §10). */
@@ -1025,24 +1021,24 @@ dialog:not(.mobile-drawer):not(.filter-sheet):not(.search-sheet)[open] {
 
 .filter-sheet[open],
 .search-sheet[open] {
-  animation: sheet-in 360ms var(--drawer-ease) both;
+  animation: sheet-in var(--motion-slow) var(--drawer-ease) both;
   will-change: transform;
 }
 
 .filter-sheet[open][data-closing],
 .search-sheet[open][data-closing] {
-  animation: sheet-out 260ms var(--drawer-ease) both;
+  animation: sheet-out var(--motion-base) var(--ease-in) both;
   pointer-events: none;
 }
 
 .filter-sheet[open]::backdrop,
 .search-sheet[open]::backdrop {
-  animation: backdrop-in 250ms ease-out both;
+  animation: backdrop-in var(--motion-base) var(--ease-standard) both;
 }
 
 .filter-sheet[open][data-closing]::backdrop,
 .search-sheet[open][data-closing]::backdrop {
-  animation: backdrop-out 250ms ease-out both;
+  animation: backdrop-out var(--motion-base) var(--ease-standard) both;
 }
 
 body:has(.filter-sheet[open]),
@@ -1069,14 +1065,14 @@ body:has(.search-sheet[open]) {
 .cat-tree-panel {
   display: grid;
   grid-template-rows: 0fr;
-  transition: grid-template-rows 240ms var(--drawer-ease);
+  transition: grid-template-rows var(--motion-base) var(--drawer-ease);
 }
 .cat-tree-panel[data-open="true"] {
   grid-template-rows: 1fr;
 }
 .cat-tree-panel[data-open="false"] > div {
   visibility: hidden;
-  transition: visibility 0s linear 240ms;
+  transition: visibility 0s linear var(--motion-base);
 }
 @media (prefers-reduced-motion: reduce) {
   .cat-tree-panel,

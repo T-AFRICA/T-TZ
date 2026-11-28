@@ -467,7 +467,7 @@ function ShareLocation({
         type="button"
         onClick={share}
         disabled={state === "asking" || pending}
-        className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-full bg-[var(--color-action-red)] px-4 text-sm font-semibold text-white transition-colors hover:bg-[var(--color-premium-black)] disabled:opacity-60"
+        className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-full m-press bg-[var(--color-action-red)] px-4 text-sm font-semibold text-white hover:bg-[var(--color-premium-black)] disabled:opacity-60"
       >
         <LocateFixed size={15} aria-hidden="true" />
         {shared || state === "saved" ? "Update location" : "Share my location"}

@@ -117,7 +117,7 @@ export function PhotoForm({ photoUrl, initials }: { photoUrl: string | null; ini
             name="intent"
             value="upload"
             disabled={pending}
-            className="inline-flex h-11 items-center rounded-full bg-[var(--color-action-red)] px-6 text-sm font-semibold text-white transition-colors hover:bg-[var(--color-premium-black)] disabled:cursor-wait disabled:opacity-70"
+            className="inline-flex h-11 items-center rounded-full m-press bg-[var(--color-action-red)] px-6 text-sm font-semibold text-white hover:bg-[var(--color-premium-black)] disabled:cursor-wait disabled:opacity-70"
           >
             {pending ? "Saving…" : "Upload photo"}
           </button>

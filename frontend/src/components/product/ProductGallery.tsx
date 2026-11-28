@@ -208,7 +208,7 @@ export function ProductGallery({ product }: { product: SampleProduct }) {
             productId={product.id}
             productName={product.name}
             size={16}
-            className="flex h-9 w-9 items-center justify-center rounded-full bg-white shadow-sm transition-all hover:scale-110 active:scale-90"
+            className="relative flex h-9 w-9 items-center justify-center rounded-full bg-white shadow-sm hover:scale-110"
           />
           <button
             type="button"

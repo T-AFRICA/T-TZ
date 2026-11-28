@@ -81,7 +81,7 @@ export function TrackOrderView({ enabled }: { enabled: boolean }) {
           type="submit"
           disabled={!enabled || pending}
           aria-busy={pending || undefined}
-          className="mt-5 inline-flex h-11 w-full items-center justify-center rounded-full bg-[var(--color-action-red)] px-6 text-sm font-semibold text-white transition-colors hover:bg-[var(--color-action-red-dark)] disabled:cursor-not-allowed disabled:bg-[var(--color-light-grey)] disabled:text-[var(--text-muted)] sm:w-auto"
+          className="mt-5 inline-flex h-11 w-full items-center justify-center rounded-full m-press bg-[var(--color-action-red)] px-6 text-sm font-semibold text-white hover:bg-[var(--color-action-red-dark)] disabled:cursor-not-allowed disabled:bg-[var(--color-light-grey)] disabled:text-[var(--text-muted)] sm:w-auto"
         >
           {pending ? "Looking up…" : "Track order"}
         </button>

@@ -91,7 +91,7 @@ export function OrderCard({ order, images }: { order: CustomerOrderSummary; imag
           </Link>
           <Link
             href={href}
-            className="inline-flex h-10 items-center rounded-full bg-[var(--color-action-red)] px-4 text-[13px] font-semibold text-white transition-colors hover:bg-[var(--color-premium-black)]"
+            className="inline-flex h-10 items-center rounded-full m-press bg-[var(--color-action-red)] px-4 text-[13px] font-semibold text-white hover:bg-[var(--color-premium-black)]"
           >
             View details
           </Link>

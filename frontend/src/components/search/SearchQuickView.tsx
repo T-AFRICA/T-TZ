@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type MouseEvent } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import type { ProductSearchHit } from "@tronic/types";
@@ -211,9 +211,12 @@ function QuickViewDetails({
       ? `Choose ${missing} to continue.`
       : null;
 
-  function addToCart() {
+  function addToCart(event: MouseEvent<HTMLButtonElement>) {
     if (!canAdd) return;
-    purchase.addToCart({ productId: hit.id, name: hit.name, quantity, color, variant });
+    purchase.addToCart(
+      { productId: hit.id, name: hit.name, quantity, color, variant },
+      { from: event.currentTarget, image: hit.image },
+    );
     setStatus("added");
     if (timer.current) clearTimeout(timer.current);
     timer.current = setTimeout(() => setStatus((current) => (current === "added" ? "idle" : current)), ADDED_FEEDBACK_MS);

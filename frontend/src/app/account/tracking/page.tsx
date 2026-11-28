@@ -65,7 +65,7 @@ export default async function AccountTrackingPage() {
                 </div>
                 <Link
                   href={`/account/orders/${order.orderNumber}/tracking`}
-                  className="mt-4 inline-flex h-10 items-center gap-1.5 rounded-full bg-[var(--color-action-red)] px-4 text-[13px] font-semibold text-white transition-colors hover:bg-[var(--color-premium-black)]"
+                  className="mt-4 inline-flex h-10 items-center gap-1.5 rounded-full m-press bg-[var(--color-action-red)] px-4 text-[13px] font-semibold text-white hover:bg-[var(--color-premium-black)]"
                 >
                   Full tracking
                   <ArrowRightIcon size={14} />

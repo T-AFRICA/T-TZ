@@ -72,7 +72,8 @@ export function BottomNav() {
               <Link
                 href={tab.href}
                 aria-current={isActive ? "page" : undefined}
-                className={`relative flex h-12 flex-col items-center justify-center gap-1 rounded-full text-[10.5px] leading-none transition-[color,background-color,scale] duration-200 active:scale-95 ${
+                data-cart-target={tab.href === CART_LINK.href ? "" : undefined}
+                className={`m-press relative flex h-12 flex-col items-center justify-center gap-1 rounded-full text-[10.5px] leading-none ${
                   isActive
                     ? "bg-[#fdecec] font-semibold text-[var(--color-action-red)]"
                     : "font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)]"

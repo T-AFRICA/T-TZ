@@ -152,7 +152,7 @@ export default async function OrderDetailsPage({ params }: { params: Promise<{ o
             <OrderTimeline tracking={tracking} compact />
             <Link
               href={`${base}/tracking`}
-              className="mt-4 inline-flex h-11 w-full items-center justify-center gap-2 rounded-full bg-[var(--color-action-red)] text-sm font-semibold text-white transition-colors hover:bg-[var(--color-premium-black)]"
+              className="mt-4 inline-flex h-11 w-full items-center justify-center gap-2 rounded-full m-press bg-[var(--color-action-red)] text-sm font-semibold text-white hover:bg-[var(--color-premium-black)]"
             >
               <Truck size={16} aria-hidden="true" />
               Track order

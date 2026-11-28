@@ -69,7 +69,7 @@ export function CartView() {
         <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
           <Link
             href="/"
-            className="inline-flex h-11 items-center gap-2 rounded-full bg-[var(--color-action-red)] px-6 text-sm font-semibold text-white transition-colors hover:bg-[var(--color-action-red-dark)]"
+            className="inline-flex h-11 items-center gap-2 rounded-full m-press bg-[var(--color-action-red)] px-6 text-sm font-semibold text-white hover:bg-[var(--color-action-red-dark)]"
           >
             Browse products
             <ArrowRightIcon size={16} />
@@ -124,7 +124,7 @@ export function CartView() {
             <Link
               href={CHECKOUT_PATH}
               aria-describedby="checkout-note"
-              className="mt-4 inline-flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[var(--color-action-red)] px-5 text-[15px] font-semibold text-white shadow-[0_10px_26px_-12px_rgba(215,25,32,0.7)] transition-colors hover:bg-[var(--color-action-red-dark)]"
+              className="mt-4 inline-flex h-12 w-full items-center justify-center gap-2 rounded-full m-press bg-[var(--color-action-red)] px-5 text-[15px] font-semibold text-white shadow-[0_10px_26px_-12px_rgba(215,25,32,0.7)] hover:bg-[var(--color-action-red-dark)]"
             >
               Proceed to checkout
               <ArrowRightIcon size={16} />
@@ -168,7 +168,7 @@ export function CartView() {
             </div>
             <Link
               href={CHECKOUT_PATH}
-              className="ml-auto inline-flex h-11 shrink-0 items-center gap-1.5 rounded-full bg-[var(--color-action-red)] px-5 text-sm font-semibold text-white transition-colors hover:bg-[var(--color-action-red-dark)]"
+              className="ml-auto inline-flex h-11 shrink-0 items-center gap-1.5 rounded-full m-press bg-[var(--color-action-red)] px-5 text-sm font-semibold text-white hover:bg-[var(--color-action-red-dark)]"
             >
               Checkout
               <ArrowRightIcon size={16} />
