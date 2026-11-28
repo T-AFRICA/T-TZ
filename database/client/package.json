@@ -24,11 +24,11 @@
     "postgres": "^4.1.1"
   },
   "devDependencies": {
-    "@electric-sql/pglite": "^0.5.16",
-    "@electric-sql/pglite-socket": "^0.2.19",
+    "@electric-sql/pglite": "^0.6.0",
+    "@electric-sql/pglite-socket": "^0.3.0",
     "@tronic/permissions": "workspace:*",
-    "@types/node": "^22.20.5",
-    "jose": "^6.2.17",
+    "@types/node": "^22.20.6",
+    "jose": "^6.2.18",
     "typescript": "^5.7.3",
     "vitest": "^4.1.12"
   }
